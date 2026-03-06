@@ -1,0 +1,63 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* Self-hosted Inter (variable weight 400–700) */
+@font-face {
+  font-family: 'Inter';
+  font-style: normal;
+  font-weight: 400 700;
+  font-display: swap;
+  src: url('./fonts/Inter.woff2') format('woff2');
+}
+
+body { font-family: 'Inter', sans-serif; }
+
+.bottom-sheet {
+  transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+.bottom-sheet.closed {
+  transform: translateY(100%);
+}
+
+.day-cell:hover { opacity: 0.85; }
+
+.settings-overlay {
+  transition: opacity 0.2s ease, visibility 0.2s ease;
+}
+.settings-overlay.hidden {
+  opacity: 0;
+  visibility: hidden;
+}
+
+.color-swatch {
+  transition: transform 0.15s ease, box-shadow 0.15s ease;
+}
+.color-swatch:hover { transform: scale(1.2); }
+.color-swatch.active {
+  box-shadow: 0 0 0 2px #fff, 0 0 0 4px currentColor;
+  transform: scale(1.15);
+}
+
+/* Month transition */
+@keyframes monthFadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+.month-fade { animation: monthFadeIn 1s ease; }
+
+/* Bottom sheet task list fade */
+@keyframes sheetFadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+.sheet-fade { animation: sheetFadeIn 0.8s ease; }
+
+/* Nav arrow */
+.nav-arrow {
+  transition: background 0.15s ease, opacity 0.15s ease;
+}
+.nav-arrow:disabled {
+  opacity: 0.2;
+  cursor: default;
+}

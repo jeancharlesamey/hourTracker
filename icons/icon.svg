@@ -1,0 +1,8 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512">
+  <rect width="512" height="512" rx="96" fill="#1a1a2e"/>
+  <!-- 2x2 grid representing the 4 task sub-squares -->
+  <rect x="80" y="80" width="160" height="160" rx="16" fill="#22c55e"/>
+  <rect x="272" y="80" width="160" height="160" rx="16" fill="#3b82f6"/>
+  <rect x="80" y="272" width="160" height="160" rx="16" fill="#a855f7"/>
+  <rect x="272" y="272" width="160" height="160" rx="16" fill="#f59e0b"/>
+</svg>
