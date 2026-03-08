@@ -78,6 +78,15 @@
     }
     .dot-spin { animation: dotSpin 6s linear infinite; transform-origin: center; }
 
+    /* Fire icon flicker */
+    @keyframes fireFlicker {
+      0%,100% { transform: scaleY(1)    scaleX(1)    rotate(-1deg); opacity: 1;    }
+      25%      { transform: scaleY(1.08) scaleX(0.95) rotate(1deg);  opacity: 0.9; }
+      50%      { transform: scaleY(0.95) scaleX(1.05) rotate(-2deg); opacity: 1;   }
+      75%      { transform: scaleY(1.05) scaleX(0.97) rotate(1.5deg);opacity: 0.85;}
+    }
+    .fire-icon { animation: fireFlicker 1.2s ease-in-out infinite; transform-origin: bottom center; display: inline-block; }
+
     /* Nav arrow */
     .nav-arrow {
       transition: background 0.15s ease, opacity 0.15s ease;
@@ -195,8 +204,8 @@
         </button>
       </div>
       <div id="settingsTasks" class="space-y-5"></div>
-      <div class="mt-6 pt-4 border-t border-gray-200 dark:border-white/10 text-center">
-        <button id="resetBtn" class="text-xs text-red-400 hover:text-red-300 transition-colors">Delete all data</button>
+      <div class="mt-6 pt-4 border-t border-gray-200 dark:border-white/10">
+        <button id="resetBtn" class="w-full py-2.5 rounded-lg bg-red-500 hover:bg-red-600 text-white text-sm font-medium transition-colors">Delete all data</button>
       </div>
     </div>
   </div>
@@ -215,6 +224,8 @@
 
   <script>
     // ── Constants ──────────────────────────────────────────
+    const FIRE_ICON = `<span class="fire-icon" aria-hidden="true"><svg class="w-3.5 h-3.5 inline" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M15.362 5.214A8.252 8.252 0 0 1 12 21 8.25 8.25 0 0 1 6.038 7.048 8.287 8.287 0 0 1 9 9.6a8.983 8.983 0 0 1 3.361-6.867 8.21 8.21 0 0 0 3 2.481Z"/><path stroke-linecap="round" stroke-linejoin="round" d="M12 18a3.75 3.75 0 0 0 .495-7.468 5.99 5.99 0 0 0-1.925 3.546 5.974 5.974 0 0 1-2.133-1.001A3.75 3.75 0 0 0 12 18Z"/></svg></span>`;
+
     const PALETTE = [
       '#ef4444','#f97316','#f59e0b','#eab308',
       '#84cc16','#22c55e','#14b8a6','#06b6d4',
@@ -241,6 +252,7 @@
     // ── State ─────────────────────────────────────────────
     let tasks = loadJSON('dt_tasks', DEFAULT_TASKS);
     let completions = loadJSON('dt_completions', {});
+    let maxCap = parseFloat(localStorage.getItem('dt_maxCap')) || 7.5;
     let selectedDate = null; // null = no day selected, sheet closed
     let sheetOpen = false;
 
@@ -343,51 +355,76 @@
       return `${parseFloat(h.toFixed(2))}h`;
     }
 
-    // Work schedule: 9am–12pm (3h), break 12–1:30pm (1.5h), 1:30pm onward
-    // Afternoon arc runs 135°–360° (7.5h) — overflow beyond 8h keeps filling
-    function buildStackedDotGradient(tasksArr, comp, emptyDot, gapColor) {
-      if (comp.every(h => !h)) return emptyDot;
-      const DEG         = 30;        // degrees per hour
-      const MORNING_END = 3   * DEG; // 90°  = 12:00
-      const LUNCH_END   = 4.5 * DEG; // 135° = 13:30
-      const AFTERNOON_CAP = (360 - LUNCH_END) / DEG; // 7.5h — fills to full circle
+    // 4 squares (2h each = 8h total) + 2h overflow background
+    // Tasks fill sequentially: task 1 first, then task 2 picks up where task 1 left off, etc.
+    function buildDaySquares(comp, totalHours, overHours, emptyBg) {
+      const SQUARE_H   = 2;
+      const NUM_SQ     = 4;
+      const NORMAL_MAX = NUM_SQ * SQUARE_H; // 8h
 
-      const sorted = tasksArr
-        .map((t, i) => ({ color: t.color, h: Math.max(0, comp[i] || 0) }))
-        .sort((a, b) => b.h - a.h);
+      // Dominant task color (for overflow layer)
+      let dominantColor = tasks[0]?.color || '#888';
+      let maxH = 0;
+      tasks.forEach((t, i) => { const h = comp[i] || 0; if (h > maxH) { maxH = h; dominantColor = t.color; } });
 
-      const mSegs = [], aSegs = [];
-      let mPos = 0, aPos = 0;
-
-      for (const task of sorted) {
-        let h = task.h;
-        if (h <= 0) continue;
-        if (mPos < 3) {
-          const take = Math.min(h, 3 - mPos);
-          mSegs.push({ color: task.color, start: mPos * DEG, end: (mPos + take) * DEG });
-          mPos += take; h -= take;
+      // Build colored segments per square from the sequential task timeline
+      const squares = Array.from({length: NUM_SQ}, () => []);
+      let cursor = 0; // running hour position across all tasks
+      tasks.forEach((t, i) => {
+        const h = comp[i] || 0;
+        if (h <= 0) { cursor += h; return; }
+        const taskStart = cursor;
+        const taskEnd   = cursor + h;
+        for (let s = 0; s < NUM_SQ; s++) {
+          const sqStart = s * SQUARE_H;
+          const sqEnd   = sqStart + SQUARE_H;
+          const oStart  = Math.max(taskStart, sqStart);
+          const oEnd    = Math.min(taskEnd,   sqEnd);
+          if (oEnd > oStart) {
+            squares[s].push({
+              color:     t.color,
+              fillStart: (oStart - sqStart) / SQUARE_H, // fraction [0,1] from bottom
+              fillEnd:   (oEnd   - sqStart) / SQUARE_H,
+            });
+          }
         }
-        if (h > 0 && aPos < AFTERNOON_CAP) {
-          const take = Math.min(h, AFTERNOON_CAP - aPos);
-          aSegs.push({ color: task.color, start: LUNCH_END + aPos * DEG, end: LUNCH_END + (aPos + take) * DEG });
-          aPos += take;
-        }
+        cursor += h;
+      });
+
+      // Overflow fill [0..1] — beyond 8h, 2h window
+      const overflowFill = totalHours > NORMAL_MAX
+        ? Math.min(1, (totalHours - NORMAL_MAX) / SQUARE_H) : 0;
+
+      let html = '';
+
+      // Overflow layer (behind squares, rises from bottom)
+      if (overflowFill > 0) {
+        html += `<div class="absolute inset-0 overflow-hidden rounded-sm md:rounded-md flex items-end pointer-events-none">`;
+        html += `<div class="w-full" style="height:${(overflowFill*100).toFixed(1)}%;background:${dominantColor};opacity:0.6"></div>`;
+        html += `</div>`;
       }
 
-      const s = [];
-      for (const seg of mSegs) s.push(`${seg.color} ${seg.start}deg ${seg.end}deg`);
-      if (mPos * DEG < MORNING_END) s.push(`${emptyDot} ${mPos * DEG}deg ${MORNING_END}deg`);
-      s.push(`${gapColor} ${MORNING_END}deg ${LUNCH_END}deg`);
-      for (const seg of aSegs) s.push(`${seg.color} ${seg.start}deg ${seg.end}deg`);
-      if (LUNCH_END + aPos * DEG < 360) s.push(`${emptyDot} ${LUNCH_END + aPos * DEG}deg 360deg`);
+      // 2×2 grid
+      html += `<div class="absolute inset-0 p-[10%] grid grid-cols-2 grid-rows-2 gap-[8%]">`;
+      squares.forEach(segs => {
+        html += `<div class="relative rounded-[2px] overflow-hidden" style="background:${emptyBg}">`;
+        segs.forEach(seg => {
+          const bottom = (seg.fillStart * 100).toFixed(1);
+          const height = ((seg.fillEnd - seg.fillStart) * 100).toFixed(1);
+          html += `<div class="absolute left-0 right-0" style="bottom:${bottom}%;height:${height}%;background:${seg.color}"></div>`;
+        });
+        html += `</div>`;
+      });
+      html += `</div>`;
 
-      return `conic-gradient(from 270deg, ${s.join(', ')})`;
+      return html;
     }
 
     function save() {
       try {
         localStorage.setItem('dt_tasks', JSON.stringify(tasks));
         localStorage.setItem('dt_completions', JSON.stringify(completions));
+        localStorage.setItem('dt_maxCap', maxCap);
       } catch (e) {
         showToast('Could not save — storage is full or unavailable');
       }
@@ -410,7 +447,7 @@
         const ds = `${viewYear}-${String(viewMonth + 1).padStart(2, '0')}-${String(d).padStart(2, '0')}`;
         if (ds > todayS) break;
         const total = getCompletions(ds).reduce((a, b) => a + b, 0);
-        if (total > 8) count++;
+        if (total > maxCap) count++;
       }
       return count;
     }
@@ -516,19 +553,13 @@
         const cellLabel = `${dateLabel}, ${doneCount} task(s) with hours logged${isToday ? ', today' : ''}`;
 
         const totalHours = comp.reduce((a, b) => a + b, 0);
-        const overHours = totalHours > 8;
-        const emptyDot = darkMode ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.08)';
-        const gapColor = overHours
-          ? '#ef4444'
-          : (darkMode ? '#1a1a2e' : '#f5f5f5');
-        html += `<div class="day-cell aspect-square rounded-sm md:rounded-md cursor-pointer relative ${overHours ? 'bg-red-500' : ''} ${isSelected ? `ring-2 ${overHours ? 'ring-red-300' : 'ring-gray-500 dark:ring-white/60'}` : ''} ${future ? 'opacity-20 pointer-events-none' : ''} focus:outline-none focus:ring-2 focus:ring-white/60"
+        const overHours = totalHours > maxCap;
+        const emptyBg = darkMode ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.1)';
+        html += `<div class="day-cell aspect-square rounded-sm md:rounded-md cursor-pointer relative overflow-hidden ${overHours ? 'bg-red-200 dark:bg-red-950' : ''} ${isSelected ? `ring-2 ${overHours ? 'ring-red-400 dark:ring-red-700' : 'ring-gray-500 dark:ring-white/60'}` : ''} ${future ? 'opacity-20 pointer-events-none' : ''} focus:outline-none focus:ring-2 focus:ring-white/60"
                       role="button" tabindex="${future ? -1 : 0}" aria-label="${cellLabel}"
                       data-date="${ds}">`;
-        const dotBg = buildStackedDotGradient(tasks, comp, emptyDot, gapColor);
-        html += `<div class="w-full h-full p-[10%]">`;
-        html += `<div class="w-full h-full rounded-full${isSelected ? ' dot-spin' : ''}" style="background:${dotBg}"></div>`;
-        html += `</div>`;
-        const numColor = totalHours > 0 ? (overHours ? '#fca5a5' : 'white') : '';
+        html += buildDaySquares(comp, totalHours, overHours, emptyBg);
+        const numColor = totalHours > 0 ? 'white' : '';
         const numStyle = totalHours > 0 ? `color:${numColor};text-shadow:0 2px 12px rgba(0,0,0,0.35),0 0 20px rgba(0,0,0,0.2)` : '';
         const numClass = totalHours > 0 ? '' : (darkMode ? 'text-white/60' : 'text-gray-400');
         html += `<span class="absolute inset-0 flex items-center justify-center text-[1.5rem] md:text-[3.5rem] font-medium ${numClass}" style="${numStyle}">${d}</span>`;
@@ -595,7 +626,7 @@
       hours = Math.max(0, hours);
       comp[index] = hours;
       const newTotal = comp.reduce((a, b) => a + b, 0);
-      if (newTotal > 8) showToast('You are burning, be careful', 'error');
+      if (newTotal > maxCap) showToast('You are burning, be careful', 'error');
       completions[selectedDate] = comp;
       save();
       renderTaskList();
@@ -690,6 +721,23 @@
         </div>`;
       });
       html += `</div></div>`;
+
+      // Compute burnout count + total exceeded hours for this month
+      let burnoutCount = 0, exceededTotal = 0;
+      for (let d = 1; d <= daysInMonth; d++) {
+        const ds = `${viewYear}-${String(viewMonth+1).padStart(2,'0')}-${String(d).padStart(2,'0')}`;
+        if (ds > todayS) break;
+        const tot = getCompletions(ds).reduce((a, b) => a + b, 0);
+        if (tot > maxCap) { burnoutCount++; exceededTotal += tot - maxCap; }
+      }
+      if (burnoutCount > 0) {
+        html += `<div class="mt-4 flex justify-center">
+          <span class="inline-flex items-center gap-1.5 text-xs bg-red-500/20 text-red-600 dark:text-red-400 px-3 py-1 rounded-full font-medium">
+            ${FIRE_ICON}
+            ${burnoutCount} burnout day${burnoutCount > 1 ? 's' : ''} +${fmtH(exceededTotal)} over cap
+          </span>
+        </div>`;
+      }
 
       document.getElementById('summaryContent').innerHTML = html;
       document.getElementById('monthSummaryOverlay').classList.remove('hidden');
@@ -826,17 +874,35 @@
       const count = calcBurnout();
       const badge = document.getElementById('streakBadge');
       if (count > 0) {
-        badge.textContent = `${count} burnout day${count > 1 ? 's' : ''}`;
+        badge.innerHTML = `${FIRE_ICON} ${count} burnout day${count > 1 ? 's' : ''}`;
         badge.classList.remove('hidden');
       } else {
         badge.classList.add('hidden');
       }
     }
 
+    function updateMaxCap(val) {
+      const v = parseFloat(val);
+      if (!isNaN(v) && v > 0) {
+        maxCap = v;
+        save();
+        renderCalendar();
+        updateStreak();
+      }
+    }
+
     // ── Settings ──────────────────────────────────────────
     function renderSettings() {
       const el = document.getElementById('settingsTasks');
-      el.innerHTML = tasks.map((t, i) => `
+      el.innerHTML = `
+        <div class="mb-5 pb-5 border-b border-gray-200 dark:border-white/10">
+          <label class="text-sm font-medium block mb-1">Daily cap <span class="text-gray-400 dark:text-white/40 text-xs font-normal">(hours)</span></label>
+          <p class="text-xs text-gray-400 dark:text-white/40 mb-2">Threshold for burnout warning and red cells</p>
+          <input type="number" min="1" max="24" step="0.5" value="${maxCap}"
+            class="w-28 bg-black/5 dark:bg-white/5 border border-gray-200 dark:border-white/10 rounded-lg px-3 py-2 text-sm text-gray-900 dark:text-white focus:outline-none focus:border-gray-400 dark:focus:border-white/30 transition-colors"
+            oninput="updateMaxCap(this.value)">
+        </div>
+      ` + tasks.map((t, i) => `
         <div class="space-y-2">
           <div class="flex items-center justify-between">
             <label for="taskName${i}" class="text-xs text-gray-400 dark:text-white/60 font-medium">Task ${i + 1}</label>
