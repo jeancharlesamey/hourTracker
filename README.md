@@ -7,7 +7,7 @@
   ╚═══════════════════════════════════════╝
 ```
 
-**1.0.1**
+**alpha-1.0.2**
 
 A minimal, offline-first hour tracker that lives only in your computer.
 
