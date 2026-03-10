@@ -1,13 +1,13 @@
 ```
   ╔═══════════════════════════════════════╗
   ║                                       ║
-  ║   ◷  H O U R   T R A C K E R         ║
+  ║   ◷  H O U R   T R A C K E R          ║
   ║      one file. no server. no fuss.    ║
   ║                                       ║
   ╚═══════════════════════════════════════╝
 ```
 
-**alpha-1.0.2**
+**alpha-1.0.3**
 
 A minimal, offline-first hour tracker that lives only in your computer.
 
@@ -49,6 +49,8 @@ Each day cell shows **4 squares**, each representing 2 hours (8h total):
   │  · Burnout days badge in header         │
   │  · "Go to today" jumps + opens sheet    │
   │  · Click month label → monthly summary  │
+  │  · Last fill time below the grid        │
+  │    e.g. "last fill : 1:45pm (2h ago)"   │
   └─────────────────────────────────────────┘
 
   ┌─ Tasks ─────────────────────────────────┐
@@ -157,7 +159,8 @@ Nothing is sent anywhere. Ever.
       └── localStorage
               ├── dt_tasks        ← your task list + colors
               ├── dt_completions  ← hours per day
-              └── dt_maxCap       ← your daily cap setting
+              ├── dt_maxCap       ← your daily cap setting
+              └── dt_lastFill     ← timestamp of last hour entry
 ```
 
 To export: open DevTools → Application → Local Storage → copy the values.

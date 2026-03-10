@@ -452,9 +452,38 @@
         localStorage.setItem('dt_tasks', JSON.stringify(tasks));
         localStorage.setItem('dt_completions', JSON.stringify(completions));
         localStorage.setItem('dt_maxCap', maxCap);
+        localStorage.setItem('dt_lastFill', Date.now());
+        updateLastFillDisplay();
       } catch (e) {
         showToast('Could not save — storage is full or unavailable');
       }
+    }
+
+    function updateLastFillDisplay() {
+      const ts = parseInt(localStorage.getItem('dt_lastFill'));
+      const el = document.getElementById('lastFillLabel');
+      if (!el) return;
+      if (!ts) { el.textContent = ''; return; }
+      const d = new Date(ts);
+      const now = new Date();
+      const sameDay = d.toDateString() === now.toDateString();
+      const h24 = d.getHours();
+      const mm = String(d.getMinutes()).padStart(2, '0');
+      const ampm = h24 >= 12 ? 'pm' : 'am';
+      const h12 = h24 % 12 || 12;
+      const dd = String(d.getDate()).padStart(2, '0');
+      const mo = String(d.getMonth() + 1).padStart(2, '0');
+      const elapsedMin = (now - d) / 60000;
+      let ago;
+      if (elapsedMin < 15) {
+        ago = `${Math.round(elapsedMin)}min ago`;
+      } else {
+        const rounded = Math.round(elapsedMin / 15) * 0.25;
+        ago = `${rounded}h ago`;
+      }
+      const timeStr = `${h12}:${mm}${ampm}`;
+      const time = sameDay ? timeStr : `${dd}/${mo} ${timeStr}`;
+      el.textContent = `last fill : ${time} (${ago})`;
     }
 
     function getCompletions(date) {
@@ -593,8 +622,11 @@
         html += `</div>`;
       }
 
-      html += `</div></div>`;
+      html += `</div>`;
+      html += `<div id="lastFillLabel" class="text-xs text-gray-400 dark:text-white/30 text-center mt-2"></div>`;
+      html += `</div>`;
       grid.innerHTML = html;
+      updateLastFillDisplay();
 
       if (monthChanged) {
         grid.classList.remove('month-fade');
@@ -1139,6 +1171,8 @@
       renderLegend();
       renderCalendar();
       updateStreak();
+      updateLastFillDisplay();
+      setInterval(updateLastFillDisplay, 60000);
     }
 
     init();
