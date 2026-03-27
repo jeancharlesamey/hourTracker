@@ -7,7 +7,7 @@
   ╚═══════════════════════════════════════╝
 ```
 
-**alpha-1.0.3**
+**alpha-1.0.4**
 
 A minimal, offline-first hour tracker that lives only in your computer.
 
@@ -43,14 +43,18 @@ Each day cell shows **4 squares**, each representing 2 hours (8h total):
 
 ```
   ┌─ Calendar ──────────────────────────────┐
-  │  · Monthly view, navigate with arrows   │
+  │  · Monthly view, scrollable grid        │
+  │  · Legend + month nav stay sticky       │
+  │  · Navigate with arrows or wheel        │
   │  · 4-square diagram per day             │
   │  · Over cap → red cell + white number   │
   │  · Burnout days badge in header         │
   │  · "Go to today" jumps + opens sheet    │
   │  · Click month label → monthly summary  │
-  │  · Last fill time below the grid        │
-  │    e.g. "last fill : 1:45pm (2h ago)"   │
+  │  · Forward-looking fill hint below grid │
+  │    e.g. "3h left to fill today"         │
+  │         "filled today ✓"                │
+  │         "next fill : Monday"            │
   └─────────────────────────────────────────┘
 
   ┌─ Tasks ─────────────────────────────────┐
@@ -58,6 +62,8 @@ Each day cell shows **4 squares**, each representing 2 hours (8h total):
   │  · Pick a color per task                │
   │  · Log hours (decimals OK: 1.5, 0.25)   │
   │  · No hard cap — log what you worked    │
+  │  · Sheet header shows time left / done  │
+  │  · "Last fill X ago" toast on open      │
   └─────────────────────────────────────────┘
 
   ┌─ Legend ────────────────────────────────┐
@@ -66,7 +72,10 @@ Each day cell shows **4 squares**, each representing 2 hours (8h total):
   └─────────────────────────────────────────┘
 
   ┌─ Monthly summary popup ─────────────────┐
-  │  · Hours per task, broken down by week  │
+  │  · Hours / Days toggle                  │
+  │    Hours: 0.25 = 15min · 0.5 = 30min   │
+  │    Days: 1 day = daily cap              │
+  │  · Per task, broken down by week        │
   │  · ISO week numbers (W01, W02 …)        │
   │  · Grand total at the bottom            │
   │  · Burnout pill with total exceeded h   │

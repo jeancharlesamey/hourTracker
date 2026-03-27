@@ -3,7 +3,13 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Hour Tracker</title>
+  <meta name="color-scheme" content="light dark">
+  <title>Hour Tracker </title>
+  <!-- alpha-1.0.4 -->
+  <style>
+    html { background-color: #f5f5f5; }
+    html.dark { background-color: #1a1a2e; }
+  </style>
   <!-- PWA -->
   <link rel="manifest" href="./manifest.json">
   <meta name="theme-color" content="#1a1a2e">
@@ -97,7 +103,7 @@
     }
   </style>
 </head>
-<body class="bg-surface dark:bg-surface-dark text-gray-900 dark:text-white min-h-screen flex flex-col overflow-hidden select-none transition-colors duration-300">
+<body class="bg-surface dark:bg-surface-dark text-gray-900 dark:text-white h-screen flex flex-col overflow-hidden select-none transition-colors duration-300">
 
   <!-- Skip link -->
   <a href="#calendarGrid" class="sr-only focus:not-sr-only focus:absolute focus:top-2 focus:left-2 focus:z-50 focus:bg-white focus:text-black focus:px-3 focus:py-2 focus:rounded-lg focus:text-sm focus:font-medium">Skip to calendar</a>
@@ -120,24 +126,27 @@
   </header>
 
   <!-- Calendar -->
-  <main id="calendarArea" class="flex-1 flex flex-col px-4 md:px-8 py-4 overflow-hidden">
-    <!-- Legend -->
-    <div class="flex items-center justify-between mb-4">
-      <div id="legend" class="flex flex-wrap gap-3 md:gap-4 text-xs md:text-sm"></div>
-      <button id="todayBtn" aria-label="Go to today" class="hidden text-xs font-medium text-black bg-white hover:bg-white/80 px-3 py-1 rounded-full transition-colors shrink-0">Go to today</button>
-    </div>
+  <main id="calendarArea" class="flex-1 flex flex-col px-4 md:px-8 py-4 overflow-y-auto overflow-x-hidden min-h-0">
+    <!-- Sticky zone: legend + month nav -->
+    <div class="sticky top-0 z-10 bg-surface dark:bg-surface-dark pb-2">
+      <!-- Legend -->
+      <div class="flex items-center justify-between mb-3">
+        <div id="legend" class="flex flex-wrap gap-3 md:gap-4 text-xs md:text-sm"></div>
+        <button id="todayBtn" aria-label="Go to today" class="hidden text-xs font-medium text-black bg-white hover:bg-white/80 px-3 py-1 rounded-full transition-colors shrink-0">Go to today</button>
+      </div>
 
-    <!-- Month Navigation -->
-    <div class="flex items-center justify-between mb-3 md:mb-4">
-      <button id="prevMonth" aria-label="Previous month" class="nav-arrow w-9 h-9 md:w-10 md:h-10 flex items-center justify-center rounded-lg hover:bg-black/5 dark:hover:bg-white/10">
-        <svg aria-hidden="true" class="w-5 h-5 md:w-6 md:h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"/></svg>
-      </button>
-      <button id="monthLabel" class="text-sm md:text-lg font-semibold text-gray-500 dark:text-white/70 hover:text-gray-700 dark:hover:text-white/90 transition-colors px-3 py-1 rounded-lg hover:bg-black/5 dark:hover:bg-white/5">
-        <!-- filled by JS -->
-      </button>
-      <button id="nextMonth" aria-label="Next month" class="nav-arrow w-9 h-9 md:w-10 md:h-10 flex items-center justify-center rounded-lg hover:bg-black/5 dark:hover:bg-white/10">
-        <svg aria-hidden="true" class="w-5 h-5 md:w-6 md:h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/></svg>
-      </button>
+      <!-- Month Navigation -->
+      <div class="flex items-center justify-between">
+        <button id="prevMonth" aria-label="Previous month" class="nav-arrow w-9 h-9 md:w-10 md:h-10 flex items-center justify-center rounded-lg hover:bg-black/5 dark:hover:bg-white/10">
+          <svg aria-hidden="true" class="w-5 h-5 md:w-6 md:h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"/></svg>
+        </button>
+        <button id="monthLabel" class="text-sm md:text-lg font-semibold text-gray-500 dark:text-white/70 hover:text-gray-700 dark:hover:text-white/90 transition-colors px-3 py-1 rounded-lg hover:bg-black/5 dark:hover:bg-white/5">
+          <!-- filled by JS -->
+        </button>
+        <button id="nextMonth" aria-label="Next month" class="nav-arrow w-9 h-9 md:w-10 md:h-10 flex items-center justify-center rounded-lg hover:bg-black/5 dark:hover:bg-white/10">
+          <svg aria-hidden="true" class="w-5 h-5 md:w-6 md:h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/></svg>
+        </button>
+      </div>
     </div>
 
     <!-- Calendar Grid (single month) -->
@@ -156,11 +165,14 @@
         <h2 id="sheetDate" class="text-sm md:text-base font-semibold text-gray-500 dark:text-white/70">Today</h2>
         <span id="sheetProgress" class="inline-block min-w-[5rem] text-xs md:text-sm text-gray-400 dark:text-white/60 tabular-nums">0h / 7.5h</span>
       </div>
-      <button id="closeSheet" aria-label="Close task list" class="w-7 h-7 flex items-center justify-center rounded-lg hover:bg-black/5 dark:hover:bg-white/10 transition-colors">
+      <div class="flex items-center gap-3">
+        <span id="timeToFillSheet" class="text-[10px] md:text-xs text-gray-400 dark:text-white/40 tabular-nums"></span>
+        <button id="closeSheet" aria-label="Close task list" class="w-7 h-7 flex items-center justify-center rounded-lg hover:bg-black/5 dark:hover:bg-white/10 transition-colors">
         <svg aria-hidden="true" class="w-4 h-4 text-gray-400 dark:text-white/50" fill="none" stroke="currentColor" viewBox="0 0 24 24">
           <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
         </svg>
       </button>
+      </div>
     </div>
     <!-- Task list -->
     <div id="taskList" class="px-5 pb-5 space-y-3 overflow-y-auto"></div>
@@ -258,14 +270,18 @@
     let burnoutToastEl    = null;  // reference to the live burnout toast DOM node
     let burnoutToastTimer = null;  // its dismiss timer
     let burnoutShown      = false; // has it been shown this day session?
+    let lastFillToastEl    = null;  // reference to the live last-fill toast DOM node
+    let lastFillToastTimer = null;  // its dismiss timer
 
     // ── Dark mode ────────────────────────────────────────
     let darkMode = localStorage.getItem('dt_darkMode') !== 'false'; // default: dark
     function applyDarkMode() {
       if (darkMode) {
         document.documentElement.classList.add('dark');
+        document.documentElement.style.colorScheme = 'dark';
       } else {
         document.documentElement.classList.remove('dark');
+        document.documentElement.style.colorScheme = 'light';
       }
       // Update toggle UI
       const toggle = document.getElementById('darkModeToggle');
@@ -377,6 +393,37 @@
       }, 3500);
     }
 
+    function showLastFillToast(agoText) {
+      // If already visible, just update content and extend timer
+      if (lastFillToastEl) {
+        lastFillToastEl.textContent = `last fill : ${agoText}`;
+        clearTimeout(lastFillToastTimer);
+        lastFillToastTimer = setTimeout(() => {
+          lastFillToastEl.classList.add('opacity-0', 'translate-y-[-8px]');
+          setTimeout(() => { lastFillToastEl?.remove(); lastFillToastEl = null; }, 300);
+        }, 4000);
+        return;
+      }
+      const container = document.getElementById('toastContainer');
+      lastFillToastEl = document.createElement('div');
+      lastFillToastEl.className = 'bg-gray-700/90 dark:bg-white/20 text-white dark:text-white/90 px-4 py-2 rounded-lg text-sm font-medium shadow-lg pointer-events-auto transition-all duration-300 opacity-0 translate-y-[-8px] backdrop-blur-sm';
+      lastFillToastEl.textContent = `last fill : ${agoText}`;
+      container.appendChild(lastFillToastEl);
+      requestAnimationFrame(() => lastFillToastEl.classList.remove('opacity-0', 'translate-y-[-8px]'));
+      lastFillToastTimer = setTimeout(() => {
+        lastFillToastEl.classList.add('opacity-0', 'translate-y-[-8px]');
+        setTimeout(() => { lastFillToastEl?.remove(); lastFillToastEl = null; }, 300);
+      }, 4000);
+    }
+
+    function dismissLastFillToast() {
+      clearTimeout(lastFillToastTimer);
+      if (lastFillToastEl) {
+        lastFillToastEl.classList.add('opacity-0', 'translate-y-[-8px]');
+        setTimeout(() => { lastFillToastEl?.remove(); lastFillToastEl = null; }, 300);
+      }
+    }
+
     function fmtH(h) {
       if (h === 0) return '—';
       return `${parseFloat(h.toFixed(2))}h`;
@@ -459,11 +506,85 @@
       }
     }
 
+    // ── Issue #3: Forward-looking "time to fill" ──────────
+    // Instead of "2h ago", show forward-looking info:
+    // - Today filled? → "filled today ✓"
+    // - Work hours, not filled? → "Xh left to fill today"
+    // - Evening/weekend → "next fill: Monday" or "next fill: tomorrow"
+    function computeTimeToFill(lastFillDate, now) {
+      const todayS = todayStr();
+      const todayComp = getCompletions(todayS);
+      const todayTotal = todayComp.reduce((a, b) => a + b, 0);
+      const todayFilled = todayTotal > 0;
+      const dayOfWeek = now.getDay(); // 0=Sun, 6=Sat
+      const hour = now.getHours();
+      const isWeekend = (dayOfWeek === 0 || dayOfWeek === 6);
+      const isEvening = hour >= 19;
+      const isMorningEarly = hour < 8;
+      const sameDay = lastFillDate.toDateString() === now.toDateString();
+
+      if (todayFilled && sameDay) {
+        const remaining = maxCap - todayTotal;
+        if (remaining > 0) {
+          return `${fmtH(remaining)} left to fill today`;
+        }
+        return `filled today ✓`;
+      }
+
+      if (isWeekend) {
+        const daysToMon = dayOfWeek === 6 ? 2 : 1;
+        return `next fill : Monday`;
+      }
+
+      if (isEvening && todayFilled) {
+        if (dayOfWeek === 5) return `next fill : Monday`;
+        return `next fill : tomorrow`;
+      }
+
+      if (isEvening && !todayFilled) {
+        return `${fmtH(maxCap)} to fill today`;
+      }
+
+      if (isMorningEarly && !todayFilled) {
+        return `${fmtH(maxCap)} to fill today`;
+      }
+
+      if (!todayFilled) {
+        return `${fmtH(maxCap)} to fill today`;
+      }
+
+      // Fallback: today partially filled
+      const remaining = maxCap - todayTotal;
+      if (remaining > 0) {
+        return `${fmtH(remaining)} left to fill today`;
+      }
+      return `filled today ✓`;
+    }
+
     function updateLastFillDisplay() {
       const ts = parseInt(localStorage.getItem('dt_lastFill'));
       const el = document.getElementById('lastFillLabel');
-      if (!el) return;
-      if (!ts) { el.textContent = ''; return; }
+      const sheetEl = document.getElementById('timeToFillSheet');
+
+      if (!ts) {
+        if (el) el.textContent = '';
+        if (sheetEl) sheetEl.textContent = '';
+        return;
+      }
+
+      const d = new Date(ts);
+      const now = new Date();
+
+      // Forward-looking "time to fill" for calendar label + bottom sheet
+      const fillText = computeTimeToFill(d, now);
+      if (el) el.textContent = fillText || '';
+      if (sheetEl) sheetEl.textContent = fillText || '';
+    }
+
+    // Compute "last fill X ago" text for the toast
+    function getLastFillAgo() {
+      const ts = parseInt(localStorage.getItem('dt_lastFill'));
+      if (!ts) return null;
       const d = new Date(ts);
       const now = new Date();
       const sameDay = d.toDateString() === now.toDateString();
@@ -483,7 +604,7 @@
       }
       const timeStr = `${h12}:${mm}${ampm}`;
       const time = sameDay ? timeStr : `${dd}/${mo} ${timeStr}`;
-      el.textContent = `last fill : ${time} (${ago})`;
+      return `${time} (${ago})`;
     }
 
     function getCompletions(date) {
@@ -709,7 +830,25 @@
     }
 
     // ── Month Summary ─────────────────────────────────────
+    let summaryMode = 'hours'; // 'hours' or 'days'
+
+    function fmtD(h) {
+      // Convert hours to days based on daily cap
+      if (h === 0) return '—';
+      const days = h / maxCap;
+      return `${parseFloat(days.toFixed(2))}d`;
+    }
+
+    function fmtVal(h) {
+      return summaryMode === 'days' ? fmtD(h) : fmtH(h);
+    }
+
     function openMonthSummary() {
+      renderSummaryContent();
+      document.getElementById('monthSummaryOverlay').classList.remove('hidden');
+    }
+
+    function renderSummaryContent() {
       const daysInMonth = new Date(viewYear, viewMonth + 1, 0).getDate();
       const firstDay = new Date(viewYear, viewMonth, 1);
       let startDow = firstDay.getDay() - 1;
@@ -737,12 +876,25 @@
       if (rows.length === 0) {
         document.getElementById('summaryContent').innerHTML =
           `<p class="text-sm text-gray-400 dark:text-white/40 text-center py-6">No data for this month yet.</p>`;
-        document.getElementById('monthSummaryOverlay').classList.remove('hidden');
         return;
       }
 
       const emptyColor = darkMode ? 'rgba(255,255,255,0.12)' : 'rgba(0,0,0,0.10)';
-      let html = '';
+      const isHours = summaryMode === 'hours';
+
+      // Toggle button
+      let html = `<div class="flex justify-center mb-4">
+        <div class="inline-flex rounded-lg bg-black/5 dark:bg-white/5 p-0.5">
+          <button onclick="setSummaryMode('hours')" class="px-3 py-1 text-xs font-medium rounded-md transition-colors ${isHours ? 'bg-white dark:bg-white/15 text-gray-900 dark:text-white shadow-sm' : 'text-gray-400 dark:text-white/40 hover:text-gray-600 dark:hover:text-white/60'}">Hours</button>
+          <button onclick="setSummaryMode('days')" class="px-3 py-1 text-xs font-medium rounded-md transition-colors ${!isHours ? 'bg-white dark:bg-white/15 text-gray-900 dark:text-white shadow-sm' : 'text-gray-400 dark:text-white/40 hover:text-gray-600 dark:hover:text-white/60'}">Days</button>
+        </div>
+      </div>`;
+
+      if (isHours) {
+        html += `<p class="text-[10px] text-gray-400 dark:text-white/30 text-center mb-3">0.25 = 15min · 0.5 = 30min · 0.75 = 45min</p>`;
+      } else {
+        html += `<p class="text-[10px] text-gray-400 dark:text-white/30 text-center mb-3">1 day = ${maxCap}h (daily cap)</p>`;
+      }
 
       // Per-week sections
       const monthTaskTotals = tasks.map(() => 0);
@@ -767,14 +919,14 @@
         html += `<div class="mb-4 pb-4 border-b border-gray-100 dark:border-white/5">`;
         html += `<div class="flex items-center justify-between mb-2.5">
           <span class="text-[11px] font-semibold text-gray-400 dark:text-white/40 uppercase tracking-wider">W${weekNum} · ${range}</span>
-          <span class="text-xs font-bold ${weekTotal > 0 ? 'text-gray-700 dark:text-white/80' : 'text-gray-300 dark:text-white/20'}">${fmtH(weekTotal)}</span>
+          <span class="text-xs font-bold ${weekTotal > 0 ? 'text-gray-700 dark:text-white/80' : 'text-gray-300 dark:text-white/20'}">${fmtVal(weekTotal)}</span>
         </div>`;
         html += `<div class="grid grid-cols-4 gap-2">`;
         tasks.forEach((t, ti) => {
           const h = taskHours[ti];
           html += `<div class="flex flex-col items-center gap-1 py-2 px-1 rounded-xl bg-black/[0.03] dark:bg-white/[0.03]">
             <div class="w-2 h-2 rounded-full" style="background:${h > 0 ? t.color : emptyColor}"></div>
-            <span class="text-xs font-medium ${h > 0 ? 'text-gray-700 dark:text-white/80' : 'text-gray-300 dark:text-white/20'}">${fmtH(h)}</span>
+            <span class="text-xs font-medium ${h > 0 ? 'text-gray-700 dark:text-white/80' : 'text-gray-300 dark:text-white/20'}">${fmtVal(h)}</span>
           </div>`;
         });
         html += `</div></div>`;
@@ -784,14 +936,14 @@
       html += `<div class="pt-1">`;
       html += `<div class="flex items-center justify-between mb-2.5">
         <span class="text-[11px] font-semibold text-gray-500 dark:text-white/50 uppercase tracking-wider">Month Total</span>
-        <span class="text-sm font-bold ${monthGrandTotal > 0 ? 'text-gray-900 dark:text-white' : 'text-gray-300 dark:text-white/20'}">${fmtH(monthGrandTotal)}</span>
+        <span class="text-sm font-bold ${monthGrandTotal > 0 ? 'text-gray-900 dark:text-white' : 'text-gray-300 dark:text-white/20'}">${fmtVal(monthGrandTotal)}</span>
       </div>`;
       html += `<div class="grid grid-cols-4 gap-2">`;
       tasks.forEach((t, ti) => {
         const h = monthTaskTotals[ti];
         html += `<div class="flex flex-col items-center gap-1.5 py-2.5 px-1 rounded-xl bg-black/5 dark:bg-white/5">
           <div class="w-2.5 h-2.5 rounded-full" style="background:${h > 0 ? t.color : emptyColor}"></div>
-          <span class="text-xs font-semibold ${h > 0 ? 'text-gray-700 dark:text-white/80' : 'text-gray-300 dark:text-white/20'}">${fmtH(h)}</span>
+          <span class="text-xs font-semibold ${h > 0 ? 'text-gray-700 dark:text-white/80' : 'text-gray-300 dark:text-white/20'}">${fmtVal(h)}</span>
           <span class="text-[10px] text-gray-400 dark:text-white/30 truncate w-full text-center">${t.name}</span>
         </div>`;
       });
@@ -809,24 +961,32 @@
         html += `<div class="mt-4 flex justify-center">
           <span class="inline-flex items-center gap-1.5 text-xs bg-red-500/20 text-red-600 dark:text-red-400 px-3 py-1 rounded-full font-medium">
             ${FIRE_ICON}
-            ${burnoutCount} burnout day${burnoutCount > 1 ? 's' : ''} +${fmtH(exceededTotal)} over cap
+            ${burnoutCount} burnout day${burnoutCount > 1 ? 's' : ''} +${fmtVal(exceededTotal)} over cap
           </span>
         </div>`;
       }
 
       document.getElementById('summaryContent').innerHTML = html;
-      document.getElementById('monthSummaryOverlay').classList.remove('hidden');
+    }
+
+    function setSummaryMode(mode) {
+      summaryMode = mode;
+      renderSummaryContent();
     }
 
     // ── Bottom Sheet Open/Close ───────────────────────────
     function openSheet() {
       sheetOpen = true;
       document.getElementById('bottomSheet').classList.remove('closed');
+      // Show "last fill" as a remaining toast
+      const ago = getLastFillAgo();
+      if (ago) showLastFillToast(ago);
     }
 
     function closeSheet() {
       sheetOpen = false;
       document.getElementById('bottomSheet').classList.add('closed');
+      dismissLastFillToast();
     }
 
     // Close button
@@ -895,6 +1055,13 @@
       let cooldown = false;
 
       area.addEventListener('wheel', (e) => {
+        // Only change month if scrolled to edge
+        const atTop = area.scrollTop <= 0;
+        const atBottom = area.scrollTop + area.clientHeight >= area.scrollHeight - 2;
+        if ((e.deltaY < 0 && !atTop) || (e.deltaY > 0 && !atBottom)) {
+          accumulated = 0;
+          return; // let native scroll happen
+        }
         e.preventDefault();
         if (cooldown) return;
         accumulated += e.deltaY;
@@ -904,6 +1071,7 @@
             viewMonth++;
             if (viewMonth > 11) { viewMonth = 0; viewYear++; }
             renderCalendar();
+            area.scrollTop = 0;
             setTimeout(() => { cooldown = false; }, 250);
           }
           accumulated = 0;
@@ -913,6 +1081,7 @@
             viewMonth--;
             if (viewMonth < 0) { viewMonth = 11; viewYear--; }
             renderCalendar();
+            area.scrollTop = 0;
             setTimeout(() => { cooldown = false; }, 250);
           }
           accumulated = 0;
