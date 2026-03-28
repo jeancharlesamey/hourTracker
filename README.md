@@ -7,7 +7,7 @@
   ╚═══════════════════════════════════════╝
 ```
 
-**alpha-1.0.5**
+**alpha-1.0.6**
 
 A minimal, offline-first hour tracker that lives only in your computer.
 
@@ -205,6 +205,13 @@ Chrome 80+, Firefox 83+, Safari 15+, Edge 80+.
 ---
 
 ## Changelog
+
+**alpha-1.0.6** — 2026-03-28
+- Bottom sheet responsive width:
+  ≤ 800px → full width (slide-up)
+  801–999px → 50vw, flips left/right by day column
+  ≥ 1000px → 33vw, flips left/right by day column
+- Live resize: sheet updates instantly when window is resized
 
 **alpha-1.0.5** — 2026-03-28
 - Bottom sheet: fixed 33vw width on desktop, no longer shifts when adding tasks

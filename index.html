@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <meta name="color-scheme" content="light dark">
   <title>Hour Tracker </title>
-  <!-- alpha-1.0.5 -->
+  <!-- alpha-1.0.6 -->
   <style>
     html { background-color: #f5f5f5; }
     html.dark { background-color: #1a1a2e; }
@@ -154,7 +154,7 @@
   </main>
 
   <!-- Bottom Sheet (task checklist) -->
-  <div id="bottomSheet" role="dialog" aria-label="Task checklist" class="bottom-sheet closed fixed bottom-0 left-0 right-0 bg-card dark:bg-card-dark border-t border-gray-200 dark:border-white/10 rounded-t-2xl z-20 max-h-[55vh] flex flex-col md:w-[33vw] md:left-auto md:right-4 md:rounded-2xl md:bottom-4 md:border md:max-h-[50vh] transition-colors duration-300">
+  <div id="bottomSheet" role="dialog" aria-label="Task checklist" class="bottom-sheet closed fixed bottom-0 left-0 right-0 bg-card dark:bg-card-dark border-t border-gray-200 dark:border-white/10 rounded-t-2xl z-20 max-h-[55vh] flex flex-col md:rounded-2xl md:bottom-4 md:border md:max-h-[50vh] transition-colors duration-300">
     <!-- Drag handle -->
     <div class="flex justify-center pt-2 pb-1 shrink-0 md:hidden">
       <div class="w-10 h-1 rounded-full bg-gray-300 dark:bg-white/20"></div>
@@ -746,14 +746,23 @@
       renderLegend();
     }
 
-    // ── Sheet side (desktop only) ─────────────────────────
+    // ── Sheet layout (width + side, responsive) ──────────
     function updateSheetSide(ds) {
-      if (window.innerWidth < 768) return;
       const sheet = document.getElementById('bottomSheet');
+      const w = window.innerWidth;
+      if (w <= 800) {
+        // Full width — clear inline styles, CSS left-0 right-0 takes over
+        sheet.style.width = '';
+        sheet.style.left  = '';
+        sheet.style.right = '';
+        return;
+      }
+      sheet.style.width = w <= 999 ? '50vw' : '33vw';
+      if (!ds) return;
       const dow = parseDate(ds).getDay(); // 0=Sun … 6=Sat
       // Right half of calendar: Thu(4), Fri(5), Sat(6), Sun(0)
       const isRightSide = dow === 0 || dow >= 4;
-      sheet.style.left = isRightSide ? '1rem' : 'auto';
+      sheet.style.left  = isRightSide ? '1rem' : 'auto';
       sheet.style.right = isRightSide ? 'auto' : '1rem';
     }
 
@@ -1350,6 +1359,11 @@
         if (canGoNext()) { viewMonth++; if (viewMonth > 11) { viewMonth = 0; viewYear++; } if (sheetOpen) deselectDay(); renderCalendar(); }
         return;
       }
+    });
+
+    // ── Resize: update sheet layout if open ───────────────
+    window.addEventListener('resize', () => {
+      if (sheetOpen && selectedDate) updateSheetSide(selectedDate);
     });
 
     // ── Service Worker ────────────────────────────────────
