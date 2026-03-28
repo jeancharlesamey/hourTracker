@@ -7,7 +7,7 @@
   ╚═══════════════════════════════════════╝
 ```
 
-**alpha-1.0.4**
+**alpha-1.0.5**
 
 A minimal, offline-first hour tracker that lives only in your computer.
 
@@ -51,10 +51,6 @@ Each day cell shows **4 squares**, each representing 2 hours (8h total):
   │  · Burnout days badge in header         │
   │  · "Go to today" jumps + opens sheet    │
   │  · Click month label → monthly summary  │
-  │  · Forward-looking fill hint below grid │
-  │    e.g. "3h left to fill today"         │
-  │         "filled today ✓"                │
-  │         "next fill : Monday"            │
   └─────────────────────────────────────────┘
 
   ┌─ Tasks ─────────────────────────────────┐
@@ -62,8 +58,12 @@ Each day cell shows **4 squares**, each representing 2 hours (8h total):
   │  · Pick a color per task                │
   │  · Log hours (decimals OK: 1.5, 0.25)   │
   │  · No hard cap — log what you worked    │
-  │  · Sheet header shows time left / done  │
-  │  · "Last fill X ago" toast on open      │
+  │  · Sheet header: Xh remain / filled ✓  │
+  │    (remaining hours for selected day)   │
+  │  · Last fill toast (today only):        │
+  │    "45min since last fill at 10:00am"   │
+  │    auto-dismisses when cap is reached   │
+  │    only updates when logging today      │
   └─────────────────────────────────────────┘
 
   ┌─ Legend ────────────────────────────────┐
@@ -169,7 +169,8 @@ Nothing is sent anywhere. Ever.
               ├── dt_tasks        ← your task list + colors
               ├── dt_completions  ← hours per day
               ├── dt_maxCap       ← your daily cap setting
-              └── dt_lastFill     ← timestamp of last hour entry
+              ├── dt_lastFill     ← timestamp of last fill (today only)
+              └── dt_lastFillDay  ← date of last fill (for day rollover)
 ```
 
 To export: open DevTools → Application → Local Storage → copy the values.
@@ -198,6 +199,33 @@ Works in any browser that supports:
 - Service Workers *(for offline/PWA only)*
 
 Chrome 80+, Firefox 83+, Safari 15+, Edge 80+.
+
+---
+
+---
+
+## Changelog
+
+**alpha-1.0.5** — 2026-03-28
+- Bottom sheet: fixed 33vw width on desktop, no longer shifts when adding tasks
+- Bottom sheet: flips left/right based on selected day's column
+  (Mon–Wed → sheet on right · Thu–Sun → sheet on left)
+- Sheet header: hidden when exactly at cap, shows +Xmin / +Xh when over cap
+- Last fill toast: shows elapsed time since last fill (not remaining hours)
+- Fixed sticky zone: removed top gap where content could bleed through
+
+**alpha-1.0.4** — 2026-03-27
+- Last fill toast: persistent, with close button, today-only
+  - Shows elapsed time since last fill: "45min since last fill at 10:00am"
+  - Auto-dismisses when daily cap is reached
+  - `dt_lastFill` only written when logging for today (not past days)
+  - Resets automatically on day rollover via `dt_lastFillDay`
+- Bottom sheet header: "Xh remain" / "filled ✓" for the selected day
+- Removed forward-looking hint below calendar grid
+- Desktop bottom sheet: fixed 20vw width, pinned bottom-right
+- Fixed sticky zone gap: no content bleeds through above legend/nav
+
+**alpha-1.0.3** — initial tagged release
 
 ---
 

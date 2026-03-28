@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <meta name="color-scheme" content="light dark">
   <title>Hour Tracker </title>
-  <!-- alpha-1.0.4 -->
+  <!-- alpha-1.0.5 -->
   <style>
     html { background-color: #f5f5f5; }
     html.dark { background-color: #1a1a2e; }
@@ -126,9 +126,9 @@
   </header>
 
   <!-- Calendar -->
-  <main id="calendarArea" class="flex-1 flex flex-col px-4 md:px-8 py-4 overflow-y-auto overflow-x-hidden min-h-0">
+  <main id="calendarArea" class="flex-1 flex flex-col px-4 md:px-8 pb-4 overflow-y-auto overflow-x-hidden min-h-0">
     <!-- Sticky zone: legend + month nav -->
-    <div class="sticky top-0 z-10 bg-surface dark:bg-surface-dark pb-2">
+    <div class="sticky top-0 z-10 bg-surface dark:bg-surface-dark pt-4 pb-2">
       <!-- Legend -->
       <div class="flex items-center justify-between mb-3">
         <div id="legend" class="flex flex-wrap gap-3 md:gap-4 text-xs md:text-sm"></div>
@@ -154,7 +154,7 @@
   </main>
 
   <!-- Bottom Sheet (task checklist) -->
-  <div id="bottomSheet" role="dialog" aria-label="Task checklist" class="bottom-sheet closed fixed bottom-0 left-0 right-0 bg-card dark:bg-card-dark border-t border-gray-200 dark:border-white/10 rounded-t-2xl z-20 max-h-[55vh] flex flex-col md:max-w-[35rem] md:mx-auto md:left-auto md:right-4 md:rounded-2xl md:bottom-4 md:border md:max-h-[50vh] transition-colors duration-300">
+  <div id="bottomSheet" role="dialog" aria-label="Task checklist" class="bottom-sheet closed fixed bottom-0 left-0 right-0 bg-card dark:bg-card-dark border-t border-gray-200 dark:border-white/10 rounded-t-2xl z-20 max-h-[55vh] flex flex-col md:w-[33vw] md:left-auto md:right-4 md:rounded-2xl md:bottom-4 md:border md:max-h-[50vh] transition-colors duration-300">
     <!-- Drag handle -->
     <div class="flex justify-center pt-2 pb-1 shrink-0 md:hidden">
       <div class="w-10 h-1 rounded-full bg-gray-300 dark:bg-white/20"></div>
@@ -270,8 +270,7 @@
     let burnoutToastEl    = null;  // reference to the live burnout toast DOM node
     let burnoutToastTimer = null;  // its dismiss timer
     let burnoutShown      = false; // has it been shown this day session?
-    let lastFillToastEl    = null;  // reference to the live last-fill toast DOM node
-    let lastFillToastTimer = null;  // its dismiss timer
+    let lastFillToastEl       = null;  // reference to the live last-fill toast DOM node
 
     // ── Dark mode ────────────────────────────────────────
     let darkMode = localStorage.getItem('dt_darkMode') !== 'false'; // default: dark
@@ -393,31 +392,54 @@
       }, 3500);
     }
 
-    function showLastFillToast(agoText) {
-      // If already visible, just update content and extend timer
+    function buildLastFillToastContent() {
+      const ts = parseInt(localStorage.getItem('dt_lastFill'));
+      if (!ts) return null;
+      const d = new Date(ts);
+      const now = new Date();
+      // Dismiss if daily cap reached
+      const todayTotal = getCompletions(todayStr()).reduce((a, b) => a + b, 0);
+      if (todayTotal >= maxCap) return null;
+      const h24 = d.getHours();
+      const mm = String(d.getMinutes()).padStart(2, '0');
+      const ampm = h24 >= 12 ? 'pm' : 'am';
+      const h12 = h24 % 12 || 12;
+      const timeStr = `${h12}:${mm}${ampm}`;
+      const elapsedMin = (now - d) / 60000;
+      const elapsed = elapsedMin < 60
+        ? `${Math.round(elapsedMin)}min`
+        : `${parseFloat((elapsedMin / 60).toFixed(2))}h`;
+      return `${elapsed} since last fill at ${timeStr}`;
+    }
+
+    function showLastFillToast() {
+      const content = buildLastFillToastContent();
+      if (!content) return;
       if (lastFillToastEl) {
-        lastFillToastEl.textContent = `last fill : ${agoText}`;
-        clearTimeout(lastFillToastTimer);
-        lastFillToastTimer = setTimeout(() => {
-          lastFillToastEl.classList.add('opacity-0', 'translate-y-[-8px]');
-          setTimeout(() => { lastFillToastEl?.remove(); lastFillToastEl = null; }, 300);
-        }, 4000);
+        const span = lastFillToastEl.querySelector('.lf-text');
+        if (span) span.textContent = content;
         return;
       }
       const container = document.getElementById('toastContainer');
       lastFillToastEl = document.createElement('div');
-      lastFillToastEl.className = 'bg-gray-700/90 dark:bg-white/20 text-white dark:text-white/90 px-4 py-2 rounded-lg text-sm font-medium shadow-lg pointer-events-auto transition-all duration-300 opacity-0 translate-y-[-8px] backdrop-blur-sm';
-      lastFillToastEl.textContent = `last fill : ${agoText}`;
+      lastFillToastEl.className = 'flex items-center gap-2 bg-gray-700/90 dark:bg-white/20 text-white dark:text-white/90 px-4 py-2 rounded-lg text-sm font-medium shadow-lg pointer-events-auto transition-all duration-300 opacity-0 translate-y-[-8px] backdrop-blur-sm';
+      lastFillToastEl.innerHTML = `<span class="lf-text">${content}</span><button onclick="dismissLastFillToast()" aria-label="Close" class="opacity-50 hover:opacity-100 text-base leading-none">×</button>`;
       container.appendChild(lastFillToastEl);
       requestAnimationFrame(() => lastFillToastEl.classList.remove('opacity-0', 'translate-y-[-8px]'));
-      lastFillToastTimer = setTimeout(() => {
-        lastFillToastEl.classList.add('opacity-0', 'translate-y-[-8px]');
-        setTimeout(() => { lastFillToastEl?.remove(); lastFillToastEl = null; }, 300);
-      }, 4000);
+    }
+
+    function updateLastFillToastSuffix() {
+      if (!lastFillToastEl) return;
+      const content = buildLastFillToastContent();
+      if (!content) {
+        dismissLastFillToast();
+        return;
+      }
+      const span = lastFillToastEl.querySelector('.lf-text');
+      if (span) span.textContent = content;
     }
 
     function dismissLastFillToast() {
-      clearTimeout(lastFillToastTimer);
       if (lastFillToastEl) {
         lastFillToastEl.classList.add('opacity-0', 'translate-y-[-8px]');
         setTimeout(() => { lastFillToastEl?.remove(); lastFillToastEl = null; }, 300);
@@ -499,7 +521,6 @@
         localStorage.setItem('dt_tasks', JSON.stringify(tasks));
         localStorage.setItem('dt_completions', JSON.stringify(completions));
         localStorage.setItem('dt_maxCap', maxCap);
-        localStorage.setItem('dt_lastFill', Date.now());
         updateLastFillDisplay();
       } catch (e) {
         showToast('Could not save — storage is full or unavailable');
@@ -561,51 +582,18 @@
       return `filled today ✓`;
     }
 
+    function checkDayRollover() {
+      const lastDay = localStorage.getItem('dt_lastFillDay');
+      if (lastDay && lastDay !== todayStr()) {
+        localStorage.removeItem('dt_lastFill');
+        localStorage.removeItem('dt_lastFillDay');
+      }
+    }
+
     function updateLastFillDisplay() {
-      const ts = parseInt(localStorage.getItem('dt_lastFill'));
-      const el = document.getElementById('lastFillLabel');
-      const sheetEl = document.getElementById('timeToFillSheet');
-
-      if (!ts) {
-        if (el) el.textContent = '';
-        if (sheetEl) sheetEl.textContent = '';
-        return;
-      }
-
-      const d = new Date(ts);
-      const now = new Date();
-
-      // Forward-looking "time to fill" for calendar label + bottom sheet
-      const fillText = computeTimeToFill(d, now);
-      if (el) el.textContent = fillText || '';
-      if (sheetEl) sheetEl.textContent = fillText || '';
+      checkDayRollover();
     }
 
-    // Compute "last fill X ago" text for the toast
-    function getLastFillAgo() {
-      const ts = parseInt(localStorage.getItem('dt_lastFill'));
-      if (!ts) return null;
-      const d = new Date(ts);
-      const now = new Date();
-      const sameDay = d.toDateString() === now.toDateString();
-      const h24 = d.getHours();
-      const mm = String(d.getMinutes()).padStart(2, '0');
-      const ampm = h24 >= 12 ? 'pm' : 'am';
-      const h12 = h24 % 12 || 12;
-      const dd = String(d.getDate()).padStart(2, '0');
-      const mo = String(d.getMonth() + 1).padStart(2, '0');
-      const elapsedMin = (now - d) / 60000;
-      let ago;
-      if (elapsedMin < 15) {
-        ago = `${Math.round(elapsedMin)}min ago`;
-      } else {
-        const rounded = Math.round(elapsedMin / 15) * 0.25;
-        ago = `${rounded}h ago`;
-      }
-      const timeStr = `${h12}:${mm}${ampm}`;
-      const time = sameDay ? timeStr : `${dd}/${mo} ${timeStr}`;
-      return `${time} (${ago})`;
-    }
 
     function getCompletions(date) {
       const raw = completions[date] || [];
@@ -744,7 +732,6 @@
       }
 
       html += `</div>`;
-      html += `<div id="lastFillLabel" class="text-xs text-gray-400 dark:text-white/30 text-center mt-2"></div>`;
       html += `</div>`;
       grid.innerHTML = html;
       updateLastFillDisplay();
@@ -759,12 +746,24 @@
       renderLegend();
     }
 
+    // ── Sheet side (desktop only) ─────────────────────────
+    function updateSheetSide(ds) {
+      if (window.innerWidth < 768) return;
+      const sheet = document.getElementById('bottomSheet');
+      const dow = parseDate(ds).getDay(); // 0=Sun … 6=Sat
+      // Right half of calendar: Thu(4), Fri(5), Sat(6), Sun(0)
+      const isRightSide = dow === 0 || dow >= 4;
+      sheet.style.left = isRightSide ? '1rem' : 'auto';
+      sheet.style.right = isRightSide ? 'auto' : '1rem';
+    }
+
     // ── Select Day ────────────────────────────────────────
     function selectDay(ds) {
       selectedDate = ds;
       burnoutShown = false;
       clearTimeout(burnoutToastTimer);
       if (burnoutToastEl) { burnoutToastEl.remove(); burnoutToastEl = null; }
+      updateSheetSide(ds);
       renderCalendar();
       renderTaskList();
       openSheet();
@@ -788,6 +787,21 @@
         selectedDate === todayStr() ? 'Today' : formatDate(selectedDate);
       document.getElementById('sheetProgress').textContent =
         `${fmtH(totalHours)} / ${fmtH(maxCap)}`;
+
+      const remaining = maxCap - totalHours;
+      const sheetEl = document.getElementById('timeToFillSheet');
+      if (sheetEl) {
+        if (remaining > 0) {
+          sheetEl.textContent = `${fmtH(remaining)} remain`;
+        } else if (remaining < 0) {
+          const over = Math.abs(remaining);
+          sheetEl.textContent = over < 1
+            ? `+${Math.round(over * 60)}min`
+            : `+${parseFloat(over.toFixed(2))}h`;
+        } else {
+          sheetEl.textContent = '';
+        }
+      }
 
       el.innerHTML = tasks.map((t, i) => `
         <div class="flex items-center gap-3 p-3 md:p-4 rounded-xl bg-black/5 dark:bg-white/5">
@@ -825,6 +839,11 @@
 
       completions[selectedDate] = comp;
       save();
+      if (selectedDate === todayStr()) {
+        localStorage.setItem('dt_lastFill', Date.now());
+        localStorage.setItem('dt_lastFillDay', todayStr());
+        updateLastFillToastSuffix();
+      }
       renderTaskList();
       renderCalendar();
     }
@@ -978,9 +997,11 @@
     function openSheet() {
       sheetOpen = true;
       document.getElementById('bottomSheet').classList.remove('closed');
-      // Show "last fill" as a remaining toast
-      const ago = getLastFillAgo();
-      if (ago) showLastFillToast(ago);
+      if (selectedDate === todayStr()) {
+        showLastFillToast();
+      } else {
+        dismissLastFillToast();
+      }
     }
 
     function closeSheet() {
@@ -1296,6 +1317,7 @@
         viewMonth = d.getMonth();
       }
       selectedDate = ds;
+      updateSheetSide(ds);
       renderCalendar();
       renderTaskList();
       openSheet();
@@ -1337,6 +1359,7 @@
 
     // ── Init ─────────────────────────────────────────────
     function init() {
+      checkDayRollover();
       renderLegend();
       renderCalendar();
       updateStreak();
