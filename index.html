@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <meta name="color-scheme" content="light dark">
   <title>Hour Tracker </title>
-  <!-- alpha-1.0.6 -->
+  <!-- alpha-1.0.7 -->
   <style>
     html { background-color: #f5f5f5; }
     html.dark { background-color: #1a1a2e; }
@@ -858,7 +858,7 @@
     }
 
     // ── Month Summary ─────────────────────────────────────
-    let summaryMode = 'hours'; // 'hours' or 'days'
+    let summaryMode = 'hours'; // 'hours', 'days', or 'pct'
 
     function fmtD(h) {
       // Convert hours to days based on daily cap
@@ -867,7 +867,14 @@
       return `${parseFloat(days.toFixed(2))}d`;
     }
 
-    function fmtVal(h) {
+    function fmtPct(h, total) {
+      if (total === 0 || h === 0) return '—';
+      const pct = (h / total) * 100;
+      return `${Math.round(pct)}%`;
+    }
+
+    function fmtVal(h, total) {
+      if (summaryMode === 'pct') return fmtPct(h, total);
       return summaryMode === 'days' ? fmtD(h) : fmtH(h);
     }
 
@@ -909,19 +916,24 @@
 
       const emptyColor = darkMode ? 'rgba(255,255,255,0.12)' : 'rgba(0,0,0,0.10)';
       const isHours = summaryMode === 'hours';
+      const isDays = summaryMode === 'days';
+      const isPct = summaryMode === 'pct';
 
       // Toggle button
       let html = `<div class="flex justify-center mb-4">
         <div class="inline-flex rounded-lg bg-black/5 dark:bg-white/5 p-0.5">
           <button onclick="setSummaryMode('hours')" class="px-3 py-1 text-xs font-medium rounded-md transition-colors ${isHours ? 'bg-white dark:bg-white/15 text-gray-900 dark:text-white shadow-sm' : 'text-gray-400 dark:text-white/40 hover:text-gray-600 dark:hover:text-white/60'}">Hours</button>
-          <button onclick="setSummaryMode('days')" class="px-3 py-1 text-xs font-medium rounded-md transition-colors ${!isHours ? 'bg-white dark:bg-white/15 text-gray-900 dark:text-white shadow-sm' : 'text-gray-400 dark:text-white/40 hover:text-gray-600 dark:hover:text-white/60'}">Days</button>
+          <button onclick="setSummaryMode('days')" class="px-3 py-1 text-xs font-medium rounded-md transition-colors ${isDays ? 'bg-white dark:bg-white/15 text-gray-900 dark:text-white shadow-sm' : 'text-gray-400 dark:text-white/40 hover:text-gray-600 dark:hover:text-white/60'}">Days</button>
+          <button onclick="setSummaryMode('pct')" class="px-3 py-1 text-xs font-medium rounded-md transition-colors ${isPct ? 'bg-white dark:bg-white/15 text-gray-900 dark:text-white shadow-sm' : 'text-gray-400 dark:text-white/40 hover:text-gray-600 dark:hover:text-white/60'}">%</button>
         </div>
       </div>`;
 
       if (isHours) {
         html += `<p class="text-[10px] text-gray-400 dark:text-white/30 text-center mb-3">0.25 = 15min · 0.5 = 30min · 0.75 = 45min</p>`;
-      } else {
+      } else if (isDays) {
         html += `<p class="text-[10px] text-gray-400 dark:text-white/30 text-center mb-3">1 day = ${maxCap}h (daily cap)</p>`;
+      } else {
+        html += `<p class="text-[10px] text-gray-400 dark:text-white/30 text-center mb-3">share of total hours per week / month</p>`;
       }
 
       // Per-week sections
@@ -947,14 +959,14 @@
         html += `<div class="mb-4 pb-4 border-b border-gray-100 dark:border-white/5">`;
         html += `<div class="flex items-center justify-between mb-2.5">
           <span class="text-[11px] font-semibold text-gray-400 dark:text-white/40 uppercase tracking-wider">W${weekNum} · ${range}</span>
-          <span class="text-xs font-bold ${weekTotal > 0 ? 'text-gray-700 dark:text-white/80' : 'text-gray-300 dark:text-white/20'}">${fmtVal(weekTotal)}</span>
+          <span class="text-xs font-bold ${weekTotal > 0 ? 'text-gray-700 dark:text-white/80' : 'text-gray-300 dark:text-white/20'}">${isPct ? fmtH(weekTotal) : fmtVal(weekTotal, weekTotal)}</span>
         </div>`;
         html += `<div class="grid grid-cols-4 gap-2">`;
         tasks.forEach((t, ti) => {
           const h = taskHours[ti];
           html += `<div class="flex flex-col items-center gap-1 py-2 px-1 rounded-xl bg-black/[0.03] dark:bg-white/[0.03]">
             <div class="w-2 h-2 rounded-full" style="background:${h > 0 ? t.color : emptyColor}"></div>
-            <span class="text-xs font-medium ${h > 0 ? 'text-gray-700 dark:text-white/80' : 'text-gray-300 dark:text-white/20'}">${fmtVal(h)}</span>
+            <span class="text-xs font-medium ${h > 0 ? 'text-gray-700 dark:text-white/80' : 'text-gray-300 dark:text-white/20'}">${fmtVal(h, weekTotal)}</span>
           </div>`;
         });
         html += `</div></div>`;
@@ -964,14 +976,14 @@
       html += `<div class="pt-1">`;
       html += `<div class="flex items-center justify-between mb-2.5">
         <span class="text-[11px] font-semibold text-gray-500 dark:text-white/50 uppercase tracking-wider">Month Total</span>
-        <span class="text-sm font-bold ${monthGrandTotal > 0 ? 'text-gray-900 dark:text-white' : 'text-gray-300 dark:text-white/20'}">${fmtVal(monthGrandTotal)}</span>
+        <span class="text-sm font-bold ${monthGrandTotal > 0 ? 'text-gray-900 dark:text-white' : 'text-gray-300 dark:text-white/20'}">${isPct ? fmtH(monthGrandTotal) : fmtVal(monthGrandTotal, monthGrandTotal)}</span>
       </div>`;
       html += `<div class="grid grid-cols-4 gap-2">`;
       tasks.forEach((t, ti) => {
         const h = monthTaskTotals[ti];
         html += `<div class="flex flex-col items-center gap-1.5 py-2.5 px-1 rounded-xl bg-black/5 dark:bg-white/5">
           <div class="w-2.5 h-2.5 rounded-full" style="background:${h > 0 ? t.color : emptyColor}"></div>
-          <span class="text-xs font-semibold ${h > 0 ? 'text-gray-700 dark:text-white/80' : 'text-gray-300 dark:text-white/20'}">${fmtVal(h)}</span>
+          <span class="text-xs font-semibold ${h > 0 ? 'text-gray-700 dark:text-white/80' : 'text-gray-300 dark:text-white/20'}">${fmtVal(h, monthGrandTotal)}</span>
           <span class="text-[10px] text-gray-400 dark:text-white/30 truncate w-full text-center">${t.name}</span>
         </div>`;
       });
@@ -989,7 +1001,7 @@
         html += `<div class="mt-4 flex justify-center">
           <span class="inline-flex items-center gap-1.5 text-xs bg-red-500/20 text-red-600 dark:text-red-400 px-3 py-1 rounded-full font-medium">
             ${FIRE_ICON}
-            ${burnoutCount} burnout day${burnoutCount > 1 ? 's' : ''} +${fmtVal(exceededTotal)} over cap
+            ${burnoutCount} burnout day${burnoutCount > 1 ? 's' : ''} +${fmtH(exceededTotal)} over cap
           </span>
         </div>`;
       }
