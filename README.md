@@ -7,7 +7,7 @@
   ╚═══════════════════════════════════════╝
 ```
 
-**v1.1.0**
+**beta-1.1.0**
 
 A minimal, offline-first hour tracker that lives only in your computer.
 
@@ -41,76 +41,54 @@ Each day cell shows **4 squares**, each representing 2 hours (8h total):
 
 ## Features
 
-```
-  ┌─ Home Calendar ──────────────────────────┐
-  │  · Monthly view, scrollable grid         │
-  │  · Legend + month nav stay sticky        │
-  │  · Navigate with arrows or wheel         │
-  │  · 4-square diagram per day              │
-  │  · Over cap → red cell + white number    │
-  │  · Burnout days badge in header          │
-  │  · "Go to today" jumps + opens sheet     │
-  │  · Click month label → monthly summary   │
-  │    (week-by-week breakdown + task totals)│
-  │  · Mode toggle: Hours / Days / Percent   │
-  └──────────────────────────────────────────┘
+**Home Calendar**
+- Monthly view, scrollable grid
+- Legend + month nav stay sticky
+- Navigate with arrows or wheel
+- 4-square diagram per day
+- Over cap → red cell + white number
+- Burnout days badge in header
+- "Go to today" jumps + opens sheet
+- Click month label → monthly summary (week-by-week breakdown + task totals)
+- Mode toggle: Hours / Days / Percent
 
-  ┌─ Analytics Page ──────────────────────────┐
-  │  THREE VIEWS FOR INSIGHT:                 │
-  │                                           │
-  │  • Activity: GitHub-style contribution    │
-  │    heatmap with all tasks combined +      │
-  │    individual per-task heatmaps           │
-  │                                           │
-  │  • Intensity: Line chart showing task     │
-  │    hours over the month with day labels   │
-  │    (e.g., "Tue 21"), responsive height   │
-  │                                           │
-  │  • Repartition: Doughnut chart showing    │
-  │    how hours are split across tasks       │
-  │                                           │
-  │  · Month navigation on each view          │
-  │  · Click month name → same summary modal  │
-  │  · Dark mode support throughout           │
-  └──────────────────────────────────────────┘
+**Analytics Page**
+Three views for insight:
+- **Activity:** GitHub-style contribution heatmap with all tasks combined + individual per-task heatmaps
+- **Intensity:** Line chart showing task hours over the month with day labels (e.g., "Tue 21"), responsive height
+- **Repartition:** Doughnut chart showing how hours are split across tasks
+- Month navigation on each view
+- Click month name → same summary modal
+- Dark mode support throughout
 
-  ┌─ Tasks ───────────────────────────────────┐
-  │  · Add / remove tasks anytime             │
-  │  · Pick a color per task                  │
-  │  · Log hours (decimals OK: 1.5, 0.25)     │
-  │  · No hard cap — log what you worked      │
-  │  · Sheet header: Xh remain / filled ✓     │
-  │    (remaining hours for selected day)     │
-  │  · Last fill toast (today only):          │
-  │    "45min since last fill at 10:00am"     │
-  │    auto-dismisses when cap is reached     │
-  │    only updates when logging today        │
-  └──────────────────────────────────────────┘
+**Tasks**
+- Add / remove tasks anytime
+- Pick a color per task
+- Log hours (decimals OK: 1.5, 0.25)
+- No hard cap — log what you worked
+- Sheet header: Xh remain / filled ✓ (remaining hours for selected day)
+- Last fill toast (today only): "45min since last fill at 10:00am" — auto-dismisses when cap is reached, only updates when logging today
 
-  ┌─ Legend ──────────────────────────────────┐
-  │  · Shows each task's monthly total        │
-  │  · Example: ● Writing (6.5h)              │
-  └──────────────────────────────────────────┘
+**Legend**
+- Shows each task's monthly total
+- Example: ● Writing (6.5h)
 
-  ┌─ Monthly Summary Modal ───────────────────┐
-  │  · Week-by-week breakdown (W01, W02 …)    │
-  │  · Per-week task totals in grid layout    │
-  │  · Month total with all task contributions│
-  │  · Mode toggle: Hours / Days / Percent    │
-  │    Hours: 0.25 = 15min · 0.5 = 30min     │
-  │    Days: 1 day = daily cap                │
-  │    Percent: share of total per week       │
-  │  · Burnout pill with days over cap        │
-  │  · Reusable across Home and Analytics     │
-  └──────────────────────────────────────────┘
+**Monthly Summary Modal**
+- Week-by-week breakdown (W01, W02 …)
+- Per-week task totals in grid layout
+- Month total with all task contributions
+- Mode toggle: Hours / Days / Percent
+  - Hours: 0.25 = 15min · 0.5 = 30min
+  - Days: 1 day = daily cap
+  - Percent: share of total per week
+- Burnout pill with days over cap
+- Reusable across Home and Analytics
 
-  ┌─ Other ───────────────────────────────────┐
-  │  · Light / dark mode toggle               │
-  │  · Configurable daily cap (default 7.5h)  │
-  │  · All data in localStorage — stays put   │
-  │  · Works offline (service worker)         │
-  └──────────────────────────────────────────┘
-```
+**Other**
+- Light / dark mode toggle
+- Configurable daily cap (default 7.5h)
+- All data in localStorage — stays put
+- Works offline (service worker)
 
 ---
 
@@ -236,7 +214,7 @@ Chrome 80+, Firefox 83+, Safari 15+, Edge 80+.
 
 ## Changelog
 
-**v1.1.0** — 2026-04-21
+**beta-1.1.0** — 2026-04-21
 - **Analytics page** (new):
   - Activity view: GitHub-style heatmap (all tasks + individual)
   - Intensity view: Line chart with responsive height, day labels (e.g., "Tue 21")
