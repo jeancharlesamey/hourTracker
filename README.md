@@ -7,7 +7,7 @@
   ╚═══════════════════════════════════════╝
 ```
 
-**alpha-1.0.6**
+**v1.1.0**
 
 A minimal, offline-first hour tracker that lives only in your computer.
 
@@ -17,7 +17,7 @@ No login. No backend. No complicated install. Just open and start logging.
 
 ## What it does
 
-Log hours per task, per day. See everything in a calendar.
+Log hours per task, per day. See everything in a calendar. Analyze trends with detailed charts.
 
 ```
   March 2026
@@ -42,51 +42,74 @@ Each day cell shows **4 squares**, each representing 2 hours (8h total):
 ## Features
 
 ```
-  ┌─ Calendar ──────────────────────────────┐
-  │  · Monthly view, scrollable grid        │
-  │  · Legend + month nav stay sticky       │
-  │  · Navigate with arrows or wheel        │
-  │  · 4-square diagram per day             │
-  │  · Over cap → red cell + white number   │
-  │  · Burnout days badge in header         │
-  │  · "Go to today" jumps + opens sheet    │
-  │  · Click month label → monthly summary  │
-  └─────────────────────────────────────────┘
+  ┌─ Home Calendar ──────────────────────────┐
+  │  · Monthly view, scrollable grid         │
+  │  · Legend + month nav stay sticky        │
+  │  · Navigate with arrows or wheel         │
+  │  · 4-square diagram per day              │
+  │  · Over cap → red cell + white number    │
+  │  · Burnout days badge in header          │
+  │  · "Go to today" jumps + opens sheet     │
+  │  · Click month label → monthly summary   │
+  │    (week-by-week breakdown + task totals)│
+  │  · Mode toggle: Hours / Days / Percent   │
+  └──────────────────────────────────────────┘
 
-  ┌─ Tasks ─────────────────────────────────┐
-  │  · Add / remove tasks anytime           │
-  │  · Pick a color per task                │
-  │  · Log hours (decimals OK: 1.5, 0.25)   │
-  │  · No hard cap — log what you worked    │
-  │  · Sheet header: Xh remain / filled ✓  │
-  │    (remaining hours for selected day)   │
-  │  · Last fill toast (today only):        │
-  │    "45min since last fill at 10:00am"   │
-  │    auto-dismisses when cap is reached   │
-  │    only updates when logging today      │
-  └─────────────────────────────────────────┘
+  ┌─ Analytics Page ──────────────────────────┐
+  │  THREE VIEWS FOR INSIGHT:                 │
+  │                                           │
+  │  • Activity: GitHub-style contribution    │
+  │    heatmap with all tasks combined +      │
+  │    individual per-task heatmaps           │
+  │                                           │
+  │  • Intensity: Line chart showing task     │
+  │    hours over the month with day labels   │
+  │    (e.g., "Tue 21"), responsive height   │
+  │                                           │
+  │  • Repartition: Doughnut chart showing    │
+  │    how hours are split across tasks       │
+  │                                           │
+  │  · Month navigation on each view          │
+  │  · Click month name → same summary modal  │
+  │  · Dark mode support throughout           │
+  └──────────────────────────────────────────┘
 
-  ┌─ Legend ────────────────────────────────┐
-  │  · Shows each task's monthly total      │
-  │  · Example: ● Writing (6.5h)            │
-  └─────────────────────────────────────────┘
+  ┌─ Tasks ───────────────────────────────────┐
+  │  · Add / remove tasks anytime             │
+  │  · Pick a color per task                  │
+  │  · Log hours (decimals OK: 1.5, 0.25)     │
+  │  · No hard cap — log what you worked      │
+  │  · Sheet header: Xh remain / filled ✓     │
+  │    (remaining hours for selected day)     │
+  │  · Last fill toast (today only):          │
+  │    "45min since last fill at 10:00am"     │
+  │    auto-dismisses when cap is reached     │
+  │    only updates when logging today        │
+  └──────────────────────────────────────────┘
 
-  ┌─ Monthly summary popup ─────────────────┐
-  │  · Hours / Days toggle                  │
-  │    Hours: 0.25 = 15min · 0.5 = 30min   │
-  │    Days: 1 day = daily cap              │
-  │  · Per task, broken down by week        │
-  │  · ISO week numbers (W01, W02 …)        │
-  │  · Grand total at the bottom            │
-  │  · Burnout pill with total exceeded h   │
-  └─────────────────────────────────────────┘
+  ┌─ Legend ──────────────────────────────────┐
+  │  · Shows each task's monthly total        │
+  │  · Example: ● Writing (6.5h)              │
+  └──────────────────────────────────────────┘
 
-  ┌─ Other ─────────────────────────────────┐
-  │  · Light / dark mode toggle             │
-  │  · Configurable daily cap (default 7.5h)│
-  │  · All data in localStorage — stays put │
-  │  · Works offline (service worker)       │
-  └─────────────────────────────────────────┘
+  ┌─ Monthly Summary Modal ───────────────────┐
+  │  · Week-by-week breakdown (W01, W02 …)    │
+  │  · Per-week task totals in grid layout    │
+  │  · Month total with all task contributions│
+  │  · Mode toggle: Hours / Days / Percent    │
+  │    Hours: 0.25 = 15min · 0.5 = 30min     │
+  │    Days: 1 day = daily cap                │
+  │    Percent: share of total per week       │
+  │  · Burnout pill with days over cap        │
+  │  · Reusable across Home and Analytics     │
+  └──────────────────────────────────────────┘
+
+  ┌─ Other ───────────────────────────────────┐
+  │  · Light / dark mode toggle               │
+  │  · Configurable daily cap (default 7.5h)  │
+  │  · All data in localStorage — stays put   │
+  │  · Works offline (service worker)         │
+  └──────────────────────────────────────────┘
 ```
 
 ---
@@ -129,7 +152,13 @@ open index.html        # macOS
 
   6. Click the month label for a summary
      └─ See totals per task, per week, for the month
+     └─ Toggle between Hours / Days / Percent views
      └─ Burnout pill shows days over cap + total excess
+
+  7. Open Analytics for deeper insights
+     └─ Click the chart icon in the header (📊)
+     └─ Choose: Activity (heatmap) / Intensity (line) / Repartition (pie)
+     └─ Navigate months, view summaries, identify patterns
 ```
 
 ---
@@ -183,9 +212,11 @@ To reset all data: Settings → Delete all data.
 
 ```
   hour-tracker/
-  ├── index.html        ← the whole app (HTML + CSS + JS)
+  ├── index.html        ← main app (HTML + CSS + JS)
+  ├── analytics.html    ← charts & analytics page
+  ├── month-modal.js    ← reusable month summary modal
   ├── manifest.json     ← PWA manifest
-  ├── sw.js             ← service worker (for offline support)
+  ├── sw.js             ← service worker (offline support)
   └── icons/            ← app icons (16, 48, 128, 192, 512px)
 ```
 
@@ -197,14 +228,30 @@ Works in any browser that supports:
 - CSS grid + custom properties
 - localStorage
 - Service Workers *(for offline/PWA only)*
+- Chart.js *(for Analytics page)*
 
 Chrome 80+, Firefox 83+, Safari 15+, Edge 80+.
 
 ---
 
----
-
 ## Changelog
+
+**v1.1.0** — 2026-04-21
+- **Analytics page** (new):
+  - Activity view: GitHub-style heatmap (all tasks + individual)
+  - Intensity view: Line chart with responsive height, day labels (e.g., "Tue 21")
+  - Repartition view: Doughnut chart showing task distribution
+  - Month navigation on each view
+  - Month summary modal with week-by-week breakdown
+- **Month Summary Modal** (refactored):
+  - Extracted to reusable `month-modal.js` component
+  - Accessible from both index.html and analytics.html
+  - Mode toggle: Hours / Days / Percent
+  - Per-week task grids + month total
+- **UI improvements**:
+  - Updated header icons for consistency
+  - Dark mode refinements
+  - Responsive chart heights based on viewport
 
 **alpha-1.0.6** — 2026-03-28
 - Bottom sheet responsive width:
@@ -214,23 +261,15 @@ Chrome 80+, Firefox 83+, Safari 15+, Edge 80+.
 - Live resize: sheet updates instantly when window is resized
 
 **alpha-1.0.5** — 2026-03-28
-- Bottom sheet: fixed 33vw width on desktop, no longer shifts when adding tasks
+- Bottom sheet: fixed 33vw width on desktop
 - Bottom sheet: flips left/right based on selected day's column
-  (Mon–Wed → sheet on right · Thu–Sun → sheet on left)
-- Sheet header: hidden when exactly at cap, shows +Xmin / +Xh when over cap
-- Last fill toast: shows elapsed time since last fill (not remaining hours)
-- Fixed sticky zone: removed top gap where content could bleed through
+- Sheet header: hidden when at cap, shows overages otherwise
+- Last fill toast: elapsed time display
 
 **alpha-1.0.4** — 2026-03-27
-- Last fill toast: persistent, with close button, today-only
-  - Shows elapsed time since last fill: "45min since last fill at 10:00am"
-  - Auto-dismisses when daily cap is reached
-  - `dt_lastFill` only written when logging for today (not past days)
-  - Resets automatically on day rollover via `dt_lastFillDay`
-- Bottom sheet header: "Xh remain" / "filled ✓" for the selected day
-- Removed forward-looking hint below calendar grid
-- Desktop bottom sheet: fixed 20vw width, pinned bottom-right
-- Fixed sticky zone gap: no content bleeds through above legend/nav
+- Last fill toast: persistent, today-only
+- Bottom sheet header improvements
+- Desktop layout refinements
 
 **alpha-1.0.3** — initial tagged release
 

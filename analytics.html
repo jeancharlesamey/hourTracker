@@ -1,0 +1,1171 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="color-scheme" content="light dark">
+  <title>Analytics - Hour Tracker</title>
+  <style>
+    html { background-color: #f5f5f5; }
+    html.dark { background-color: #1a1a2e; }
+  </style>
+  <link rel="manifest" href="./manifest.json">
+  <meta name="theme-color" content="#1a1a2e">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="apple-mobile-web-app-title" content="Hour Tracker">
+  <link rel="apple-touch-icon" href="./icons/icon-192.png">
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <script>
+    tailwind.config = {
+      darkMode: 'class',
+      theme: {
+        extend: {
+          colors: {
+            surface: { DEFAULT: '#f5f5f5', dark: '#1a1a2e' },
+            card: { DEFAULT: '#ffffff', dark: '#16213e' },
+            accent: { DEFAULT: '#e0e7ff', dark: '#0f3460' },
+            muted: { DEFAULT: '#d1d5db', dark: '#333a56' },
+          }
+        }
+      }
+    }
+  </script>
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
+    body { font-family: 'Inter', sans-serif; }
+
+    .heatmap-cell {
+      width: 13px;
+      height: 13px;
+      border-radius: 2px;
+      position: relative;
+    }
+
+    .heatmap-tooltip {
+      position: absolute;
+      bottom: 100%;
+      left: 50%;
+      transform: translateX(-50%) translateY(-8px);
+      background: rgba(0, 0, 0, 0.9);
+      color: white;
+      padding: 6px 10px;
+      border-radius: 4px;
+      font-size: 12px;
+      white-space: nowrap;
+      pointer-events: none;
+      opacity: 0;
+      z-index: 20;
+      transition: opacity 0.2s ease;
+    }
+
+    .heatmap-cell:hover .heatmap-tooltip {
+      opacity: 1;
+    }
+
+    .heatmap-tooltip::after {
+      content: '';
+      position: absolute;
+      top: 100%;
+      left: 50%;
+      transform: translateX(-50%);
+      width: 0;
+      height: 0;
+      border-left: 4px solid transparent;
+      border-right: 4px solid transparent;
+      border-top: 4px solid rgba(0, 0, 0, 0.9);
+    }
+
+    .graph-container {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      overflow-x: auto;
+      padding: 1rem 0;
+    }
+
+    .graph-container svg {
+      display: block;
+      flex-shrink: 0;
+    }
+
+    svg {
+      min-width: fit-content;
+    }
+
+    .tab-button {
+      padding: 8px 16px;
+      border-radius: 6px;
+      font-size: 14px;
+      font-weight: 500;
+      transition: all 0.2s ease;
+      cursor: pointer;
+      border: none;
+      background: transparent;
+    }
+
+    .tab-button.active {
+      background: white;
+      color: #111827;
+      box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+    }
+
+    .dark .tab-button.active {
+      background: rgba(255, 255, 255, 0.15);
+      color: white;
+    }
+
+    .tab-button:not(.active) {
+      color: rgb(107, 114, 128);
+    }
+
+    .dark .tab-button:not(.active) {
+      color: rgba(255, 255, 255, 0.4);
+    }
+
+    .legend {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      font-size: 12px;
+      margin-bottom: 1.5rem;
+      flex-wrap: wrap;
+    }
+
+    .legend-label {
+      color: rgb(107, 114, 128);
+    }
+
+    .dark .legend-label {
+      color: rgba(255, 255, 255, 0.4);
+    }
+
+    .legend-cells {
+      display: flex;
+      gap: 4px;
+      align-items: center;
+    }
+
+    .legend-dot {
+      width: 13px;
+      height: 13px;
+      border-radius: 2px;
+    }
+
+    .settings-overlay {
+      transition: opacity 0.2s ease, visibility 0.2s ease;
+    }
+
+    .settings-overlay.hidden {
+      opacity: 0;
+      visibility: hidden;
+    }
+
+    .color-swatch {
+      transition: transform 0.15s ease, box-shadow 0.15s ease;
+    }
+
+    .color-swatch:hover { transform: scale(1.2); }
+
+    .color-swatch.active {
+      box-shadow: 0 0 0 2px #fff, 0 0 0 4px currentColor;
+      transform: scale(1.15);
+    }
+
+    .day-label {
+      font-size: 11px;
+      fill: rgb(107, 114, 128);
+      text-anchor: end;
+      user-select: none;
+    }
+
+    .dark .day-label {
+      fill: rgba(255, 255, 255, 0.4);
+    }
+
+    .month-label {
+      font-size: 12px;
+      font-weight: 500;
+      fill: rgb(55, 65, 81);
+      text-anchor: start;
+      user-select: none;
+    }
+
+    .dark .month-label {
+      fill: rgba(255, 255, 255, 0.7);
+    }
+
+    .view-toggle-btn {
+      padding: 8px 16px;
+      border-radius: 6px;
+      font-size: 14px;
+      font-weight: 500;
+      transition: all 0.2s ease;
+      cursor: pointer;
+      border: none;
+      background: transparent;
+      color: rgb(107, 114, 128);
+    }
+
+    .dark .view-toggle-btn {
+      color: rgba(255, 255, 255, 0.4);
+    }
+
+    .view-toggle-btn.active {
+      background: white;
+      color: #111827;
+      box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+    }
+
+    .dark .view-toggle-btn.active {
+      background: rgba(255, 255, 255, 0.15);
+      color: white;
+    }
+
+.nav-arrow {
+      transition: background 0.15s ease, opacity 0.15s ease;
+    }
+
+    .nav-arrow:disabled {
+      opacity: 0.5;
+      cursor: not-allowed;
+    }
+
+  </style>
+</head>
+<body class="bg-surface dark:bg-surface-dark transition-colors">
+  <div class="min-h-screen flex flex-col">
+    <!-- Header -->
+    <header class="flex items-center justify-between px-4 md:px-8 py-3 md:py-4 bg-card/80 dark:bg-card-dark/80 backdrop-blur-sm border-b border-gray-200 dark:border-white/5 z-30 shrink-0 transition-colors duration-300">
+      <div class="flex items-center gap-3">
+        <a href="/" aria-label="Back" class="w-8 h-8 md:w-9 md:h-9 flex items-center justify-center rounded-lg hover:bg-black/5 dark:hover:bg-white/10 transition-colors text-gray-600 dark:text-gray-400">
+          <svg aria-hidden="true" class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"/>
+          </svg>
+        </a>
+        <h1 class="text-lg md:text-xl font-bold tracking-tight text-gray-900 dark:text-white">Analytics</h1>
+      </div>
+      <button id="settingsBtn" aria-label="Settings" class="w-8 h-8 md:w-9 md:h-9 flex items-center justify-center rounded-lg hover:bg-black/5 dark:hover:bg-white/10 transition-colors text-gray-600 dark:text-gray-400" style="display: none;">
+        <svg aria-hidden="true" class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.066 2.573c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.573 1.066c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.066-2.573c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"/>
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/>
+        </svg>
+      </button>
+    </header>
+
+    <!-- Main Content -->
+    <div class="flex-1 w-full mx-auto px-4 md:px-8 py-8 space-y-6">
+      <!-- View Toggle -->
+      <div class="flex justify-center">
+        <div class="inline-flex rounded-lg bg-gray-100 dark:bg-white/5 p-1">
+          <button class="view-toggle-btn" data-view="activity" onclick="switchView('activity')">Activity</button>
+          <button class="view-toggle-btn active" data-view="linear" onclick="switchView('linear')">Intensity</button>
+          <button class="view-toggle-btn" data-view="repartition" onclick="switchView('repartition')">Repartition</button>
+        </div>
+      </div>
+
+      <!-- Activity View -->
+      <div id="activityView" class="hidden space-y-6">
+      <!-- Combined View -->
+      <div class="bg-white dark:bg-card-dark rounded-2xl p-6 shadow-sm border border-gray-100 dark:border-white/5">
+        <div class="flex items-center gap-3 mb-4">
+          <div class="w-4 h-4 rounded bg-gray-400 dark:bg-gray-600"></div>
+          <h2 class="text-lg font-semibold text-gray-900 dark:text-white">All Tasks</h2>
+        </div>
+        <div class="legend">
+          <span class="legend-label">Less</span>
+          <div class="legend-cells" id="combinedLegend"></div>
+          <span class="legend-label">More</span>
+        </div>
+        <div class="graph-container">
+          <svg id="combinedGraph" width="100%" height="180" style="min-height: 180px;"></svg>
+        </div>
+      </div>
+
+      <!-- Individual Views -->
+      <div id="taskGraphsContainer" style="display: flex; flex-direction: column; gap: 40px;"></div>
+      </div>
+
+      <!-- Linear View -->
+      <div id="linearView" class="space-y-6">
+        <div class="bg-white dark:bg-card-dark rounded-2xl p-6 shadow-sm border border-gray-100 dark:border-white/5">
+          <!-- Month Navigation Header -->
+          <div class="flex items-center justify-between mb-6">
+            <button id="prevMonthBtn" aria-label="Previous month" class="nav-arrow w-9 h-9 md:w-10 md:h-10 flex items-center justify-center rounded-lg hover:bg-black/5 dark:hover:bg-white/10">
+              <svg aria-hidden="true" class="w-5 h-5 md:w-6 md:h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"/></svg>
+            </button>
+            <span id="monthLabel" class="text-sm md:text-lg font-semibold text-gray-900 dark:text-white"></span>
+            <button id="nextMonthBtn" aria-label="Next month" class="nav-arrow w-9 h-9 md:w-10 md:h-10 flex items-center justify-center rounded-lg hover:bg-black/5 dark:hover:bg-white/10">
+              <svg aria-hidden="true" class="w-5 h-5 md:w-6 md:h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/></svg>
+            </button>
+          </div>
+          <h2 class="text-lg font-semibold text-gray-900 dark:text-white mb-6">Task Intensity Over Time</h2>
+          <div style="position: relative; height: calc(100vh - 280px); min-height: 500px; max-height: 800px;">
+            <canvas id="linearChart"></canvas>
+          </div>
+        </div>
+      </div>
+
+      <!-- Repartition View -->
+      <div id="repartitionView" class="hidden space-y-6">
+        <div class="bg-white dark:bg-card-dark rounded-2xl p-6 shadow-sm border border-gray-100 dark:border-white/5">
+          <!-- Month Navigation Header -->
+          <div class="flex items-center justify-between mb-6">
+            <button id="prevMonthBtnRep" aria-label="Previous month" class="nav-arrow w-9 h-9 md:w-10 md:h-10 flex items-center justify-center rounded-lg hover:bg-black/5 dark:hover:bg-white/10">
+              <svg aria-hidden="true" class="w-5 h-5 md:w-6 md:h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"/></svg>
+            </button>
+            <span id="monthLabelRep" class="text-sm md:text-lg font-semibold text-gray-900 dark:text-white"></span>
+            <button id="nextMonthBtnRep" aria-label="Next month" class="nav-arrow w-9 h-9 md:w-10 md:h-10 flex items-center justify-center rounded-lg hover:bg-black/5 dark:hover:bg-white/10">
+              <svg aria-hidden="true" class="w-5 h-5 md:w-6 md:h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/></svg>
+            </button>
+          </div>
+          <h2 class="text-lg font-semibold text-gray-900 dark:text-white mb-6">Task Repartition</h2>
+          <div style="position: relative; height: 600px;">
+            <canvas id="repartitionChart"></canvas>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Settings Overlay -->
+  <div id="settingsOverlay" role="dialog" aria-modal="true" aria-label="Settings" class="settings-overlay hidden fixed inset-0 bg-black/60 backdrop-blur-sm z-40 flex items-end sm:items-center justify-center">
+    <div class="bg-card dark:bg-card-dark w-full max-w-md rounded-t-2xl sm:rounded-2xl p-6 max-h-[85vh] overflow-y-auto transition-colors duration-300">
+      <div class="flex items-center justify-between mb-6">
+        <h2 class="text-lg font-bold">Settings</h2>
+        <button id="closeSettings" aria-label="Close settings" class="w-8 h-8 flex items-center justify-center rounded-lg hover:bg-black/5 dark:hover:bg-white/10">
+          <svg aria-hidden="true" class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
+          </svg>
+        </button>
+      </div>
+      <!-- Dark mode toggle -->
+      <div class="flex items-center justify-between mb-5 pb-5 border-b border-gray-200 dark:border-white/10">
+        <div>
+          <span class="text-sm font-medium">Dark mode</span>
+          <p class="text-xs text-gray-400 dark:text-white/40 mt-0.5">Switch between light and dark theme</p>
+        </div>
+        <button id="darkModeToggle" role="switch" aria-checked="true" aria-label="Dark mode"
+          class="relative w-11 h-6 rounded-full bg-gray-300 dark:bg-emerald-500 transition-colors duration-200 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-emerald-500">
+          <span id="darkModeKnob" class="absolute top-0.5 left-0.5 w-5 h-5 rounded-full bg-white shadow transition-transform duration-200 translate-x-5"></span>
+        </button>
+      </div>
+      <!-- Daily cap -->
+      <div class="mb-5 pb-5 border-b border-gray-200 dark:border-white/10">
+        <label for="maxCapInput" class="block text-sm font-medium mb-2">Daily hour cap</label>
+        <input type="number" id="maxCapInput" step="0.25" min="0.5" class="w-full bg-black/5 dark:bg-white/10 border border-gray-200 dark:border-white/10 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-gray-400 dark:focus:border-white/30 transition-colors" placeholder="7.5">
+      </div>
+      <div class="mt-6 pt-4 border-t border-gray-200 dark:border-white/10">
+        <button id="resetBtn" class="w-full py-2.5 rounded-lg bg-red-500 hover:bg-red-600 text-white text-sm font-medium transition-colors">Delete all data</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Delete confirm modal -->
+  <div id="deleteModal" class="settings-overlay hidden fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center px-6">
+    <div class="bg-card dark:bg-card-dark w-full max-w-sm rounded-2xl p-6 shadow-xl transition-colors duration-300">
+      <h2 class="text-base font-bold mb-1">Delete — Are you sure?</h2>
+      <p class="text-sm text-gray-400 dark:text-white/40 mb-6">All data will be permanently removed. This cannot be undone.</p>
+      <div class="flex gap-3 justify-end">
+        <button id="deleteCancelBtn" class="px-4 py-2 rounded-lg text-sm font-medium bg-black/5 dark:bg-white/10 hover:bg-black/10 dark:hover:bg-white/20 transition-colors">Cancel</button>
+        <button id="deleteConfirmBtn" class="px-4 py-2 rounded-lg text-sm font-medium bg-red-500 hover:bg-red-600 text-white transition-colors">Delete</button>
+      </div>
+    </div>
+  </div>
+
+  <script src="./month-modal.js"></script>
+  <script>
+    // ── Config ────────────────────────────────────────────
+    const DEFAULT_TASKS = [
+      { name: 'Exercise', color: '#22c55e' },
+      { name: 'Read', color: '#3b82f6' },
+      { name: 'Meditate', color: '#a855f7' },
+      { name: 'Journal', color: '#f59e0b' },
+    ];
+
+    const CELL_SIZE = 13;
+    const CELL_MARGIN = 2;
+    const WEEK_LABEL_WIDTH = 0;
+    const DAY_LABELS_WIDTH = 30;
+    const MONTH_LABELS_HEIGHT = 14;
+    const DAY_LABELS = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
+
+    // ── Data Loading ──────────────────────────────────────
+    function loadJSON(key, fallback) {
+      try {
+        return JSON.parse(localStorage.getItem(key) || '{}') || fallback;
+      } catch {
+        return fallback;
+      }
+    }
+
+    let tasks = loadJSON('dt_tasks', DEFAULT_TASKS);
+    let completions = loadJSON('dt_completions', {});
+    let maxCap = parseFloat(localStorage.getItem('dt_maxCap')) || 7.5;
+
+    // ── Dark Mode ─────────────────────────────────────────
+    let darkMode = localStorage.getItem('dt_darkMode') !== 'false';
+
+    function applyDarkMode() {
+      if (darkMode) {
+        document.documentElement.classList.add('dark');
+      } else {
+        document.documentElement.classList.remove('dark');
+      }
+      updateDarkModeButton();
+    }
+
+    function updateDarkModeButton() {
+      const toggle = document.getElementById('darkModeToggle');
+      const knob = document.getElementById('darkModeKnob');
+      if (toggle && knob) {
+        toggle.setAttribute('aria-checked', darkMode);
+        if (darkMode) {
+          knob.classList.add('translate-x-5');
+          knob.classList.remove('translate-x-0');
+        } else {
+          knob.classList.remove('translate-x-5');
+          knob.classList.add('translate-x-0');
+        }
+      }
+    }
+
+    function toggleDarkMode() {
+      darkMode = !darkMode;
+      localStorage.setItem('dt_darkMode', darkMode);
+      applyDarkMode();
+      render();
+    }
+
+    applyDarkMode();
+    document.getElementById('darkModeToggle').addEventListener('click', toggleDarkMode);
+    document.getElementById('settingsBtn').addEventListener('click', () => {
+      document.getElementById('settingsOverlay').classList.remove('hidden');
+    });
+    document.getElementById('closeSettings').addEventListener('click', () => {
+      document.getElementById('settingsOverlay').classList.add('hidden');
+    });
+
+    // Max cap input
+    document.getElementById('maxCapInput').addEventListener('change', (e) => {
+      const val = parseFloat(e.target.value);
+      if (val > 0) {
+        maxCap = val;
+        localStorage.setItem('dt_maxCap', maxCap);
+        render();
+      }
+    });
+
+    // Close settings on outside click
+    document.getElementById('settingsOverlay').addEventListener('click', (e) => {
+      if (e.target === document.getElementById('settingsOverlay')) {
+        document.getElementById('settingsOverlay').classList.add('hidden');
+      }
+    });
+
+    // Delete data button
+    document.getElementById('resetBtn').addEventListener('click', () => {
+      document.getElementById('deleteModal').classList.remove('hidden');
+    });
+
+    document.getElementById('deleteCancelBtn').addEventListener('click', () => {
+      document.getElementById('deleteModal').classList.add('hidden');
+    });
+
+    document.getElementById('deleteConfirmBtn').addEventListener('click', () => {
+      localStorage.removeItem('dt_tasks');
+      localStorage.removeItem('dt_completions');
+      tasks = JSON.parse(JSON.stringify(DEFAULT_TASKS));
+      completions = {};
+      localStorage.setItem('dt_tasks', JSON.stringify(tasks));
+      localStorage.setItem('dt_completions', JSON.stringify(completions));
+      document.getElementById('deleteModal').classList.add('hidden');
+      document.getElementById('settingsOverlay').classList.add('hidden');
+      render();
+    });
+
+    // Close delete modal on outside click
+    document.getElementById('deleteModal').addEventListener('click', (e) => {
+      if (e.target === document.getElementById('deleteModal')) {
+        document.getElementById('deleteModal').classList.add('hidden');
+      }
+    });
+
+    // ── Date Utilities ────────────────────────────────────
+    function todayStr() {
+      const d = new Date();
+      return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+    }
+
+    function parseDate(dateStr) {
+      const [y, m, d] = dateStr.split('-').map(Number);
+      return new Date(y, m - 1, d);
+    }
+
+    // Get Monday of the week
+    function getMonday(date) {
+      const d = new Date(date);
+      const day = d.getDay();
+      const diff = d.getDate() - day + (day === 0 ? -6 : 1);
+      return new Date(d.setDate(diff));
+    }
+
+    // Get all weeks in the past year starting from a Monday
+    function getWeeksInPastYear() {
+      const today = new Date();
+      const oneYearAgo = new Date(today.getFullYear() - 1, today.getMonth(), today.getDate());
+      const startMonday = getMonday(oneYearAgo);
+
+      const weeks = [];
+      let current = new Date(startMonday);
+
+      while (current <= today) {
+        const week = [];
+        for (let i = 0; i < 7; i++) {
+          const dateStr = `${current.getFullYear()}-${String(current.getMonth() + 1).padStart(2, '0')}-${String(current.getDate()).padStart(2, '0')}`;
+          week.push(dateStr);
+          current.setDate(current.getDate() + 1);
+        }
+        weeks.push(week);
+      }
+
+      return weeks;
+    }
+
+    // ── Data Access ────────────────────────────────────────
+    function getHours(dateStr, taskIndex) {
+      const comp = completions[dateStr];
+      if (!comp) return 0;
+      return comp[taskIndex] || 0;
+    }
+
+    function getTotalHours(dateStr) {
+      const comp = completions[dateStr];
+      if (!comp) return 0;
+      return comp.reduce((a, b) => a + b, 0);
+    }
+
+    // ── Colors ─────────────────────────────────────────────
+    function getEmptyColor() {
+      return darkMode ? '#0d1117' : '#ebedf0';
+    }
+
+    function getIntensityColor(color, intensity) {
+      if (intensity === 0) return getEmptyColor();
+
+      const hex = color.replace('#', '');
+      const r = parseInt(hex.slice(0, 2), 16);
+      const g = parseInt(hex.slice(2, 4), 16);
+      const b = parseInt(hex.slice(4, 6), 16);
+
+      if (darkMode) {
+        // Dark mode: blend from dark (#0d1117) towards bright color
+        // Use power curve for more visible distinction at low intensities
+        const curve = Math.pow(intensity, 0.8); // Emphasize lower intensities
+
+        const empty = [13, 17, 23]; // #0d1117
+        const blended = [
+          Math.round(empty[0] + (r - empty[0]) * curve),
+          Math.round(empty[1] + (g - empty[1]) * curve),
+          Math.round(empty[2] + (b - empty[2]) * curve)
+        ];
+        return `rgb(${blended[0]}, ${blended[1]}, ${blended[2]})`;
+      } else {
+        // Light mode: blend from light grey (#ebedf0) towards dark/saturated color
+        // Use power curve for more visible distinction at low intensities
+        const curve = Math.pow(intensity, 0.7); // Emphasize lower intensities more
+
+        const empty = [235, 237, 240]; // #ebedf0
+        const blended = [
+          Math.round(empty[0] + (r - empty[0]) * curve),
+          Math.round(empty[1] + (g - empty[1]) * curve),
+          Math.round(empty[2] + (b - empty[2]) * curve)
+        ];
+        return `rgb(${blended[0]}, ${blended[1]}, ${blended[2]})`;
+      }
+    }
+
+    // ── Rendering ──────────────────────────────────────────
+    function renderCombinedGraph() {
+      const weeks = getWeeksInPastYear();
+      const graphWidth = weeks.length * (CELL_SIZE + CELL_MARGIN) + 20;
+      const graphHeight = MONTH_LABELS_HEIGHT + 7 * (CELL_SIZE + CELL_MARGIN) + 20;
+
+      let svg = `<svg width="${graphWidth}" height="${graphHeight}" viewBox="0 0 ${graphWidth} ${graphHeight}" class="text-gray-900 dark:text-white/70">`;
+
+      // Month labels and cells
+      let lastMonth = null;
+      weeks.forEach((week, wi) => {
+        const x = wi * (CELL_SIZE + CELL_MARGIN) + 10;
+
+        // Add month label at start of each month
+        const firstDateStr = week[0];
+        const firstDate = parseDate(firstDateStr);
+        const currentMonth = firstDate.getMonth();
+
+        if (lastMonth !== currentMonth) {
+          const monthNames = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+          svg += `<text x="${x}" y="12" class="month-label">${monthNames[currentMonth]}</text>`;
+          lastMonth = currentMonth;
+        }
+
+        // Render cells for each day
+        week.forEach(dateStr => {
+          const date = parseDate(dateStr);
+          const dayOfWeek = (date.getDay() + 6) % 7;
+          const y = MONTH_LABELS_HEIGHT + dayOfWeek * (CELL_SIZE + CELL_MARGIN) + 2;
+
+          const totalHours = getTotalHours(dateStr);
+          const intensity = Math.min(totalHours / maxCap, 1);
+
+          // For combined view, use a neutral grey scale
+          let cellColor = getEmptyColor();
+          if (totalHours > 0) {
+            // Use white in dark mode (intensity goes dark→white), black in light mode (intensity goes light→dark)
+            const greyColor = darkMode ? '#ffffff' : '#000000';
+            cellColor = getIntensityColor(greyColor, intensity);
+          }
+
+          svg += `
+            <rect x="${x}" y="${y}" width="${CELL_SIZE}" height="${CELL_SIZE}"
+                  fill="${cellColor}" rx="2" ry="2" class="heatmap-cell">
+              <title>${dateStr}: ${totalHours.toFixed(2)}h</title>
+            </rect>
+          `;
+        });
+      });
+
+      svg += `</svg>`;
+      const container = document.getElementById('combinedGraph').parentElement;
+      container.innerHTML = getDayLabelsHTML() + svg;
+    }
+
+    function renderIndividualGraphs() {
+      const weeks = getWeeksInPastYear();
+      const graphWidth = weeks.length * (CELL_SIZE + CELL_MARGIN) + 20;
+      const graphHeight = MONTH_LABELS_HEIGHT + 7 * (CELL_SIZE + CELL_MARGIN) + 20;
+
+      let html = '';
+
+      tasks.forEach((task, taskIndex) => {
+        let svg = `<svg width="${graphWidth}" height="${graphHeight}" viewBox="0 0 ${graphWidth} ${graphHeight}" class="text-gray-900 dark:text-white/70">`;
+
+        // Month labels and cells
+        let lastMonth = null;
+        weeks.forEach((week, wi) => {
+          const x = wi * (CELL_SIZE + CELL_MARGIN) + 10;
+
+          const firstDateStr = week[0];
+          const firstDate = parseDate(firstDateStr);
+          const currentMonth = firstDate.getMonth();
+
+          if (lastMonth !== currentMonth) {
+            const monthNames = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+            svg += `<text x="${x}" y="12" class="month-label">${monthNames[currentMonth]}</text>`;
+            lastMonth = currentMonth;
+          }
+
+          week.forEach(dateStr => {
+            const date = parseDate(dateStr);
+            const dayOfWeek = (date.getDay() + 6) % 7;
+            const y = MONTH_LABELS_HEIGHT + dayOfWeek * (CELL_SIZE + CELL_MARGIN) + 2;
+
+            const hours = getHours(dateStr, taskIndex);
+            const intensity = Math.min(hours / maxCap, 1);
+            const cellColor = getIntensityColor(task.color, intensity);
+
+            svg += `
+              <rect x="${x}" y="${y}" width="${CELL_SIZE}" height="${CELL_SIZE}"
+                    fill="${cellColor}" rx="2" ry="2" class="heatmap-cell">
+                <title>${dateStr}: ${hours.toFixed(2)}h</title>
+              </rect>
+            `;
+          });
+        });
+
+        svg += `</svg>`;
+
+        html += `
+          <div class="bg-white dark:bg-card-dark rounded-2xl p-6 shadow-sm border border-gray-100 dark:border-white/5">
+            <div class="flex items-center gap-3 mb-4">
+              <div class="w-4 h-4 rounded" style="background: ${task.color}"></div>
+              <h2 class="text-lg font-semibold text-gray-900 dark:text-white">${task.name}</h2>
+            </div>
+            <div class="graph-container" style="flex-direction: row; gap: 8px;">
+              ${getDayLabelsHTML()}
+              ${svg}
+            </div>
+          </div>
+        `;
+      });
+
+      document.getElementById('taskGraphsContainer').innerHTML = html;
+    }
+
+    function renderLegend() {
+      const steps = [0, 0.25, 0.5, 0.75, 1];
+      let html = '';
+
+      // Use grey scale for combined "All Tasks" view
+      const legendColor = darkMode ? '#ffffff' : '#000000';
+
+      steps.forEach(intensity => {
+        const cellColor = getIntensityColor(legendColor, intensity);
+        html += `<div class="legend-dot" style="background: ${cellColor};"></div>`;
+      });
+
+      document.getElementById('combinedLegend').innerHTML = html;
+    }
+
+    function render() {
+      renderLegend();
+      renderCombinedGraph();
+      renderIndividualGraphs();
+      renderLinearChart();
+    }
+
+    let linearChartInstance = null;
+    let repartitionChartInstance = null;
+    let linearViewYear = new Date().getFullYear();
+    let linearViewMonth = new Date().getMonth();
+    let summaryCachingMode = 'hours';
+
+    function renderLinearChart() {
+      let sortedDates = [];
+
+      // Month view - only show dates with data in that month
+      const allDates = getAllDates();
+      if (allDates.length === 0) {
+        updateMonthLabel();
+        return;
+      }
+
+      sortedDates = allDates.sort();
+      const yearStr = linearViewYear.toString();
+      const monthStr = String(linearViewMonth + 1).padStart(2, '0');
+      sortedDates = sortedDates.filter(d => d.startsWith(`${yearStr}-${monthStr}`));
+      updateMonthLabel();
+
+      const datasets = tasks.map((task, taskIndex) => {
+        const data = sortedDates.map(dateStr => getHours(dateStr, taskIndex));
+        return {
+          label: task.name,
+          data: data,
+          borderColor: task.color,
+          backgroundColor: task.color + '20',
+          borderWidth: 2,
+          fill: true,
+          stepped: 'middle',
+          pointRadius: 2,
+          pointBackgroundColor: task.color,
+          pointBorderColor: task.color,
+          pointHoverRadius: 5
+        };
+      });
+
+      const step = Math.max(1, Math.floor(sortedDates.length / 12));
+      const displayDates = sortedDates.map((d, i) => {
+        if (i % step !== 0) return '';
+        const [year, month, day] = d.split('-').map(Number);
+        const date = new Date(year, month - 1, day);
+        const dayNames = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
+        return `${dayNames[date.getDay()]} ${day}`;
+      });
+
+      const ctx = document.getElementById('linearChart');
+      if (!ctx) return;
+
+      if (linearChartInstance) {
+        linearChartInstance.destroy();
+      }
+
+      linearChartInstance = new Chart(ctx.getContext('2d'), {
+        type: 'line',
+        data: {
+          labels: displayDates,
+          datasets: datasets
+        },
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          plugins: {
+            legend: {
+              display: true,
+              position: 'top',
+              labels: {
+                color: darkMode ? 'rgba(255, 255, 255, 0.7)' : 'rgb(55, 65, 81)',
+                padding: 15,
+                font: { size: 12, weight: '500' }
+              }
+            }
+          },
+          scales: {
+            y: {
+              beginAtZero: true,
+              max: maxCap * 1.2,
+              ticks: {
+                color: darkMode ? 'rgba(255, 255, 255, 0.4)' : 'rgb(107, 114, 128)',
+                callback: function(value) {
+                  return value.toFixed(1) + 'h';
+                }
+              },
+              grid: {
+                color: darkMode ? 'rgba(255, 255, 255, 0.05)' : 'rgba(0, 0, 0, 0.05)'
+              }
+            },
+            x: {
+              ticks: {
+                color: darkMode ? 'rgba(255, 255, 255, 0.4)' : 'rgb(107, 114, 128)',
+                font: { size: 11 }
+              },
+              grid: {
+                color: darkMode ? 'rgba(255, 255, 255, 0.05)' : 'rgba(0, 0, 0, 0.05)'
+              }
+            }
+          }
+        }
+      });
+    }
+
+    function renderRepartitionChart() {
+      // Get dates for the selected month
+      const yearStr = linearViewYear.toString();
+      const monthStr = String(linearViewMonth + 1).padStart(2, '0');
+      const monthDates = Object.keys(completions)
+        .filter(d => d.startsWith(`${yearStr}-${monthStr}`))
+        .sort();
+
+      if (monthDates.length === 0) {
+        if (repartitionChartInstance) {
+          repartitionChartInstance.destroy();
+        }
+        return;
+      }
+
+      // Calculate hours per task for the month
+      const taskHours = tasks.map((task, taskIndex) => {
+        return monthDates.reduce((sum, dateStr) => sum + getHours(dateStr, taskIndex), 0);
+      });
+
+      const totalHours = taskHours.reduce((a, b) => a + b, 0);
+      const ctx = document.getElementById('repartitionChart');
+      if (!ctx) return;
+
+      if (repartitionChartInstance) {
+        repartitionChartInstance.destroy();
+      }
+
+      repartitionChartInstance = new Chart(ctx.getContext('2d'), {
+        type: 'doughnut',
+        data: {
+          labels: tasks.map(t => t.name),
+          datasets: [{
+            data: taskHours,
+            backgroundColor: tasks.map(t => t.color),
+            borderColor: darkMode ? '#16213e' : '#ffffff',
+            borderWidth: 2
+          }]
+        },
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          plugins: {
+            legend: {
+              display: true,
+              position: 'bottom',
+              labels: {
+                color: darkMode ? 'rgba(255, 255, 255, 0.7)' : 'rgb(55, 65, 81)',
+                padding: 15,
+                font: { size: 12, weight: '500' },
+                boxWidth: 12,
+                usePointStyle: true,
+                backgroundColor: 'transparent'
+              },
+              backgroundColor: 'transparent'
+            },
+            tooltip: {
+              callbacks: {
+                label: function(context) {
+                  const label = context.label || '';
+                  const value = context.parsed || 0;
+                  const percentage = ((value / totalHours) * 100).toFixed(1);
+                  return `${label}: ${value.toFixed(2)}h (${percentage}%)`;
+                }
+              },
+              backgroundColor: darkMode ? 'rgba(0, 0, 0, 0.8)' : 'rgba(0, 0, 0, 0.7)',
+              titleColor: '#fff',
+              bodyColor: '#fff',
+              borderColor: darkMode ? 'rgba(255, 255, 255, 0.2)' : 'rgba(255, 255, 255, 0.3)',
+              borderWidth: 1,
+              padding: 10,
+              displayColors: true,
+              font: { size: 12 }
+            }
+          }
+        }
+      });
+
+      updateMonthLabelRep();
+    }
+
+    function switchView(view) {
+      document.querySelectorAll('.view-toggle-btn').forEach(btn => {
+        btn.classList.remove('active');
+      });
+      document.querySelector(`[data-view="${view}"]`).classList.add('active');
+
+      const activityView = document.getElementById('activityView');
+      const linearView = document.getElementById('linearView');
+      const repartitionView = document.getElementById('repartitionView');
+
+      activityView.classList.add('hidden');
+      linearView.classList.add('hidden');
+      repartitionView.classList.add('hidden');
+
+      if (view === 'activity') {
+        activityView.classList.remove('hidden');
+      } else if (view === 'linear') {
+        linearView.classList.remove('hidden');
+        setTimeout(() => renderLinearChart(), 100);
+      } else if (view === 'repartition') {
+        repartitionView.classList.remove('hidden');
+        setTimeout(() => renderRepartitionChart(), 100);
+      }
+    }
+
+
+    function updateMonthLabel() {
+      const monthNames = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'];
+      document.getElementById('monthLabel').textContent = `${monthNames[linearViewMonth]} ${linearViewYear}`;
+    }
+
+    function updateMonthLabelRep() {
+      const monthNames = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'];
+      document.getElementById('monthLabelRep').textContent = `${monthNames[linearViewMonth]} ${linearViewYear}`;
+    }
+
+    function prevMonth() {
+      linearViewMonth--;
+      if (linearViewMonth < 0) {
+        linearViewMonth = 11;
+        linearViewYear--;
+      }
+      renderLinearChart();
+      renderRepartitionChart();
+    }
+
+    function nextMonth() {
+      const today = new Date();
+      if (linearViewYear > today.getFullYear() || (linearViewYear === today.getFullYear() && linearViewMonth >= today.getMonth())) {
+        return;
+      }
+      linearViewMonth++;
+      if (linearViewMonth > 11) {
+        linearViewMonth = 0;
+        linearViewYear++;
+      }
+      renderLinearChart();
+      renderRepartitionChart();
+    }
+
+    function getAllDates() {
+      const dates = Object.keys(completions)
+        .filter(d => d <= todayStr())
+        .sort();
+      return dates;
+    }
+
+    function getDayLabelsHTML() {
+      const dayLabelHeight = MONTH_LABELS_HEIGHT + 7 * (CELL_SIZE + CELL_MARGIN) + 20;
+      let html = `<svg width="30" height="${dayLabelHeight}" viewBox="0 0 30 ${dayLabelHeight}" class="text-gray-900 dark:text-white/70" style="min-height: ${dayLabelHeight}px;">`;
+
+      DAY_LABELS.forEach((label, i) => {
+        const y = MONTH_LABELS_HEIGHT + i * (CELL_SIZE + CELL_MARGIN) + CELL_SIZE / 2 + 3;
+        html += `<text x="25" y="${y}" class="day-label">${label}</text>`;
+      });
+
+      html += `</svg>`;
+      return html;
+    }
+
+    // ── Init ──────────────────────────────────────────────
+    render();
+
+    // Month navigation event listeners
+    document.getElementById('prevMonthBtn').addEventListener('click', prevMonth);
+    document.getElementById('nextMonthBtn').addEventListener('click', nextMonth);
+    document.getElementById('prevMonthBtnRep').addEventListener('click', prevMonth);
+    document.getElementById('nextMonthBtnRep').addEventListener('click', nextMonth);
+
+    // Helper function to get week of year
+    function getWeekOfYear(date) {
+      const firstDay = new Date(date.getFullYear(), 0, 1);
+      const pastDaysOfYear = (date - firstDay) / 86400000;
+      return Math.ceil((pastDaysOfYear + firstDay.getDay() + 1) / 7);
+    }
+
+    // Helper function to add ordinal suffix
+    function ordinal(n) {
+      const s = ['th', 'st', 'nd', 'rd'];
+      const v = n % 100;
+      return n + (s[(v - 20) % 10] || s[v] || s[0]);
+    }
+
+    // Formatting functions for summary modes
+    function fmtH(h) {
+      return h.toFixed(2) + 'h';
+    }
+
+    function fmtD(h) {
+      const days = (h / maxCap).toFixed(2);
+      return days + 'd';
+    }
+
+    function fmtPct(h, total) {
+      if (total === 0) return '0%';
+      return ((h / total) * 100).toFixed(0) + '%';
+    }
+
+    function fmtVal(h, total) {
+      if (summaryCachingMode === 'hours') return fmtH(h);
+      if (summaryCachingMode === 'days') return fmtD(h);
+      if (summaryCachingMode === 'pct') return fmtPct(h, total);
+      return fmtH(h);
+    }
+
+    // Render summary content with current mode
+    function renderSummaryContent() {
+      const daysInMonth = new Date(linearViewYear, linearViewMonth + 1, 0).getDate();
+      const firstDay = new Date(linearViewYear, linearViewMonth, 1);
+      let startDow = firstDay.getDay() - 1;
+      if (startDow < 0) startDow = 6;
+      const shortMonthNames = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+
+      // Group days by calendar row (week)
+      const weekGroups = {};
+      const todayS = todayStr();
+      for (let d = 1; d <= daysInMonth; d++) {
+        const ds = `${linearViewYear}-${String(linearViewMonth+1).padStart(2,'0')}-${String(d).padStart(2,'0')}`;
+        if (ds > todayS) break;
+        const row = Math.floor((d - 1 + startDow) / 7);
+        if (!weekGroups[row]) weekGroups[row] = [];
+        weekGroups[row].push(ds);
+      }
+
+      const rows = Object.keys(weekGroups).sort((a,b) => a-b).map(r => weekGroups[r]);
+
+      if (rows.length === 0) {
+        return `<p class="text-sm text-gray-400 dark:text-white/40 text-center py-6">No data for this month yet.</p>`;
+      }
+
+      const isHours = summaryCachingMode === 'hours';
+      const isDays = summaryCachingMode === 'days';
+      const isPct = summaryCachingMode === 'pct';
+
+      // Mode toggle buttons
+      let html = `<div class="flex justify-center mb-4">
+        <div class="inline-flex rounded-lg bg-black/5 dark:bg-white/5 p-0.5">
+          <button onclick="setSummaryMode('hours')" class="px-3 py-1 text-xs font-medium rounded-md transition-colors ${isHours ? 'bg-white dark:bg-white/15 text-gray-900 dark:text-white shadow-sm' : 'text-gray-400 dark:text-white/40 hover:text-gray-600 dark:hover:text-white/60'}">Hours</button>
+          <button onclick="setSummaryMode('days')" class="px-3 py-1 text-xs font-medium rounded-md transition-colors ${isDays ? 'bg-white dark:bg-white/15 text-gray-900 dark:text-white shadow-sm' : 'text-gray-400 dark:text-white/40 hover:text-gray-600 dark:hover:text-white/60'}">Days</button>
+          <button onclick="setSummaryMode('pct')" class="px-3 py-1 text-xs font-medium rounded-md transition-colors ${isPct ? 'bg-white dark:bg-white/15 text-gray-900 dark:text-white shadow-sm' : 'text-gray-400 dark:text-white/40 hover:text-gray-600 dark:hover:text-white/60'}">%</button>
+        </div>
+      </div>`;
+
+      if (isHours) {
+        html += `<p class="text-[10px] text-gray-400 dark:text-white/30 text-center mb-3">0.25 = 15min · 0.5 = 30min · 0.75 = 45min</p>`;
+      } else if (isDays) {
+        html += `<p class="text-[10px] text-gray-400 dark:text-white/30 text-center mb-3">1 day = ${maxCap}h (daily cap)</p>`;
+      } else {
+        html += `<p class="text-[10px] text-gray-400 dark:text-white/30 text-center mb-3">share of total hours per week / month</p>`;
+      }
+
+      // Per-week sections
+      const monthTaskTotals = tasks.map(() => 0);
+      let monthGrandTotal = 0;
+
+      rows.forEach((weekDates, wi) => {
+        const first = parseDate(weekDates[0]);
+        const last = parseDate(weekDates[weekDates.length - 1]);
+        const fd = first.getDate(), ld = last.getDate();
+        const range = first.getMonth() === last.getMonth()
+          ? `${shortMonthNames[first.getMonth()]} ${fd}${ordinal(fd)}–${ld}${ordinal(ld)}`
+          : `${shortMonthNames[first.getMonth()]} ${fd}${ordinal(fd)} – ${shortMonthNames[last.getMonth()]} ${ld}${ordinal(ld)}`;
+        const weekNum = getWeekOfYear(first);
+
+        const taskHours = tasks.map((_, ti) =>
+          weekDates.reduce((sum, ds) => sum + getHours(ds, ti), 0)
+        );
+        const weekTotal = taskHours.reduce((a, b) => a + b, 0);
+        taskHours.forEach((h, i) => { monthTaskTotals[i] += h; });
+        monthGrandTotal += weekTotal;
+
+        html += `<div class="mb-4 pb-4 border-b border-gray-100 dark:border-white/5">`;
+        html += `<div class="flex items-center justify-between mb-2.5">
+          <span class="text-[11px] font-semibold text-gray-400 dark:text-white/40 uppercase tracking-wider">W${weekNum} · ${range}</span>
+          <span class="text-xs font-bold ${weekTotal > 0 ? 'text-gray-700 dark:text-white/80' : 'text-gray-300 dark:text-white/20'}">${isPct ? fmtH(weekTotal) : fmtVal(weekTotal, weekTotal)}</span>
+        </div>`;
+        html += `<div class="grid grid-cols-4 gap-2">`;
+        tasks.forEach((t, ti) => {
+          const h = taskHours[ti];
+          const emptyColor = darkMode ? 'rgba(255,255,255,0.12)' : 'rgba(0,0,0,0.10)';
+          html += `<div class="flex flex-col items-center gap-1 py-2 px-1 rounded-xl bg-black/[0.03] dark:bg-white/[0.03]">
+            <div class="w-2 h-2 rounded-full" style="background:${h > 0 ? t.color : emptyColor}"></div>
+            <span class="text-xs font-medium ${h > 0 ? 'text-gray-700 dark:text-white/80' : 'text-gray-300 dark:text-white/20'}">${fmtVal(h, weekTotal)}</span>
+          </div>`;
+        });
+        html += `</div></div>`;
+      });
+
+      // Burnout info
+      let burnoutCount = 0, exceededTotal = 0;
+      const yearStr = linearViewYear.toString();
+      const monthStr = String(linearViewMonth + 1).padStart(2, '0');
+      for (let d = 1; d <= daysInMonth; d++) {
+        const ds = `${yearStr}-${monthStr}-${String(d).padStart(2,'0')}`;
+        if (ds > todayStr()) break;
+        const tot = getTotalHours(ds);
+        if (tot > maxCap) { burnoutCount++; exceededTotal += tot - maxCap; }
+      }
+      if (burnoutCount > 0) {
+        html += `<div class="mt-4 flex justify-center">
+          <span class="inline-flex items-center gap-1.5 text-xs bg-red-500/20 text-red-600 dark:text-red-400 px-3 py-1 rounded-full font-medium">
+            🔥 ${burnoutCount} burnout day${burnoutCount > 1 ? 's' : ''} +${exceededTotal.toFixed(2)}h over cap
+          </span>
+        </div>`;
+      }
+
+      return html;
+    }
+
+    function setSummaryMode(mode) {
+      summaryCachingMode = mode;
+      const monthNames = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'];
+      const title = `${monthNames[linearViewMonth]} ${linearViewYear}`;
+      MonthModal.setContent(title, renderSummaryContent());
+    }
+
+    // Month label click - open modal with detailed breakdown
+    function openMonthSummaryModal() {
+      const monthNames = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'];
+      const title = `${monthNames[linearViewMonth]} ${linearViewYear}`;
+      const content = renderSummaryContent();
+      MonthModal.open(title, content);
+    }
+
+    document.getElementById('monthLabel').addEventListener('click', openMonthSummaryModal);
+    document.getElementById('monthLabelRep').addEventListener('click', openMonthSummaryModal);
+
+    // Re-render when data changes in another tab
+    window.addEventListener('storage', () => {
+      tasks = loadJSON('dt_tasks', DEFAULT_TASKS);
+      completions = loadJSON('dt_completions', {});
+      maxCap = parseFloat(localStorage.getItem('dt_maxCap')) || 7.5;
+      darkMode = localStorage.getItem('dt_darkMode') !== 'false';
+      applyDarkMode();
+      render();
+    });
+  </script>
+</body>
+</html>
