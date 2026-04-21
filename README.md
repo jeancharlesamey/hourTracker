@@ -254,5 +254,5 @@ Chrome 80+, Firefox 83+, Safari 15+, Edge 80+.
 ---
 
 ```
-  made with curiosity in one file and few evening hours by jeancharlesamey
+  made with claude & curiosity by jeancharlesamey
 ```

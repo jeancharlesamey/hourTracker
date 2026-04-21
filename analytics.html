@@ -238,7 +238,7 @@
 <body class="bg-surface dark:bg-surface-dark transition-colors">
   <div class="min-h-screen flex flex-col">
     <!-- Header -->
-    <header class="flex items-center justify-between px-4 md:px-8 py-3 md:py-4 bg-card/80 dark:bg-card-dark/80 backdrop-blur-sm border-b border-gray-200 dark:border-white/5 z-30 shrink-0 transition-colors duration-300">
+    <header class="fixed top-0 left-0 right-0 flex items-center justify-between px-4 md:px-8 py-3 md:py-4 bg-card/80 dark:bg-card-dark/80 backdrop-blur-sm border-b border-gray-200 dark:border-white/5 z-30 transition-colors duration-300">
       <div class="flex items-center gap-3">
         <a href="/" aria-label="Back" class="w-8 h-8 md:w-9 md:h-9 flex items-center justify-center rounded-lg hover:bg-black/5 dark:hover:bg-white/10 transition-colors text-gray-600 dark:text-gray-400">
           <svg aria-hidden="true" class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -256,7 +256,7 @@
     </header>
 
     <!-- Main Content -->
-    <div class="flex-1 w-full mx-auto px-4 md:px-8 py-8 space-y-6">
+    <div class="flex-1 w-full mx-auto px-4 md:px-8 py-8 space-y-6 pt-20">
       <!-- View Toggle -->
       <div class="flex justify-center">
         <div class="inline-flex rounded-lg bg-gray-100 dark:bg-white/5 p-1">
@@ -719,10 +719,14 @@
       document.getElementById('combinedLegend').innerHTML = html;
     }
 
-    function render() {
+    function renderActivityView() {
       renderLegend();
       renderCombinedGraph();
       renderIndividualGraphs();
+    }
+
+    function render() {
+      renderActivityView();
       renderLinearChart();
     }
 
@@ -910,6 +914,8 @@
       updateMonthLabelRep();
     }
 
+    let renderedViews = {};
+
     function switchView(view) {
       document.querySelectorAll('.view-toggle-btn').forEach(btn => {
         btn.classList.remove('active');
@@ -926,12 +932,22 @@
 
       if (view === 'activity') {
         activityView.classList.remove('hidden');
+        if (!renderedViews.activity) {
+          renderActivityView();
+          renderedViews.activity = true;
+        }
       } else if (view === 'linear') {
         linearView.classList.remove('hidden');
-        setTimeout(() => renderLinearChart(), 100);
+        if (!renderedViews.linear) {
+          renderLinearChart();
+          renderedViews.linear = true;
+        }
       } else if (view === 'repartition') {
         repartitionView.classList.remove('hidden');
-        setTimeout(() => renderRepartitionChart(), 100);
+        if (!renderedViews.repartition) {
+          renderRepartitionChart();
+          renderedViews.repartition = true;
+        }
       }
     }
 
@@ -991,7 +1007,9 @@
     }
 
     // ── Init ──────────────────────────────────────────────
-    render();
+    // Only render the default active view (linear/intensity) on page load
+    renderLinearChart();
+    renderedViews.linear = true;
 
     // Month navigation event listeners
     document.getElementById('prevMonthBtn').addEventListener('click', prevMonth);
@@ -1164,7 +1182,13 @@
       maxCap = parseFloat(localStorage.getItem('dt_maxCap')) || 7.5;
       darkMode = localStorage.getItem('dt_darkMode') !== 'false';
       applyDarkMode();
-      render();
+      // Mark all views as needing re-render when data changes
+      renderedViews = {};
+      // Re-render only the currently visible view
+      const activeBtn = document.querySelector('.view-toggle-btn.active');
+      if (activeBtn) {
+        switchView(activeBtn.dataset.view);
+      }
     });
   </script>
 </body>
