@@ -301,7 +301,7 @@
               <svg aria-hidden="true" class="w-5 h-5 md:w-6 md:h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/></svg>
             </button>
           </div>
-          <h2 class="text-lg font-semibold text-gray-900 dark:text-white mb-6">Task Intensity Over Time</h2>
+          <h2 class="text-lg font-semibold text-gray-900 dark:text-white mb-6">Daily Task Hours</h2>
           <div style="position: relative; height: calc(100vh - 280px); min-height: 500px; max-height: 800px;">
             <canvas id="linearChart"></canvas>
           </div>
@@ -752,20 +752,18 @@
       sortedDates = sortedDates.filter(d => d.startsWith(`${yearStr}-${monthStr}`));
       updateMonthLabel();
 
+      // Calculate average hours per day
+      const totalHours = sortedDates.reduce((sum, dateStr) => sum + getTotalHours(dateStr), 0);
+      const averageHours = sortedDates.length > 0 ? totalHours / sortedDates.length : 0;
+
       const datasets = tasks.map((task, taskIndex) => {
         const data = sortedDates.map(dateStr => getHours(dateStr, taskIndex));
         return {
           label: task.name,
           data: data,
+          backgroundColor: task.color,
           borderColor: task.color,
-          backgroundColor: task.color + '20',
-          borderWidth: 2,
-          fill: true,
-          stepped: 'middle',
-          pointRadius: 2,
-          pointBackgroundColor: task.color,
-          pointBorderColor: task.color,
-          pointHoverRadius: 5
+          borderWidth: 0
         };
       });
 
@@ -785,8 +783,36 @@
         linearChartInstance.destroy();
       }
 
+      // Plugin to draw average line
+      const averageLinePlugin = {
+        id: 'averageLine',
+        afterDatasetsDraw(chart) {
+          if (averageHours === 0) return;
+          const yAxis = chart.scales.y;
+          const xScale = chart.scales.x;
+          const yPixel = yAxis.getPixelForValue(averageHours);
+          const ctx = chart.ctx;
+
+          ctx.save();
+          ctx.strokeStyle = darkMode ? 'rgba(255, 255, 255, 0.3)' : 'rgba(0, 0, 0, 0.2)';
+          ctx.lineWidth = 2;
+          ctx.setLineDash([5, 5]);
+          ctx.beginPath();
+          ctx.moveTo(xScale.left, yPixel);
+          ctx.lineTo(xScale.right, yPixel);
+          ctx.stroke();
+
+          // Label
+          ctx.fillStyle = darkMode ? 'rgba(255, 255, 255, 0.5)' : 'rgba(0, 0, 0, 0.4)';
+          ctx.font = '11px Inter';
+          ctx.textAlign = 'right';
+          ctx.fillText(`avg: ${averageHours.toFixed(2)}h`, xScale.right - 8, yPixel - 8);
+          ctx.restore();
+        }
+      };
+
       linearChartInstance = new Chart(ctx.getContext('2d'), {
-        type: 'line',
+        type: 'bar',
         data: {
           labels: displayDates,
           datasets: datasets
@@ -794,19 +820,20 @@
         options: {
           responsive: true,
           maintainAspectRatio: false,
-          plugins: {
-            legend: {
-              display: true,
-              position: 'top',
-              labels: {
-                color: darkMode ? 'rgba(255, 255, 255, 0.7)' : 'rgb(55, 65, 81)',
-                padding: 15,
-                font: { size: 12, weight: '500' }
-              }
-            }
-          },
+          indexAxis: 'x',
           scales: {
+            x: {
+              stacked: true,
+              ticks: {
+                color: darkMode ? 'rgba(255, 255, 255, 0.4)' : 'rgb(107, 114, 128)',
+                font: { size: 11 }
+              },
+              grid: {
+                color: darkMode ? 'rgba(255, 255, 255, 0.05)' : 'rgba(0, 0, 0, 0.05)'
+              }
+            },
             y: {
+              stacked: true,
               beginAtZero: true,
               max: maxCap * 1.2,
               ticks: {
@@ -818,18 +845,28 @@
               grid: {
                 color: darkMode ? 'rgba(255, 255, 255, 0.05)' : 'rgba(0, 0, 0, 0.05)'
               }
+            }
+          },
+          plugins: {
+            legend: {
+              display: true,
+              position: 'top',
+              labels: {
+                color: darkMode ? 'rgba(255, 255, 255, 0.7)' : 'rgb(55, 65, 81)',
+                padding: 15,
+                font: { size: 12, weight: '500' }
+              }
             },
-            x: {
-              ticks: {
-                color: darkMode ? 'rgba(255, 255, 255, 0.4)' : 'rgb(107, 114, 128)',
-                font: { size: 11 }
-              },
-              grid: {
-                color: darkMode ? 'rgba(255, 255, 255, 0.05)' : 'rgba(0, 0, 0, 0.05)'
+            tooltip: {
+              callbacks: {
+                label: function(context) {
+                  return context.dataset.label + ': ' + context.parsed.y.toFixed(2) + 'h';
+                }
               }
             }
           }
-        }
+        },
+        plugins: [averageLinePlugin]
       });
     }
 
