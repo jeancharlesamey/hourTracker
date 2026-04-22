@@ -55,7 +55,7 @@ Each day cell shows **4 squares**, each representing 2 hours (8h total):
 **Analytics Page**
 Three views for insight:
 - **Activity:** GitHub-style contribution heatmap with all tasks combined + individual per-task heatmaps
-- **Intensity:** Line chart showing task hours over the month with day labels (e.g., "Tue 21"), responsive height
+- **Intensity:** Stacked bar chart showing daily task hours with average line reference, day labels (e.g., "Tue 21"), responsive height
 - **Repartition:** Doughnut chart showing how hours are split across tasks
 - Month navigation on each view
 - Click month name → same summary modal
@@ -214,22 +214,25 @@ Chrome 80+, Firefox 83+, Safari 15+, Edge 80+.
 
 ## Changelog
 
-**beta-1.1.0** — 2026-04-21
+**beta-1.1.0** — 2026-04-22
 - **Analytics page** (new):
   - Activity view: GitHub-style heatmap (all tasks + individual)
-  - Intensity view: Line chart with responsive height, day labels (e.g., "Tue 21")
+  - Intensity view: Stacked bar chart showing daily task hours with monthly average reference line, day labels (e.g., "Tue 21"), responsive height
   - Repartition view: Doughnut chart showing task distribution
   - Month navigation on each view
   - Month summary modal with week-by-week breakdown
+  - Lazy-loaded views (only render active view on first switch)
+  - Fixed header for easier navigation
 - **Month Summary Modal** (refactored):
   - Extracted to reusable `month-modal.js` component
   - Accessible from both index.html and analytics.html
   - Mode toggle: Hours / Days / Percent
   - Per-week task grids + month total
 - **UI improvements**:
-  - Updated header icons for consistency
+  - Updated header icons for consistency (new settings cog icon)
   - Dark mode refinements
   - Responsive chart heights based on viewport
+  - Eliminated flash/refresh on view switching
 
 **alpha-1.0.6** — 2026-03-28
 - Bottom sheet responsive width:

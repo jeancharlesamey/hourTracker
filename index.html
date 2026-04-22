@@ -101,6 +101,76 @@
       opacity: 0.2;
       cursor: default;
     }
+
+    /* Modal animations */
+    @keyframes overlayFadeIn {
+      from {
+        opacity: 0;
+      }
+      to {
+        opacity: 1;
+      }
+    }
+
+    @keyframes overlayFadeOut {
+      from {
+        opacity: 1;
+      }
+      to {
+        opacity: 0;
+      }
+    }
+
+    @keyframes modalSlideInUp {
+      from {
+        transform: translateY(100%);
+      }
+      to {
+        transform: translateY(0);
+      }
+    }
+
+    @keyframes modalSlideUpOut {
+      from {
+        transform: translateY(0);
+      }
+      to {
+        transform: translateY(-100%);
+      }
+    }
+
+    @keyframes modalFadeOut {
+      from {
+        opacity: 1;
+      }
+      to {
+        opacity: 0;
+      }
+    }
+
+    .settings-overlay {
+      animation: overlayFadeIn 0.3s ease;
+    }
+
+    .settings-overlay > div {
+      animation: modalSlideInUp 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+    }
+
+    .settings-overlay.slide-up {
+      animation: overlayFadeOut 0.3s ease forwards;
+    }
+
+    .settings-overlay.slide-up > div {
+      animation: modalSlideUpOut 0.3s cubic-bezier(0.34, 1.56, 0.64, 1) forwards;
+    }
+
+    .settings-overlay.fade-out {
+      animation: overlayFadeOut 0.3s ease forwards;
+    }
+
+    .settings-overlay.fade-out > div {
+      animation: modalFadeOut 0.3s ease forwards;
+    }
   </style>
 </head>
 <body class="bg-surface dark:bg-surface-dark text-gray-900 dark:text-white h-screen flex flex-col overflow-hidden select-none transition-colors duration-300">
@@ -113,24 +183,49 @@
 
   <!-- Header -->
   <header class="flex items-center justify-between px-4 md:px-8 py-3 md:py-4 bg-card/80 dark:bg-card-dark/80 backdrop-blur-sm border-b border-gray-200 dark:border-white/5 z-30 shrink-0 transition-colors duration-300">
-    <h1 class="text-lg md:text-xl font-bold tracking-tight">Hour Tracker</h1>
-    <div class="flex items-center gap-3">
-      <span id="streakBadge" class="text-xs md:text-sm bg-red-500/20 text-red-600 dark:text-red-400 px-2 py-0.5 rounded-full font-medium hidden">0 burnout days</span>
-      <a href="./analytics.html" aria-label="Analytics" class="w-8 h-8 md:w-9 md:h-9 flex items-center justify-center rounded-lg hover:bg-black/5 dark:hover:bg-white/10 transition-colors text-gray-600 dark:text-gray-400">
-        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="w-5 h-5">
-          <path d="M13 17V9"/>
-          <path d="M18 17V5"/>
-          <path d="M3 3v16a2 2 0 0 0 2 2h16"/>
-          <path d="M8 17v-3"/>
-        </svg>
-      </a>
-      <button id="settingsBtn" aria-label="Settings" class="w-8 h-8 md:w-9 md:h-9 flex items-center justify-center rounded-lg hover:bg-black/5 dark:hover:bg-white/10 transition-colors text-gray-600 dark:text-gray-400">
-        <svg aria-hidden="true" class="w-5 h-5" xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-          <path d="M9.671 4.136a2.34 2.34 0 0 1 4.659 0 2.34 2.34 0 0 0 3.319 1.915 2.34 2.34 0 0 1 2.33 4.033 2.34 2.34 0 0 0 0 3.831 2.34 2.34 0 0 1-2.33 4.033 2.34 2.34 0 0 0-3.319 1.915 2.34 2.34 0 0 1-4.659 0 2.34 2.34 0 0 0-3.32-1.915 2.34 2.34 0 0 1-2.33-4.033 2.34 2.34 0 0 0 0-3.831A2.34 2.34 0 0 1 6.35 6.051a2.34 2.34 0 0 0 3.319-1.915"/>
-          <circle cx="12" cy="12" r="3"/>
+    <div class="relative">
+      <button id="appMenuBtn" aria-label="App menu" class="flex items-center gap-2 hover:opacity-80 transition-opacity">
+        <h1 class="text-lg md:text-xl font-bold tracking-tight">Hour Tracker</h1>
+        <svg aria-hidden="true" class="w-4 h-4 text-gray-600 dark:text-gray-400" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M6 9l6 6 6-6"/>
         </svg>
       </button>
+      <div id="appMenu" class="hidden absolute left-0 top-full mt-2 bg-card dark:bg-card-dark rounded-lg shadow-lg border border-gray-200 dark:border-white/10 w-56 z-50">
+        <a href="./analytics.html" class="flex items-center gap-3 px-4 py-2 text-sm text-gray-700 dark:text-white hover:bg-gray-100 dark:hover:bg-white/10 rounded-t-lg transition-colors">
+          <svg aria-hidden="true" class="w-5 h-5" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M13 17V9"/>
+            <path d="M18 17V5"/>
+            <path d="M3 3v16a2 2 0 0 0 2 2h16"/>
+            <path d="M8 17v-3"/>
+          </svg>
+          Analytics
+        </a>
+        <button id="appSettingsBtn" class="flex items-center gap-3 w-full text-left px-4 py-2 text-sm text-gray-700 dark:text-white hover:bg-gray-100 dark:hover:bg-white/10 transition-colors border-t border-gray-200 dark:border-white/5">
+          <svg aria-hidden="true" class="w-5 h-5" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M9.671 4.136a2.34 2.34 0 0 1 4.659 0 2.34 2.34 0 0 0 3.319 1.915 2.34 2.34 0 0 1 2.33 4.033 2.34 2.34 0 0 0 0 3.831 2.34 2.34 0 0 1-2.33 4.033 2.34 2.34 0 0 0-3.319 1.915 2.34 2.34 0 0 1-4.659 0 2.34 2.34 0 0 0-3.32-1.915 2.34 2.34 0 0 1-2.33-4.033 2.34 2.34 0 0 0 0-3.831A2.34 2.34 0 0 1 6.35 6.051a2.34 2.34 0 0 0 3.319-1.915"/>
+            <circle cx="12" cy="12" r="3"/>
+          </svg>
+          Settings
+        </button>
+        <div class="flex items-center justify-between px-4 py-2 border-t border-gray-200 dark:border-white/5">
+          <label for="dropdownDarkMode" class="flex items-center gap-3 text-sm text-gray-700 dark:text-white cursor-pointer flex-1">
+            <svg aria-hidden="true" class="w-5 h-5" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/>
+            </svg>
+            Dark mode
+          </label>
+          <input id="dropdownDarkMode" type="checkbox" class="w-5 h-5 rounded cursor-pointer">
+        </div>
+        <button id="addTaskBtn" class="flex items-center gap-3 w-full text-left px-4 py-2 text-sm text-gray-700 dark:text-white hover:bg-gray-100 dark:hover:bg-white/10 rounded-b-lg transition-colors border-t border-gray-200 dark:border-white/5">
+          <svg aria-hidden="true" class="w-5 h-5" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <line x1="12" y1="5" x2="12" y2="19"/>
+            <line x1="5" y1="12" x2="19" y2="12"/>
+          </svg>
+          Add task
+        </button>
+      </div>
     </div>
+    <span id="streakBadge" class="text-xs md:text-sm bg-red-500/20 text-red-600 dark:text-red-400 px-2 py-0.5 rounded-full font-medium hidden">0 burnout days</span>
   </header>
 
   <!-- Calendar -->
@@ -191,7 +286,7 @@
   <div id="settingsOverlay" role="dialog" aria-modal="true" aria-label="Settings" class="settings-overlay hidden fixed inset-0 bg-black/60 backdrop-blur-sm z-40 flex items-end sm:items-center justify-center">
     <div class="bg-card dark:bg-card-dark w-full max-w-md rounded-t-2xl sm:rounded-2xl p-6 max-h-[85vh] overflow-y-auto transition-colors duration-300">
       <div class="flex items-center justify-between mb-6">
-        <h2 class="text-lg font-bold">Settings</h2>
+        <h2 id="settingsTitle" class="text-lg font-bold">Settings</h2>
         <button id="closeSettings" aria-label="Close settings" class="w-8 h-8 flex items-center justify-center rounded-lg hover:bg-black/5 dark:hover:bg-white/10">
           <svg aria-hidden="true" class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
@@ -199,7 +294,7 @@
         </button>
       </div>
       <!-- Dark mode toggle -->
-      <div class="flex items-center justify-between mb-5 pb-5 border-b border-gray-200 dark:border-white/10">
+      <div id="settingsDarkModeSection" class="flex items-center justify-between mb-5 pb-5 border-b border-gray-200 dark:border-white/10">
         <div>
           <span class="text-sm font-medium">Dark mode</span>
           <p class="text-xs text-gray-400 dark:text-white/40 mt-0.5">Switch between light and dark theme</p>
@@ -210,7 +305,7 @@
         </button>
       </div>
       <div id="settingsTasks" class="space-y-5"></div>
-      <div class="mt-6 pt-4 border-t border-gray-200 dark:border-white/10">
+      <div id="settingsDeleteSection" class="mt-6 pt-4 border-t border-gray-200 dark:border-white/10">
         <button id="resetBtn" class="w-full py-2.5 rounded-lg bg-red-500 hover:bg-red-600 text-white text-sm font-medium transition-colors">Delete all data</button>
       </div>
     </div>
@@ -1171,9 +1266,15 @@
     }
 
     // ── Settings ──────────────────────────────────────────
-    function renderSettings() {
+    function renderSettings(options = {}) {
+      const { tasks: showTasks = true, dailyCap: showDailyCap = true, darkMode: showDarkMode = true, deleteData: showDeleteData = true, title = 'Settings' } = options;
       const el = document.getElementById('settingsTasks');
-      el.innerHTML = `
+      const titleEl = document.getElementById('settingsTitle');
+      if (titleEl) titleEl.textContent = title;
+      let html = '';
+
+      if (showDailyCap) {
+        html += `
         <div class="mb-5 pb-5 border-b border-gray-200 dark:border-white/10">
           <label class="text-sm font-medium block mb-1">Daily cap <span class="text-gray-400 dark:text-white/40 text-xs font-normal">(hours)</span></label>
           <p class="text-xs text-gray-400 dark:text-white/40 mb-2">Number of hours worked in a day before burnout warning</p>
@@ -1182,28 +1283,86 @@
             oninput="updateMaxCap(this.value)">
         </div>
       ` + tasks.map((t, i) => `
-        <div class="space-y-2">
-          <div class="flex items-center justify-between">
-            <label for="taskName${i}" class="text-xs text-gray-400 dark:text-white/60 font-medium">Task ${i + 1}</label>
-            ${tasks.length > 1 ? `<button onclick="removeTask(${i})" class="text-xs text-red-400 hover:text-red-300 transition-colors" aria-label="Remove task ${i + 1}">Remove</button>` : ''}
+        <div class="space-y-2 pb-4 border-b border-gray-200 dark:border-white/10 last:border-b-0">
+          <div class="flex items-center justify-between gap-2">
+            <div class="flex-1">
+              <label for="taskName${i}" class="text-xs text-gray-400 dark:text-white/60 font-medium block mb-1">Task ${i + 1}</label>
+              <input id="taskName${i}" type="text" value="${t.name}" maxlength="20" placeholder="Task name"
+                class="w-full bg-black/5 dark:bg-white/5 border border-gray-200 dark:border-white/10 rounded-lg px-3 py-2 text-sm text-gray-900 dark:text-white placeholder-gray-300 dark:placeholder-white/20 focus:outline-none focus:border-gray-400 dark:focus:border-white/30 transition-colors"
+                oninput="updateTaskName(${i}, this.value)">
+            </div>
+            <div class="flex-1">
+              <label for="taskJira${i}" class="text-xs text-gray-400 dark:text-white/60 font-medium block mb-1">Jira Link</label>
+              <input id="taskJira${i}" type="url" value="${t.jiraLink || ''}" maxlength="256" placeholder="https://..."
+                class="w-full bg-black/5 dark:bg-white/5 border border-gray-200 dark:border-white/10 rounded-lg px-3 py-2 text-sm text-gray-900 dark:text-white placeholder-gray-300 dark:placeholder-white/20 focus:outline-none focus:border-gray-400 dark:focus:border-white/30 transition-colors"
+                oninput="updateTaskJiraLink(${i}, this.value)">
+            </div>
           </div>
-          <input id="taskName${i}" type="text" value="${t.name}" maxlength="20"
-            class="w-full bg-black/5 dark:bg-white/5 border border-gray-200 dark:border-white/10 rounded-lg px-3 py-2 text-sm text-gray-900 dark:text-white placeholder-gray-300 dark:placeholder-white/20 focus:outline-none focus:border-gray-400 dark:focus:border-white/30 transition-colors"
-            oninput="updateTaskName(${i}, this.value)">
-          <div class="flex flex-wrap gap-2 pt-1">
-            ${PALETTE.map(c => `
-              <button class="color-swatch w-7 h-7 rounded-full ${c === t.color ? 'active' : ''}"
-                style="background:${c};color:${c}"
-                aria-label="${COLOR_NAMES[c] || c}${c === t.color ? ' (selected)' : ''}"
-                onclick="updateTaskColor(${i}, '${c}')"></button>
-            `).join('')}
+
+          <div class="grid grid-cols-2 gap-3">
+            <div>
+              <label for="taskEstimate${i}" class="text-xs text-gray-400 dark:text-white/60 font-medium block mb-1">Estimated workload</label>
+              <input id="taskEstimate${i}" type="number" min="0" step="1" value="${t.estimate || ''}" placeholder="days"
+                class="w-full bg-black/5 dark:bg-white/5 border border-gray-200 dark:border-white/10 rounded-lg px-3 py-2 text-sm text-gray-900 dark:text-white placeholder-gray-300 dark:placeholder-white/20 focus:outline-none focus:border-gray-400 dark:focus:border-white/30 transition-colors"
+                oninput="updateTaskEstimate(${i}, this.value)">
+            </div>
+            <div>
+              <label for="taskDelivery${i}" class="text-xs text-gray-400 dark:text-white/60 font-medium block mb-1">Delivery date</label>
+              <input id="taskDelivery${i}" type="date" value="${t.deliveryDate || ''}"
+                class="w-full bg-black/5 dark:bg-white/5 border border-gray-200 dark:border-white/10 rounded-lg px-3 py-2 text-sm text-gray-900 dark:text-white focus:outline-none focus:border-gray-400 dark:focus:border-white/30 transition-colors"
+                oninput="updateTaskDeliveryDate(${i}, this.value)">
+            </div>
+          </div>
+
+          <div class="flex items-center justify-between gap-3 pt-1">
+            <div style="display: grid; grid-template-columns: repeat(9, 1fr); gap: 8px;">
+              ${PALETTE.map(c => `
+                <button class="color-swatch w-7 h-7 rounded-full ${c === t.color ? 'active' : ''}"
+                  style="background:${COLOR_HEX[c]};color:${COLOR_HEX[c]}"
+                  aria-label="${COLOR_NAMES[c]}${c === t.color ? ' (selected)' : ''}"
+                  onclick="updateTaskColor(${i}, '${c}')"></button>
+              `).join('')}
+            </div>
+            ${tasks.length > 1 ? `<button onclick="deleteTaskWithConfirm(${i})" class="text-xs text-red-400 hover:text-red-300 transition-colors whitespace-nowrap" aria-label="Delete task ${i + 1}">Delete task</button>` : ''}
           </div>
         </div>
-      `).join('') + `
+      `).join('');
+        html += `
         <button onclick="addTask()" class="w-full mt-2 py-2 rounded-lg border border-dashed border-gray-300 dark:border-white/20 text-sm text-gray-400 dark:text-white/40 hover:border-gray-400 dark:hover:border-white/40 hover:text-gray-500 dark:hover:text-white/60 transition-colors">
           + Add task
         </button>
-      `;
+        `;
+      }
+
+      el.innerHTML = html;
+
+      // Show/hide dark mode section
+      const darkModeSection = document.getElementById('settingsDarkModeSection');
+      if (darkModeSection) {
+        darkModeSection.style.display = showDarkMode ? 'flex' : 'none';
+      }
+
+      // Show/hide delete section
+      const deleteSection = document.getElementById('settingsDeleteSection');
+      if (deleteSection) {
+        deleteSection.style.display = showDeleteData ? 'block' : 'none';
+      }
+
+      // Update dark mode toggle state
+      const toggle = document.getElementById('darkModeToggle');
+      const knob = document.getElementById('darkModeKnob');
+      if (toggle && knob) {
+        toggle.setAttribute('aria-checked', darkMode ? 'true' : 'false');
+        if (darkMode) {
+          toggle.classList.add('bg-emerald-500');
+          toggle.classList.remove('bg-gray-300');
+          knob.classList.add('translate-x-5');
+        } else {
+          toggle.classList.remove('bg-emerald-500');
+          toggle.classList.add('bg-gray-300');
+          knob.classList.remove('translate-x-5');
+        }
+      }
     }
 
     function updateTaskName(index, name) {
@@ -1248,28 +1407,179 @@
       if (sheetOpen) renderTaskList();
     }
 
-    document.getElementById('settingsBtn').addEventListener('click', () => {
-      renderSettings();
-      applyDarkMode();
-      document.getElementById('settingsOverlay').classList.remove('hidden');
+    // App menu dropdown
+    document.getElementById('appMenuBtn').addEventListener('click', (e) => {
+      e.stopPropagation();
+      const menu = document.getElementById('appMenu');
+      menu.classList.toggle('hidden');
     });
 
-    document.getElementById('darkModeToggle').addEventListener('click', () => {
+    document.getElementById('appSettingsBtn').addEventListener('click', () => {
+      document.getElementById('appMenu').classList.add('hidden');
+      isAddTaskMode = false;
+      const overlay = document.getElementById('settingsOverlay');
+      overlay.classList.remove('hidden');
+      renderSettings({ title: 'Settings' });
+      applyDarkMode();
+    });
+
+    document.getElementById('addTaskBtn').addEventListener('click', () => {
+      document.getElementById('appMenu').classList.add('hidden');
+      isAddTaskMode = true;
+      const newTask = { name: '', color: 'blue', estimate: 0, deliveryDate: '', jiraLink: '' };
+      tasks.push(newTask);
+      save();
+
+      // Show modal with slide-in animation
+      const overlay = document.getElementById('settingsOverlay');
+      overlay.classList.remove('hidden');
+
+      // Show only the new task in settings modal (hide existing tasks, daily cap, dark mode, delete)
+      renderSettings({ tasks: false, dailyCap: false, darkMode: false, deleteData: false, title: 'Add a task' });
+      // Manually render only the new task
+      const el = document.getElementById('settingsTasks');
+      const i = tasks.length - 1;
+      const t = tasks[i];
+      const taskHTML = `
+        <div class="space-y-2 pb-4 border-b border-gray-200 dark:border-white/10 last:border-b-0">
+          <div class="flex items-center justify-between gap-2">
+            <div class="flex-1">
+              <label for="taskName${i}" class="text-xs text-gray-400 dark:text-white/60 font-medium block mb-1">New Task</label>
+              <input id="taskName${i}" type="text" value="${t.name}" maxlength="20" placeholder="Task name"
+                class="w-full bg-black/5 dark:bg-white/5 border border-gray-200 dark:border-white/10 rounded-lg px-3 py-2 text-sm text-gray-900 dark:text-white placeholder-gray-300 dark:placeholder-white/20 focus:outline-none focus:border-gray-400 dark:focus:border-white/30 transition-colors"
+                oninput="updateTaskName(${i}, this.value)">
+            </div>
+            <div class="flex-1">
+              <label for="taskJira${i}" class="text-xs text-gray-400 dark:text-white/60 font-medium block mb-1">Jira Link</label>
+              <input id="taskJira${i}" type="url" value="${t.jiraLink || ''}" maxlength="256" placeholder="https://..."
+                class="w-full bg-black/5 dark:bg-white/5 border border-gray-200 dark:border-white/10 rounded-lg px-3 py-2 text-sm text-gray-900 dark:text-white placeholder-gray-300 dark:placeholder-white/20 focus:outline-none focus:border-gray-400 dark:focus:border-white/30 transition-colors"
+                oninput="updateTaskJiraLink(${i}, this.value)">
+            </div>
+          </div>
+
+          <div class="grid grid-cols-2 gap-3">
+            <div>
+              <label for="taskEstimate${i}" class="text-xs text-gray-400 dark:text-white/60 font-medium block mb-1">Estimated workload</label>
+              <input id="taskEstimate${i}" type="number" min="0" step="1" value="${t.estimate || ''}" placeholder="days"
+                class="w-full bg-black/5 dark:bg-white/5 border border-gray-200 dark:border-white/10 rounded-lg px-3 py-2 text-sm text-gray-900 dark:text-white placeholder-gray-300 dark:placeholder-white/20 focus:outline-none focus:border-gray-400 dark:focus:border-white/30 transition-colors"
+                oninput="updateTaskEstimate(${i}, this.value)">
+            </div>
+            <div>
+              <label for="taskDelivery${i}" class="text-xs text-gray-400 dark:text-white/60 font-medium block mb-1">Delivery date</label>
+              <input id="taskDelivery${i}" type="date" value="${t.deliveryDate || ''}"
+                class="w-full bg-black/5 dark:bg-white/5 border border-gray-200 dark:border-white/10 rounded-lg px-3 py-2 text-sm text-gray-900 dark:text-white focus:outline-none focus:border-gray-400 dark:focus:border-white/30 transition-colors"
+                oninput="updateTaskDeliveryDate(${i}, this.value)">
+            </div>
+          </div>
+
+          <div class="flex items-center justify-between gap-3 pt-1">
+            <div style="display: grid; grid-template-columns: repeat(9, 1fr); gap: 8px;">
+              ${PALETTE.map(c => `
+                <button class="color-swatch w-7 h-7 rounded-full ${c === t.color ? 'active' : ''}"
+                  style="background:${COLOR_HEX[c]};color:${COLOR_HEX[c]}"
+                  aria-label="${COLOR_NAMES[c]}${c === t.color ? ' (selected)' : ''}"
+                  onclick="updateTaskColor(${i}, '${c}')"></button>
+              `).join('')}
+            </div>
+          </div>
+        </div>
+      `;
+      el.innerHTML = taskHTML;
+      applyDarkMode();
+      // Focus on the new task name input
+      setTimeout(() => {
+        document.getElementById(`taskName${i}`).focus();
+      }, 100);
+    });
+
+    // Close dropdown when clicking outside
+    document.addEventListener('click', (e) => {
+      const appMenuBtn = document.getElementById('appMenuBtn');
+      const appMenu = document.getElementById('appMenu');
+      if (!appMenuBtn.contains(e.target) && !appMenu.contains(e.target)) {
+        appMenu.classList.add('hidden');
+      }
+    });
+
+    const toggleDarkMode = () => {
       darkMode = !darkMode;
       try { localStorage.setItem('dt_darkMode', darkMode); } catch(e) {}
       applyDarkMode();
       renderCalendar();
       renderLegend();
       if (sheetOpen) renderTaskList();
-    });
+      // Sync both toggles
+      document.getElementById('darkModeToggle').checked = darkMode;
+      document.getElementById('dropdownDarkMode').checked = darkMode;
+    };
+
+    document.getElementById('darkModeToggle').addEventListener('click', toggleDarkMode);
+    document.getElementById('dropdownDarkMode').addEventListener('change', toggleDarkMode);
+
+    let isAddTaskMode = false;
+
+    function closeSettingsModal(isAddTaskMode = false) {
+      const overlay = document.getElementById('settingsOverlay');
+      const lastTask = tasks[tasks.length - 1];
+      const hasTaskName = lastTask && lastTask.name.trim() !== '';
+
+      if (isAddTaskMode && hasTaskName) {
+        // Task name filled: slide up and open settings
+        overlay.classList.add('slide-up');
+        setTimeout(() => {
+          overlay.classList.remove('slide-up');
+          overlay.classList.add('hidden');
+          save();
+          renderLegend();
+          renderCalendar();
+          if (sheetOpen) renderTaskList();
+          // Open settings modal
+          openSettingsModal();
+        }, 300);
+      } else if (isAddTaskMode && !hasTaskName) {
+        // No task name: fade out and remove empty task
+        overlay.classList.add('fade-out');
+        setTimeout(() => {
+          tasks = tasks.filter(t => t.name.trim() !== '');
+          if (tasks.length === 0) {
+            tasks = JSON.parse(JSON.stringify(DEFAULT_TASKS));
+          }
+          overlay.classList.remove('fade-out');
+          overlay.classList.add('hidden');
+          save();
+          renderLegend();
+          renderCalendar();
+          if (sheetOpen) renderTaskList();
+        }, 300);
+      } else {
+        // Normal settings close
+        tasks = tasks.filter(t => t.name.trim() !== '');
+        if (tasks.length === 0) {
+          tasks = JSON.parse(JSON.stringify(DEFAULT_TASKS));
+        }
+        overlay.classList.add('hidden');
+        save();
+        renderLegend();
+        renderCalendar();
+        if (sheetOpen) renderTaskList();
+      }
+    }
+
+    function openSettingsModal() {
+      isAddTaskMode = false;
+      const overlay = document.getElementById('settingsOverlay');
+      overlay.classList.remove('hidden', 'slide-up', 'fade-out');
+      renderSettings({ title: 'Settings' });
+      applyDarkMode();
+    }
 
     document.getElementById('closeSettings').addEventListener('click', () => {
-      document.getElementById('settingsOverlay').classList.add('hidden');
+      closeSettingsModal(isAddTaskMode);
     });
 
     document.getElementById('settingsOverlay').addEventListener('click', (e) => {
       if (e.target === e.currentTarget) {
-        document.getElementById('settingsOverlay').classList.add('hidden');
+        closeSettingsModal(isAddTaskMode);
       }
     });
 
