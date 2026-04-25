@@ -259,26 +259,17 @@
     <!-- Header -->
     <header class="fixed top-0 left-0 right-0 flex items-center justify-between px-4 md:px-8 py-3 md:py-4 bg-card/80 dark:bg-card-dark/80 backdrop-blur-sm border-b border-gray-200 dark:border-white/5 z-30 transition-colors duration-300">
       <a href="./" aria-label="Back to home" class="flex items-center gap-2 hover:opacity-80 transition-opacity">
-        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="w-6 h-6 text-gray-900 dark:text-white">
-          <path d="m12 19-7-7 7-7"/>
-          <path d="M19 12H5"/>
-        </svg>
+        <img src="./icons/back-arrow.svg" alt="" class="w-6 h-6" aria-hidden="true">
         <h1 class="text-lg md:text-xl font-bold tracking-tight text-gray-900 dark:text-white">Analytics</h1>
       </a>
       <div class="relative">
         <button id="appMenuBtn" aria-label="App menu" class="flex items-center gap-2 hover:opacity-80 transition-opacity">
-          <svg aria-hidden="true" class="w-4 h-4 text-gray-600 dark:text-gray-400" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-            <circle cx="12" cy="12" r="1"/>
-            <circle cx="19" cy="12" r="1"/>
-            <circle cx="5" cy="12" r="1"/>
-          </svg>
+          <img src="./icons/menu-dots.svg" alt="" class="w-4 h-4" aria-hidden="true">
         </button>
         <div id="appMenu" class="hidden absolute right-0 top-full mt-2 bg-card dark:bg-card-dark rounded-lg shadow-lg border border-gray-200 dark:border-white/10 w-56 z-50">
           <div class="flex items-center justify-between px-4 py-2 border-b border-gray-200 dark:border-white/5">
             <label class="flex items-center gap-3 text-sm text-gray-700 dark:text-white cursor-pointer flex-1">
-              <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="w-5 h-5">
-                <path d="M20.985 12.486a9 9 0 1 1-9.473-9.472c.405-.022.617.46.402.803a6 6 0 0 0 8.268 8.268c.344-.215.825-.004.803.401"/>
-              </svg>
+              <img src="./icons/moon-icon.svg" alt="" class="w-5 h-5" aria-hidden="true">
               Dark mode
             </label>
             <button id="dropdownDarkMode" role="switch" aria-label="Dark mode"
