@@ -97,9 +97,7 @@ const SettingsModal = {
           <div class="flex items-center justify-between mb-6">
             <h2 id="settingsTitle" class="text-lg font-bold">Settings</h2>
             <button id="closeSettings" aria-label="Close settings" class="w-8 h-8 flex items-center justify-center rounded-lg hover:bg-black/5 dark:hover:bg-white/10">
-              <svg aria-hidden="true" class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
-              </svg>
+              <img src="./icons/close-icon.svg" alt="" class="w-5 h-5 text-gray-400 dark:text-white/50" aria-hidden="true">
             </button>
           </div>
           <div id="settingsDarkModeSection" class="flex items-center justify-between mb-5 pb-5 border-b border-gray-200 dark:border-white/10">
