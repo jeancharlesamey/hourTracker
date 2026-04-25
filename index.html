@@ -321,6 +321,18 @@
     </div>
   </div>
 
+  <!-- Cancel Add Task Modal -->
+  <div id="cancelAddTaskModal" class="settings-overlay hidden fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center px-6">
+    <div class="bg-card dark:bg-card-dark w-full max-w-sm rounded-2xl p-6 shadow-xl transition-colors duration-300">
+      <h2 class="text-base font-bold mb-1">Discard task?</h2>
+      <p class="text-sm text-gray-400 dark:text-white/40 mb-6">This new task will be deleted without saving.</p>
+      <div class="flex gap-3 justify-end">
+        <button id="cancelAddTaskCancelBtn" class="px-4 py-2 rounded-lg text-sm font-medium bg-black/5 dark:bg-white/10 hover:bg-black/10 dark:hover:bg-white/20 transition-colors">Keep editing</button>
+        <button id="cancelAddTaskConfirmBtn" class="px-4 py-2 rounded-lg text-sm font-medium bg-red-500 hover:bg-red-600 text-white transition-colors">Discard</button>
+      </div>
+    </div>
+  </div>
+
   <script src="./month-modal.js"></script>
   <script>
     // ── Constants ──────────────────────────────────────────
@@ -1598,17 +1610,18 @@
             </div>
           </div>
 
-          <div class="flex items-center justify-between gap-3 pt-1">
-            <div style="display: grid; grid-template-columns: repeat(9, 1fr); gap: 8px;">
-              ${PALETTE.map(c => `
-                <button class="color-swatch w-7 h-7 rounded-full ${c === t.color ? 'active' : ''}"
-                  style="background:${COLOR_HEX[c]};color:${COLOR_HEX[c]}"
-                  aria-label="${COLOR_NAMES[c]}${c === t.color ? ' (selected)' : ''}"
-                  onclick="updateTaskColor(${i}, '${c}')"></button>
-              `).join('')}
-            </div>
-            <button onclick="deleteAddedTask(${i})" class="text-xs text-red-400 hover:text-red-300 transition-colors whitespace-nowrap" aria-label="Delete task ${i + 1}">Delete task</button>
+          <div style="display: grid; grid-template-columns: repeat(9, 1fr); gap: 8px; pt-1">
+            ${PALETTE.map(c => `
+              <button class="color-swatch w-7 h-7 rounded-full ${c === t.color ? 'active' : ''}"
+                style="background:${COLOR_HEX[c]};color:${COLOR_HEX[c]}"
+                aria-label="${COLOR_NAMES[c]}${c === t.color ? ' (selected)' : ''}"
+                onclick="updateTaskColor(${i}, '${c}')"></button>
+            `).join('')}
           </div>
+        </div>
+        <div class="flex gap-3 justify-end mt-6 pt-4 border-t border-gray-200 dark:border-white/10">
+          <button id="cancelAddTaskBtn" class="px-4 py-2 rounded-lg text-sm font-medium bg-black/5 dark:bg-white/10 hover:bg-black/10 dark:hover:bg-white/20 transition-colors">Cancel</button>
+          <button id="saveAddTaskBtn" class="px-4 py-2 rounded-lg text-sm font-medium bg-emerald-500 hover:bg-emerald-600 text-white transition-colors">Save</button>
         </div>
       `;
       el.innerHTML = taskHTML;
@@ -1645,6 +1658,12 @@
     document.getElementById('dropdownDarkMode').addEventListener('change', toggleDarkMode);
 
     function closeSettingsModal() {
+      // If in add task mode, show discard confirmation
+      if (isAddTaskMode) {
+        document.getElementById('cancelAddTaskModal').classList.remove('hidden');
+        return;
+      }
+
       // Remove empty tasks (tasks with no name)
       tasks = tasks.filter(t => t.name.trim() !== '');
       if (tasks.length === 0) {
@@ -1699,6 +1718,52 @@
 
     document.getElementById('deleteTaskConfirmBtn').addEventListener('click', confirmDeleteAddedTask);
 
+    // ── Add Task Modal Handlers ────────────────────────────
+    document.addEventListener('click', (e) => {
+      // Save button in add task modal
+      if (e.target.id === 'saveAddTaskBtn') {
+        const lastIndex = tasks.length - 1;
+        const taskNameInput = document.getElementById(`taskName${lastIndex}`);
+        const name = taskNameInput?.value.trim() || 'unknown';
+
+        tasks[lastIndex].name = name;
+        save();
+        console.log('Task saved:', tasks[lastIndex]);
+
+        isAddTaskMode = false;
+        document.getElementById('settingsOverlay').classList.add('hidden');
+        renderSettings({ title: 'Settings' });
+        renderLegend();
+        renderCalendar();
+        if (sheetOpen) renderTaskList();
+        applyDarkMode();
+      }
+
+      // Cancel button in add task modal
+      if (e.target.id === 'cancelAddTaskBtn') {
+        document.getElementById('cancelAddTaskModal').classList.remove('hidden');
+      }
+    });
+
+    document.getElementById('cancelAddTaskCancelBtn').addEventListener('click', () => {
+      document.getElementById('cancelAddTaskModal').classList.add('hidden');
+    });
+
+    document.getElementById('cancelAddTaskConfirmBtn').addEventListener('click', () => {
+      document.getElementById('cancelAddTaskModal').classList.add('hidden');
+      const lastIndex = tasks.length - 1;
+      tasks.splice(lastIndex, 1);
+      Object.keys(completions).forEach(date => {
+        if (Array.isArray(completions[date])) {
+          completions[date].splice(lastIndex, 1);
+        }
+      });
+      save();
+      isAddTaskMode = false;
+      document.getElementById('settingsOverlay').classList.add('hidden');
+      console.log('Task discarded');
+    });
+
     // ── Touch gesture for bottom sheet ────────────────────
     let touchStartY = 0;
     const sheet = document.getElementById('bottomSheet');
@@ -1736,7 +1801,7 @@
       const inInput = e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA';
       const settingsOpen = !document.getElementById('settingsOverlay').classList.contains('hidden');
       if (e.key === 'Escape') {
-        if (settingsOpen) { document.getElementById('settingsOverlay').classList.add('hidden'); return; }
+        if (settingsOpen) { closeSettingsModal(); return; }
         if (MonthModal.isOpen) { MonthModal.close(); return; }
         if (sheetOpen) deselectDay();
         return;
