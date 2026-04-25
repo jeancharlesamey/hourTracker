@@ -77,6 +77,13 @@
     }
     .sheet-fade { animation: sheetFadeIn 0.8s cubic-bezier(0.4, 0, 0.2, 1); }
 
+    /* Page reload fade in */
+    @keyframes pageReloadFadeIn {
+      from { opacity: 0; }
+      to { opacity: 1; }
+    }
+    body.page-reload-fade { animation: pageReloadFadeIn 0.6s cubic-bezier(0.4, 0, 0.2, 1); }
+
     /* Selected dot spin */
     @keyframes dotSpin {
       from { transform: rotate(0deg); }
@@ -315,7 +322,6 @@
   </div>
 
   <script src="./month-modal.js"></script>
-  <script src="./seed.js"></script>
   <script>
     // ── Constants ──────────────────────────────────────────
     const FIRE_ICON = `<span class="fire-icon" aria-hidden="true"><svg class="w-3.5 h-3.5 inline" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M15.362 5.214A8.252 8.252 0 0 1 12 21 8.25 8.25 0 0 1 6.038 7.048 8.287 8.287 0 0 1 9 9.6a8.983 8.983 0 0 1 3.361-6.867 8.21 8.21 0 0 0 3 2.481Z"/><path stroke-linecap="round" stroke-linejoin="round" d="M12 18a3.75 3.75 0 0 0 .495-7.468 5.99 5.99 0 0 0-1.925 3.546 5.974 5.974 0 0 1-2.133-1.001A3.75 3.75 0 0 0 12 18Z"/></svg></span>`;
@@ -361,11 +367,13 @@
     let maxCap = parseFloat(localStorage.getItem('dt_maxCap')) || 7.5;
     let selectedDate = null; // null = no day selected, sheet closed
     let sheetOpen = false;
+    let isAddTaskMode = false;  // tracks if in "add task" mode vs settings mode
     let burnoutToastEl    = null;  // reference to the live burnout toast DOM node
     let burnoutToastTimer = null;  // its dismiss timer
     let burnoutShown      = false; // has it been shown this day session?
     let lastFillToastEl       = null;  // reference to the live last-fill toast DOM node
     let pendingDeleteIndex = null;  // tracks which task index is pending deletion
+    let pageNeedsReload = false;    // tracks if page needs reload after modal closes
 
     // ── Dark mode ────────────────────────────────────────
     let darkMode = localStorage.getItem('dt_darkMode') !== 'false'; // default: dark
@@ -1417,14 +1425,20 @@
     }
 
     function removeTask(index) {
-      if (tasks.length <= 1) return;
+      console.log('removeTask called with index:', index, 'tasks.length:', tasks.length);
+      if (tasks.length <= 1) {
+        console.log('Cannot delete - only 1 task remaining');
+        return;
+      }
       tasks.splice(index, 1);
       Object.keys(completions).forEach(date => {
         if (Array.isArray(completions[date])) {
           completions[date].splice(index, 1);
         }
       });
+      console.log('Tasks after splice:', tasks);
       save();
+      console.log('Saved to localStorage');
       renderSettings();
       renderLegend();
       renderCalendar();
@@ -1454,9 +1468,12 @@
       const index = pendingDeleteIndex;
       pendingDeleteIndex = null;
       document.getElementById('deleteTaskModal').classList.add('hidden');
+      console.log('Deleting task at index:', index, 'isAddTaskMode:', isAddTaskMode);
 
       // Fade out and collapse the task element
       const taskEl = document.getElementById(`taskContainer-${index}`);
+      console.log('Found task element:', !!taskEl);
+
       if (taskEl) {
         const height = taskEl.offsetHeight;
         taskEl.style.overflow = 'hidden';
@@ -1471,8 +1488,10 @@
         }, 10);
 
         setTimeout(() => {
+          console.log('Deletion timeout - executing deletion');
           if (isAddTaskMode) {
             // Delete from add task modal
+            console.log('Deleting from add task modal');
             tasks.splice(index, 1);
             Object.keys(completions).forEach(date => {
               if (Array.isArray(completions[date])) {
@@ -1480,16 +1499,23 @@
               }
             });
             save();
+            console.log('Tasks after delete:', tasks);
+            // Reload page after deletion
+            document.body.classList.add('page-reload-fade');
+            location.reload();
           } else {
-            // Delete from settings modal
+            // Delete from settings modal - delete from cache but don't reload yet
+            console.log('Deleting from settings modal');
             removeTask(index);
+            console.log('Tasks after removeTask:', tasks);
+            pageNeedsReload = true;
           }
-          // Reload page after deletion
-          location.reload();
         }, 700);
       } else {
-        // Fallback if element not found
+        // Fallback if element not found (no animation)
+        console.log('Fallback: element not found, deleting directly');
         if (isAddTaskMode) {
+          console.log('Fallback: deleting from add task modal');
           tasks.splice(index, 1);
           Object.keys(completions).forEach(date => {
             if (Array.isArray(completions[date])) {
@@ -1497,13 +1523,19 @@
             }
           });
           save();
-          renderLegend();
-          renderCalendar();
-          if (sheetOpen) renderTaskList();
-          document.getElementById('settingsOverlay').classList.add('hidden');
-          isAddTaskMode = false;
+          setTimeout(() => {
+            renderLegend();
+            renderCalendar();
+            if (sheetOpen) renderTaskList();
+            document.getElementById('settingsOverlay').classList.add('hidden');
+            isAddTaskMode = false;
+          }, 900);
         } else {
-          removeTask(index);
+          console.log('Fallback: deleting from settings modal');
+          setTimeout(() => {
+            removeTask(index);
+            pageNeedsReload = true;
+          }, 900);
         }
       }
     }
@@ -1619,11 +1651,20 @@
         tasks = JSON.parse(JSON.stringify(DEFAULT_TASKS));
       }
       save();
-      renderSettings({ title: 'Settings' });
-      renderLegend();
-      renderCalendar();
-      if (sheetOpen) renderTaskList();
       document.getElementById('settingsOverlay').classList.add('hidden');
+
+      if (pageNeedsReload) {
+        pageNeedsReload = false;
+        setTimeout(() => {
+          document.body.classList.add('page-reload-fade');
+          location.reload();
+        }, 100);
+      } else {
+        renderSettings({ title: 'Settings' });
+        renderLegend();
+        renderCalendar();
+        if (sheetOpen) renderTaskList();
+      }
     }
 
     document.getElementById('closeSettings').addEventListener('click', closeSettingsModal);
@@ -1647,8 +1688,8 @@
       document.getElementById('deleteModal').classList.add('hidden');
       localStorage.removeItem('dt_tasks');
       localStorage.removeItem('dt_completions');
-      // Reload page after deletion
-      setTimeout(() => location.reload(), 300);
+      // Mark that page needs reload when settings modal closes
+      pageNeedsReload = true;
     });
 
     document.getElementById('deleteTaskCancelBtn').addEventListener('click', () => {
@@ -1727,6 +1768,7 @@
 
     // ── Init ─────────────────────────────────────────────
     function init() {
+      document.body.classList.add('page-reload-fade');
       checkDayRollover();
       renderLegend();
       renderCalendar();
