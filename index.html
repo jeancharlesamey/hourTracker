@@ -195,13 +195,16 @@
           Settings
         </button>
         <div class="flex items-center justify-between px-4 py-2 border-t border-gray-200 dark:border-white/5">
-          <label for="dropdownDarkMode" class="flex items-center gap-3 text-sm text-gray-700 dark:text-white cursor-pointer flex-1">
+          <label class="flex items-center gap-3 text-sm text-gray-700 dark:text-white cursor-pointer flex-1">
             <svg aria-hidden="true" class="w-5 h-5" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
               <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/>
             </svg>
             Dark mode
           </label>
-          <input id="dropdownDarkMode" type="checkbox" class="w-5 h-5 rounded cursor-pointer">
+          <button id="dropdownDarkMode" role="switch" aria-label="Dark mode"
+            class="relative w-10 h-6 rounded-full bg-gray-300 dark:bg-emerald-500 transition-colors duration-200 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-emerald-500">
+            <span id="dropdownDarkModeKnob" class="absolute top-0.5 left-0.5 w-5 h-5 rounded-full bg-white shadow transition-transform duration-200 translate-x-4"></span>
+          </button>
         </div>
         <button id="addTaskBtn" class="flex items-center gap-3 w-full text-left px-4 py-2 text-sm text-gray-700 dark:text-white hover:bg-gray-100 dark:hover:bg-white/10 rounded-b-lg transition-colors border-t border-gray-200 dark:border-white/5">
           <svg aria-hidden="true" class="w-5 h-5" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
@@ -1650,12 +1653,26 @@
       renderLegend();
       if (sheetOpen) renderTaskList();
       // Sync both toggles
-      document.getElementById('darkModeToggle').checked = darkMode;
-      document.getElementById('dropdownDarkMode').checked = darkMode;
+      const knob = document.getElementById('darkModeKnob');
+      const dropdownKnob = document.getElementById('dropdownDarkModeKnob');
+      if (knob) {
+        if (darkMode) {
+          knob.style.transform = 'translateX(20px)';
+        } else {
+          knob.style.transform = 'translateX(0)';
+        }
+      }
+      if (dropdownKnob) {
+        if (darkMode) {
+          dropdownKnob.style.transform = 'translateX(16px)';
+        } else {
+          dropdownKnob.style.transform = 'translateX(0)';
+        }
+      }
     };
 
     document.getElementById('darkModeToggle').addEventListener('click', toggleDarkMode);
-    document.getElementById('dropdownDarkMode').addEventListener('change', toggleDarkMode);
+    document.getElementById('dropdownDarkMode').addEventListener('click', toggleDarkMode);
 
     function closeSettingsModal() {
       // If in add task mode, show discard confirmation
@@ -1834,6 +1851,17 @@
     // ── Init ─────────────────────────────────────────────
     function init() {
       document.body.classList.add('page-reload-fade');
+
+      // Initialize dark mode switch knobs
+      const knob = document.getElementById('darkModeKnob');
+      const dropdownKnob = document.getElementById('dropdownDarkModeKnob');
+      if (knob) {
+        knob.style.transform = darkMode ? 'translateX(20px)' : 'translateX(0)';
+      }
+      if (dropdownKnob) {
+        dropdownKnob.style.transform = darkMode ? 'translateX(16px)' : 'translateX(0)';
+      }
+
       checkDayRollover();
       renderLegend();
       renderCalendar();
