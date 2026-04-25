@@ -16,5 +16,6 @@ User handles all git operations exclusively.
 ## General Workflow
 
 - Review code and suggest changes
+- Propose Plan Mode for heavy need reflexion and implementation on multipe files
 - Ask user for confirmation before making file modifications
 - Provide clear explanations of what's being changed and why

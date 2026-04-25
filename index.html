@@ -834,7 +834,7 @@
       el.innerHTML = tasks.map((t, i) => `
         <div class="flex items-center gap-3 p-3 md:p-4 rounded-xl bg-black/5 dark:bg-white/5">
           <div class="w-3 h-3 rounded-full shrink-0" style="background:${COLOR_HEX[t.color]}"></div>
-          <span class="flex-1 text-sm md:text-base font-medium text-gray-900 dark:text-white/90">${t.name}</span>
+          ${t.jiraLink ? `<a href="${t.jiraLink}" target="_blank" rel="noopener noreferrer" class="flex-1 text-sm md:text-base font-medium text-gray-900 dark:text-white/90 hover:underline">${t.name}</a>` : `<span class="flex-1 text-sm md:text-base font-medium text-gray-900 dark:text-white/90">${t.name}</span>`}
           <input type="number" min="0" step="0.25" value="${comp[i] || 0}"
             class="w-20 bg-black/5 dark:bg-white/10 border border-gray-200 dark:border-white/10 rounded-lg px-2 py-1.5 text-sm text-right text-gray-900 dark:text-white focus:outline-none focus:border-gray-400 dark:focus:border-white/30 transition-colors"
             onchange="updateHours(${i}, this.value)" onblur="updateHours(${i}, this.value)">

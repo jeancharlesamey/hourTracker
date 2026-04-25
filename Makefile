@@ -2,20 +2,20 @@
 
 help:
 	@echo "Available commands:"
-	@echo "  make commit MSG=\"message\"         - Stage all changes and commit with message"
+	@echo "  make commit m=\"message\"           - Stage all changes and commit"
 	@echo "  make createbranch BRANCH=\"name\"   - Create and switch to a new branch"
 	@echo "  make switchbranch BRANCH=\"name\"   - Switch to an existing branch"
 	@echo "  make status                        - Show git status"
 	@echo "  make push                          - Push to remote"
 
 commit:
-	@if [ -z "$(MSG)" ]; then \
-		echo "Error: MSG variable is required"; \
-		echo "Usage: make commit MSG=\"your commit message\""; \
+	@if [ -z "$(m)" ]; then \
+		echo "Error: Commit message required"; \
+		echo "Usage: make commit m=\"your commit message\""; \
 		exit 1; \
 	fi
 	git add -A
-	git commit -m "$(MSG)"
+	git commit -m "$(m)"
 
 createbranch:
 	@if [ -z "$(BRANCH)" ]; then \
