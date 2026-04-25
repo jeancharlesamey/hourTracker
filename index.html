@@ -91,6 +91,14 @@
     }
     .dot-spin { animation: dotSpin 6s linear infinite; transform-origin: center; }
 
+    /* SVG icon styling for light/dark mode */
+    img[src*="icons/"] {
+      filter: brightness(0.4);
+    }
+    html.dark img[src*="icons/"] {
+      filter: brightness(0) invert(1);
+    }
+
     /* Fire icon flicker */
     @keyframes fireFlicker {
       0%,100% { transform: scaleY(1)    scaleX(1)    rotate(-1deg); opacity: 1;    }
