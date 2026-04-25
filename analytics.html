@@ -154,6 +154,25 @@
       border-radius: 2px;
     }
 
+    @keyframes deliveryDotBlink {
+      0%, 100% { opacity: 1; }
+      50% { opacity: 0.4; }
+    }
+
+    .delivery-dot {
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      animation: deliveryDotBlink 1.5s ease-in-out infinite;
+      pointer-events: auto;
+      filter: drop-shadow(0 1px 2px rgba(0, 0, 0, 0.3));
+      cursor: pointer;
+    }
+
+    .delivery-dot:hover {
+      filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.4));
+    }
+
     .settings-overlay {
       transition: opacity 0.2s ease, visibility 0.2s ease;
     }
@@ -376,13 +395,22 @@
   </div>
 
   <script src="./month-modal.js"></script>
+  <script src="./popover.js"></script>
   <script>
     // ── Config ────────────────────────────────────────────
+    const COLOR_HEX = {
+      'red': '#ef4444', 'orange': '#f97316', 'amber': '#f59e0b', 'yellow': '#eab308',
+      'lime': '#84cc16', 'green': '#22c55e', 'emerald': '#10b981', 'teal': '#14b8a6',
+      'cyan': '#06b6d4', 'sky': '#0ea5e9', 'blue': '#3b82f6', 'indigo': '#6366f1',
+      'violet': '#8b5cf6', 'purple': '#a855f7', 'fuchsia': '#d946ef', 'pink': '#ec4899',
+      'rose': '#f43f5e', 'zinc': '#71717a',
+    };
+
     const DEFAULT_TASKS = [
-      { name: 'Exercise', color: '#22c55e' },
-      { name: 'Read', color: '#3b82f6' },
-      { name: 'Meditate', color: '#a855f7' },
-      { name: 'Journal', color: '#f59e0b' },
+      { name: 'Exercise', color: 'green' },
+      { name: 'Read', color: 'blue' },
+      { name: 'Meditate', color: 'purple' },
+      { name: 'Journal', color: 'amber' },
     ];
 
     const CELL_SIZE = 13;
@@ -534,6 +562,29 @@
       return weeks;
     }
 
+    // Get all weeks for full calendar year (Jan 1 - Dec 31)
+    function getWeeksInCalendarYear() {
+      const year = new Date().getFullYear();
+      const jan1 = new Date(year, 0, 1);
+      const dec31 = new Date(year, 11, 31);
+      const startMonday = getMonday(jan1);
+
+      const weeks = [];
+      let current = new Date(startMonday);
+
+      while (current <= dec31) {
+        const week = [];
+        for (let i = 0; i < 7; i++) {
+          const dateStr = `${current.getFullYear()}-${String(current.getMonth() + 1).padStart(2, '0')}-${String(current.getDate()).padStart(2, '0')}`;
+          week.push(dateStr);
+          current.setDate(current.getDate() + 1);
+        }
+        weeks.push(week);
+      }
+
+      return weeks;
+    }
+
     // ── Data Access ────────────────────────────────────────
     function getHours(dateStr, taskIndex) {
       const comp = completions[dateStr];
@@ -587,9 +638,115 @@
       }
     }
 
+    // Get delivery dates for a given date string
+    function getDeliveryDatesForDate(dateStr) {
+      const matches = [];
+      tasks.forEach((task, i) => {
+        if (task.deliveryDate === dateStr) {
+          matches.push({ taskIndex: i, color: COLOR_HEX[task.color], name: task.name });
+        }
+      });
+      return matches;
+    }
+
+    // Calculate working days late from delivery date to activity date
+    function calculateDaysLate(deliveryDateStr, activityDateStr) {
+      const deliveryDate = parseDate(deliveryDateStr);
+      const activityDate = parseDate(activityDateStr);
+
+      if (activityDate <= deliveryDate) return 0;
+
+      let count = 0;
+      let current = new Date(deliveryDate);
+      current.setDate(current.getDate() + 1);
+
+      while (current < activityDate) {
+        const dow = current.getDay();
+        if (dow !== 0 && dow !== 6) count++;
+        current.setDate(current.getDate() + 1);
+      }
+
+      return count + 1;
+    }
+
+    // Setup popover events for delivery date squares
+    function setupDeliveryDatePopovers() {
+      // Attach to cells with delivery dates
+      document.querySelectorAll('.delivery-cell[data-task-name]').forEach(cell => {
+        const taskName = cell.getAttribute('data-task-name');
+        const deliveryDate = cell.getAttribute('data-delivery-date');
+
+        if (!taskName) return;
+
+        const taskColor = getTaskColorByName(taskName);
+
+        const showPopover = () => {
+          let statusText = '';
+          let statusColor = 'inherit';
+
+          const todayObj = new Date();
+          const today = `${todayObj.getFullYear()}-${String(todayObj.getMonth() + 1).padStart(2, '0')}-${String(todayObj.getDate()).padStart(2, '0')}`;
+
+          if (deliveryDate < today) {
+            // Delivery date is in the past - show days late
+            const daysLate = calculateDaysLate(deliveryDate, today);
+            statusText = `${daysLate} days late`;
+            statusColor = '#f97316'; // Orange
+          } else if (deliveryDate === today) {
+            // Delivery date is today
+            statusText = 'Due today';
+            statusColor = '#eab308'; // Yellow
+          } else {
+            // Delivery date is in the future
+            const workingDays = getWorkingDaysTo(deliveryDate);
+            statusText = `${workingDays} working days to go`;
+          }
+
+          const content = `
+            <div style="display: flex; gap: 6px;">
+              <div style="width: 10px; height: 10px; border-radius: 50%; background: ${taskColor}; flex-shrink: 0; margin-top: 1px;"></div>
+              <div>${taskName}<br>${deliveryDate}<br><span style="color: ${statusColor};">${statusText}</span></div>
+            </div>
+          `;
+          Popover.open(cell, content);
+        };
+
+        cell.addEventListener('mouseenter', showPopover);
+        cell.addEventListener('mouseleave', () => Popover.close());
+        cell.addEventListener('click', showPopover);
+      });
+    }
+
+    // Helper to get task color by name
+    function getTaskColorByName(taskName) {
+      const task = tasks.find(t => t.name === taskName);
+      return task ? COLOR_HEX[task.color] : '#999999';
+    }
+
+    // Calculate working days (Mon-Fri) from today to a target date
+    function getWorkingDaysTo(targetDateStr) {
+      const today = parseDate(todayStr());
+      const targetDate = parseDate(targetDateStr);
+
+      if (targetDate < today) return 0;
+      if (targetDate.getTime() === today.getTime()) return 0;
+
+      let count = 0;
+      let current = new Date(today);
+      current.setDate(current.getDate() + 1);
+
+      while (current <= targetDate) {
+        const dow = current.getDay();
+        if (dow !== 0 && dow !== 6) count++;
+        current.setDate(current.getDate() + 1);
+      }
+
+      return count;
+    }
+
     // ── Rendering ──────────────────────────────────────────
     function renderCombinedGraph() {
-      const weeks = getWeeksInPastYear();
+      const weeks = getWeeksInCalendarYear();
       const graphWidth = weeks.length * (CELL_SIZE + CELL_MARGIN) + 20;
       const graphHeight = MONTH_LABELS_HEIGHT + 7 * (CELL_SIZE + CELL_MARGIN) + 20;
 
@@ -628,22 +785,60 @@
             cellColor = getIntensityColor(greyColor, intensity);
           }
 
+          const deliveryDates = getDeliveryDatesForDate(dateStr);
+
+          let tooltipText = `${dateStr}: ${totalHours.toFixed(2)}h`;
+          let strokeColor = 'none';
+          let strokeWidth = '0';
+
+          if (deliveryDates.length > 0) {
+            const deliveryInfo = deliveryDates.map(d => {
+              const workingDays = getWorkingDaysTo(dateStr);
+              return `${d.name} • ${dateStr} • ${workingDays}d remaining`;
+            }).join('\n');
+            tooltipText += '\n' + deliveryInfo;
+            strokeColor = deliveryDates[0].color;
+            strokeWidth = '1.5';
+          }
+
+          const cellId = `cell-combined-${wi}-${deliveryDates.length > 0 ? 'd' : 'h'}`;
+
           svg += `
-            <rect x="${x}" y="${y}" width="${CELL_SIZE}" height="${CELL_SIZE}"
-                  fill="${cellColor}" rx="2" ry="2" class="heatmap-cell">
-              <title>${dateStr}: ${totalHours.toFixed(2)}h</title>
-            </rect>
-          `;
+            <g>
+              <rect id="${cellId}" x="${x}" y="${y}" width="${CELL_SIZE}" height="${CELL_SIZE}"
+                    fill="${cellColor}" rx="2" ry="2" class="heatmap-cell delivery-cell"
+                    stroke="${strokeColor}" stroke-width="${strokeWidth}"
+                    data-task-name="${deliveryDates.length > 0 ? deliveryDates[0].name : ''}"
+                    data-delivery-date="${dateStr}"
+                    data-working-days="${deliveryDates.length > 0 ? getWorkingDaysTo(dateStr) : '0'}"
+                    style="cursor: ${deliveryDates.length > 0 ? 'pointer' : 'default'};"></rect>`;
+
+          // Add delivery date dots positioned over the square top-right
+          deliveryDates.forEach((delivery, dotIndex) => {
+            const dotX = x + CELL_SIZE - 1;
+            const dotY = y - 1;
+            const dotId = `delivery-dot-${Math.random().toString(36).substr(2, 9)}`;
+            const workingDays = getWorkingDaysTo(dateStr);
+            svg += `<circle id="${dotId}" cx="${dotX}" cy="${dotY}" r="4" fill="${delivery.color}" class="delivery-dot"
+              data-task="${delivery.name}" data-date="${dateStr}" data-days="${workingDays}"
+              style="filter: drop-shadow(0 1px 2px rgba(0,0,0,0.3)); cursor: pointer;">
+            </circle>`;
+          });
+
+          svg += `</g>`;
         });
       });
 
       svg += `</svg>`;
       const container = document.getElementById('combinedGraph').parentElement;
       container.innerHTML = getDayLabelsHTML() + svg;
+
+      // Setup popover events after rendering
+      setTimeout(() => setupDeliveryDatePopovers(), 0);
     }
 
     function renderIndividualGraphs() {
-      const weeks = getWeeksInPastYear();
+      const weeks = getWeeksInCalendarYear();
       const graphWidth = weeks.length * (CELL_SIZE + CELL_MARGIN) + 20;
       const graphHeight = MONTH_LABELS_HEIGHT + 7 * (CELL_SIZE + CELL_MARGIN) + 20;
 
@@ -674,14 +869,44 @@
 
             const hours = getHours(dateStr, taskIndex);
             const intensity = Math.min(hours / maxCap, 1);
-            const cellColor = getIntensityColor(task.color, intensity);
+            const cellColor = getIntensityColor(COLOR_HEX[task.color], intensity);
+
+            let strokeColor = 'none';
+            let strokeWidth = '0';
+            let cellId = `cell-task-${taskIndex}-${wi}-h`;
+            let hasDelivery = false;
+
+            if (task.deliveryDate === dateStr) {
+              const workingDays = getWorkingDaysTo(dateStr);
+              strokeColor = COLOR_HEX[task.color];
+              strokeWidth = '1.5';
+              cellId = `cell-task-${taskIndex}-${wi}-d`;
+              hasDelivery = true;
+            }
 
             svg += `
-              <rect x="${x}" y="${y}" width="${CELL_SIZE}" height="${CELL_SIZE}"
-                    fill="${cellColor}" rx="2" ry="2" class="heatmap-cell">
-                <title>${dateStr}: ${hours.toFixed(2)}h</title>
-              </rect>
-            `;
+              <g>
+                <rect id="${cellId}" x="${x}" y="${y}" width="${CELL_SIZE}" height="${CELL_SIZE}"
+                      fill="${cellColor}" rx="2" ry="2" class="heatmap-cell delivery-cell"
+                      stroke="${strokeColor}" stroke-width="${strokeWidth}"
+                      data-task-name="${hasDelivery ? task.name : ''}"
+                      data-delivery-date="${dateStr}"
+                      data-working-days="${hasDelivery ? getWorkingDaysTo(dateStr) : '0'}"
+                      style="cursor: ${hasDelivery ? 'pointer' : 'default'};"></rect>`;
+
+            // Add delivery date indicator for this task hovering over
+            if (task.deliveryDate === dateStr) {
+              const dotX = x + CELL_SIZE - 1;
+              const dotY = y - 1;
+              const dotId = `delivery-dot-${Math.random().toString(36).substr(2, 9)}`;
+              const workingDays = getWorkingDaysTo(dateStr);
+              svg += `<circle id="${dotId}" cx="${dotX}" cy="${dotY}" r="4" fill="${COLOR_HEX[task.color]}" class="delivery-dot"
+                data-task="${task.name}" data-date="${dateStr}" data-days="${workingDays}"
+                style="filter: drop-shadow(0 1px 2px rgba(0,0,0,0.3)); cursor: pointer;">
+              </circle>`;
+            }
+
+            svg += `</g>`;
           });
         });
 
@@ -690,7 +915,7 @@
         html += `
           <div class="bg-white dark:bg-card-dark rounded-2xl p-6 shadow-sm border border-gray-100 dark:border-white/5">
             <div class="flex items-center gap-3 mb-4">
-              <div class="w-4 h-4 rounded" style="background: ${task.color}"></div>
+              <div class="w-4 h-4 rounded" style="background: ${COLOR_HEX[task.color]}"></div>
               <h2 class="text-lg font-semibold text-gray-900 dark:text-white">${task.name}</h2>
             </div>
             <div class="graph-container" style="flex-direction: row; gap: 8px;">
@@ -702,6 +927,9 @@
       });
 
       document.getElementById('taskGraphsContainer').innerHTML = html;
+
+      // Setup popover events after rendering
+      setTimeout(() => setupDeliveryDatePopovers(), 0);
     }
 
     function renderLegend() {
@@ -761,8 +989,8 @@
         return {
           label: task.name,
           data: data,
-          backgroundColor: task.color,
-          borderColor: task.color,
+          backgroundColor: COLOR_HEX[task.color],
+          borderColor: COLOR_HEX[task.color],
           borderWidth: 0
         };
       });
@@ -904,7 +1132,7 @@
           labels: tasks.map(t => t.name),
           datasets: [{
             data: taskHours,
-            backgroundColor: tasks.map(t => t.color),
+            backgroundColor: tasks.map(t => COLOR_HEX[t.color]),
             borderColor: darkMode ? '#16213e' : '#ffffff',
             borderWidth: 2
           }]

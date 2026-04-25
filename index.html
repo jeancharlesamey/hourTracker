@@ -4,8 +4,8 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <meta name="color-scheme" content="light dark">
-  <title>Hour Tracker </title>
-  <!-- alpha-1.0.7 -->
+  <title>Hour Tracker</title>
+  <!-- Beta-1.0.1 -->
   <style>
     html { background-color: #f5f5f5; }
     html.dark { background-color: #1a1a2e; }
@@ -100,76 +100,6 @@
     .nav-arrow:disabled {
       opacity: 0.2;
       cursor: default;
-    }
-
-    /* Modal animations */
-    @keyframes overlayFadeIn {
-      from {
-        opacity: 0;
-      }
-      to {
-        opacity: 1;
-      }
-    }
-
-    @keyframes overlayFadeOut {
-      from {
-        opacity: 1;
-      }
-      to {
-        opacity: 0;
-      }
-    }
-
-    @keyframes modalSlideInUp {
-      from {
-        transform: translateY(100%);
-      }
-      to {
-        transform: translateY(0);
-      }
-    }
-
-    @keyframes modalSlideUpOut {
-      from {
-        transform: translateY(0);
-      }
-      to {
-        transform: translateY(-100%);
-      }
-    }
-
-    @keyframes modalFadeOut {
-      from {
-        opacity: 1;
-      }
-      to {
-        opacity: 0;
-      }
-    }
-
-    .settings-overlay {
-      animation: overlayFadeIn 0.3s ease;
-    }
-
-    .settings-overlay > div {
-      animation: modalSlideInUp 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
-    }
-
-    .settings-overlay.slide-up {
-      animation: overlayFadeOut 0.3s ease forwards;
-    }
-
-    .settings-overlay.slide-up > div {
-      animation: modalSlideUpOut 0.3s cubic-bezier(0.34, 1.56, 0.64, 1) forwards;
-    }
-
-    .settings-overlay.fade-out {
-      animation: overlayFadeOut 0.3s ease forwards;
-    }
-
-    .settings-overlay.fade-out > div {
-      animation: modalFadeOut 0.3s ease forwards;
     }
   </style>
 </head>
@@ -324,35 +254,48 @@
   </div>
 
   <script src="./month-modal.js"></script>
+  <script src="./seed.js"></script>
   <script>
     // ── Constants ──────────────────────────────────────────
     const FIRE_ICON = `<span class="fire-icon" aria-hidden="true"><svg class="w-3.5 h-3.5 inline" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M15.362 5.214A8.252 8.252 0 0 1 12 21 8.25 8.25 0 0 1 6.038 7.048 8.287 8.287 0 0 1 9 9.6a8.983 8.983 0 0 1 3.361-6.867 8.21 8.21 0 0 0 3 2.481Z"/><path stroke-linecap="round" stroke-linejoin="round" d="M12 18a3.75 3.75 0 0 0 .495-7.468 5.99 5.99 0 0 0-1.925 3.546 5.974 5.974 0 0 1-2.133-1.001A3.75 3.75 0 0 0 12 18Z"/></svg></span>`;
 
-    const PALETTE = [
-      '#ef4444','#f97316','#f59e0b','#eab308',
-      '#84cc16','#22c55e','#14b8a6','#06b6d4',
-      '#3b82f6','#6366f1','#8b5cf6','#a855f7',
-      '#d946ef','#ec4899','#f43f5e','#78716c',
-    ];
+    const PALETTE = ['red', 'orange', 'amber', 'yellow', 'lime', 'green', 'emerald', 'teal', 'cyan', 'sky', 'blue', 'indigo', 'violet', 'purple', 'fuchsia', 'pink', 'rose', 'zinc'];
+
+    const COLOR_HEX = {
+      'red': '#ef4444', 'orange': '#f97316', 'amber': '#f59e0b', 'yellow': '#eab308',
+      'lime': '#84cc16', 'green': '#22c55e', 'emerald': '#10b981', 'teal': '#14b8a6',
+      'cyan': '#06b6d4', 'sky': '#0ea5e9', 'blue': '#3b82f6', 'indigo': '#6366f1',
+      'violet': '#8b5cf6', 'purple': '#a855f7', 'fuchsia': '#d946ef', 'pink': '#ec4899',
+      'rose': '#f43f5e', 'zinc': '#666666',
+    };
 
     const COLOR_NAMES = {
-      '#ef4444': 'Red', '#f97316': 'Orange', '#f59e0b': 'Amber', '#eab308': 'Yellow',
-      '#84cc16': 'Lime', '#22c55e': 'Green', '#14b8a6': 'Teal', '#06b6d4': 'Cyan',
-      '#3b82f6': 'Blue', '#6366f1': 'Indigo', '#8b5cf6': 'Violet', '#a855f7': 'Purple',
-      '#d946ef': 'Fuchsia', '#ec4899': 'Pink', '#f43f5e': 'Rose', '#78716c': 'Stone',
+      'red': 'Red', 'orange': 'Orange', 'amber': 'Amber', 'yellow': 'Yellow',
+      'lime': 'Lime', 'green': 'Green', 'emerald': 'Emerald', 'teal': 'Teal',
+      'cyan': 'Cyan', 'sky': 'Sky', 'blue': 'Blue', 'indigo': 'Indigo',
+      'violet': 'Violet', 'purple': 'Purple', 'fuchsia': 'Fuchsia', 'pink': 'Pink',
+      'rose': 'Rose', 'zinc': 'Zinc',
     };
 
     const DEFAULT_TASKS = [
-      { name: 'Exercise', color: '#22c55e' },
-      { name: 'Read', color: '#3b82f6' },
-      { name: 'Meditate', color: '#a855f7' },
-      { name: 'Journal', color: '#f59e0b' },
+      { name: 'Exercise', color: 'green', estimate: '', deliveryDate: '', jiraLink: '' },
+      { name: 'Read', color: 'blue', estimate: '', deliveryDate: '', jiraLink: '' },
+      { name: 'Meditate', color: 'purple', estimate: '', deliveryDate: '', jiraLink: '' },
+      { name: 'Journal', color: 'amber', estimate: '', deliveryDate: '', jiraLink: '' },
     ];
 
     const MAX_MONTHS_BACK = 24;
 
     // ── State ─────────────────────────────────────────────
     let tasks = loadJSON('dt_tasks', DEFAULT_TASKS);
+    // Migrate existing tasks to include new fields
+    tasks = tasks.map(t => ({
+      name: t.name,
+      color: t.color,
+      estimate: t.estimate ?? '',
+      deliveryDate: t.deliveryDate ?? '',
+      jiraLink: t.jiraLink ?? ''
+    }));
     let completions = loadJSON('dt_completions', {});
     let maxCap = parseFloat(localStorage.getItem('dt_maxCap')) || 7.5;
     let selectedDate = null; // null = no day selected, sheet closed
@@ -549,9 +492,9 @@
       const NORMAL_MAX = NUM_SQ * SQUARE_H; // 8h
 
       // Dominant task color (for overflow layer)
-      let dominantColor = tasks[0]?.color || '#888';
+      let dominantColor = COLOR_HEX[tasks[0]?.color] || '#888';
       let maxH = 0;
-      tasks.forEach((t, i) => { const h = comp[i] || 0; if (h > maxH) { maxH = h; dominantColor = t.color; } });
+      tasks.forEach((t, i) => { const h = comp[i] || 0; if (h > maxH) { maxH = h; dominantColor = COLOR_HEX[t.color]; } });
 
       // Build colored segments per square from the sequential task timeline
       const squares = Array.from({length: NUM_SQ}, () => []);
@@ -568,7 +511,7 @@
           const oEnd    = Math.min(taskEnd,   sqEnd);
           if (oEnd > oStart) {
             squares[s].push({
-              color:     t.color,
+              color:     COLOR_HEX[t.color],
               fillStart: (oStart - sqStart) / SQUARE_H, // fraction [0,1] from bottom
               fillEnd:   (oEnd   - sqStart) / SQUARE_H,
             });
@@ -740,7 +683,7 @@
         const label = total > 0 ? `${t.name} (${fmtH(total)})` : t.name;
         return `
           <div class="flex items-center gap-1.5 md:gap-2">
-            <div class="w-2.5 h-2.5 md:w-3 md:h-3 rounded-full" style="background:${t.color}"></div>
+            <div class="w-2.5 h-2.5 md:w-3 md:h-3 rounded-full" style="background:${COLOR_HEX[t.color]}"></div>
             <span class="text-gray-500 dark:text-white/70">${label}</span>
           </div>
         `;
@@ -904,7 +847,7 @@
 
       el.innerHTML = tasks.map((t, i) => `
         <div class="flex items-center gap-3 p-3 md:p-4 rounded-xl bg-black/5 dark:bg-white/5">
-          <div class="w-3 h-3 rounded-full shrink-0" style="background:${t.color}"></div>
+          <div class="w-3 h-3 rounded-full shrink-0" style="background:${COLOR_HEX[t.color]}"></div>
           <span class="flex-1 text-sm md:text-base font-medium text-gray-900 dark:text-white/90">${t.name}</span>
           <input type="number" min="0" step="0.25" value="${comp[i] || 0}"
             class="w-20 bg-black/5 dark:bg-white/10 border border-gray-200 dark:border-white/10 rounded-lg px-2 py-1.5 text-sm text-right text-gray-900 dark:text-white focus:outline-none focus:border-gray-400 dark:focus:border-white/30 transition-colors"
@@ -1049,7 +992,7 @@
         tasks.forEach((t, ti) => {
           const h = taskHours[ti];
           html += `<div class="flex flex-col items-center gap-1 py-2 px-1 rounded-xl bg-black/[0.03] dark:bg-white/[0.03]">
-            <div class="w-2 h-2 rounded-full" style="background:${h > 0 ? t.color : emptyColor}"></div>
+            <div class="w-2 h-2 rounded-full" style="background:${h > 0 ? COLOR_HEX[t.color] : emptyColor}"></div>
             <span class="text-xs font-medium ${h > 0 ? 'text-gray-700 dark:text-white/80' : 'text-gray-300 dark:text-white/20'}">${fmtVal(h, weekTotal)}</span>
           </div>`;
         });
@@ -1066,7 +1009,7 @@
       tasks.forEach((t, ti) => {
         const h = monthTaskTotals[ti];
         html += `<div class="flex flex-col items-center gap-1.5 py-2.5 px-1 rounded-xl bg-black/5 dark:bg-white/5">
-          <div class="w-2.5 h-2.5 rounded-full" style="background:${h > 0 ? t.color : emptyColor}"></div>
+          <div class="w-2.5 h-2.5 rounded-full" style="background:${h > 0 ? COLOR_HEX[t.color] : emptyColor}"></div>
           <span class="text-xs font-semibold ${h > 0 ? 'text-gray-700 dark:text-white/80' : 'text-gray-300 dark:text-white/20'}">${fmtVal(h, monthGrandTotal)}</span>
           <span class="text-[10px] text-gray-400 dark:text-white/30 truncate w-full text-center">${t.name}</span>
         </div>`;
@@ -1282,7 +1225,11 @@
             class="w-28 bg-black/5 dark:bg-white/5 border border-gray-200 dark:border-white/10 rounded-lg px-3 py-2 text-sm text-gray-900 dark:text-white focus:outline-none focus:border-gray-400 dark:focus:border-white/30 transition-colors"
             oninput="updateMaxCap(this.value)">
         </div>
-      ` + tasks.map((t, i) => `
+        `;
+      }
+
+      if (showTasks) {
+        html += tasks.map((t, i) => `
         <div class="space-y-2 pb-4 border-b border-gray-200 dark:border-white/10 last:border-b-0">
           <div class="flex items-center justify-between gap-2">
             <div class="flex-1">
@@ -1381,10 +1328,25 @@
       if (sheetOpen) renderTaskList();
     }
 
+    function updateTaskEstimate(index, value) {
+      tasks[index].estimate = value ? parseInt(value) : '';
+      save();
+    }
+
+    function updateTaskDeliveryDate(index, value) {
+      tasks[index].deliveryDate = value;
+      save();
+    }
+
+    function updateTaskJiraLink(index, value) {
+      tasks[index].jiraLink = value;
+      save();
+    }
+
     function addTask() {
       const usedColors = tasks.map(t => t.color);
       const nextColor = PALETTE.find(c => !usedColors.includes(c)) || PALETTE[tasks.length % PALETTE.length];
-      tasks.push({ name: `Task ${tasks.length + 1}`, color: nextColor });
+      tasks.push({ name: `Task ${tasks.length + 1}`, color: nextColor, estimate: '', deliveryDate: '', jiraLink: '' });
       save();
       renderSettings();
       renderLegend();
@@ -1407,6 +1369,17 @@
       if (sheetOpen) renderTaskList();
     }
 
+    function deleteTaskWithConfirm(index) {
+      if (tasks.length <= 1) {
+        alert('You must have at least one task.');
+        return;
+      }
+      const taskName = tasks[index].name;
+      if (confirm(`Delete "${taskName}"? This cannot be undone.`)) {
+        removeTask(index);
+      }
+    }
+
     // App menu dropdown
     document.getElementById('appMenuBtn').addEventListener('click', (e) => {
       e.stopPropagation();
@@ -1416,24 +1389,16 @@
 
     document.getElementById('appSettingsBtn').addEventListener('click', () => {
       document.getElementById('appMenu').classList.add('hidden');
-      isAddTaskMode = false;
-      const overlay = document.getElementById('settingsOverlay');
-      overlay.classList.remove('hidden');
       renderSettings({ title: 'Settings' });
       applyDarkMode();
+      document.getElementById('settingsOverlay').classList.remove('hidden');
     });
 
     document.getElementById('addTaskBtn').addEventListener('click', () => {
       document.getElementById('appMenu').classList.add('hidden');
-      isAddTaskMode = true;
       const newTask = { name: '', color: 'blue', estimate: 0, deliveryDate: '', jiraLink: '' };
       tasks.push(newTask);
       save();
-
-      // Show modal with slide-in animation
-      const overlay = document.getElementById('settingsOverlay');
-      overlay.classList.remove('hidden');
-
       // Show only the new task in settings modal (hide existing tasks, daily cap, dark mode, delete)
       renderSettings({ tasks: false, dailyCap: false, darkMode: false, deleteData: false, title: 'Add a task' });
       // Manually render only the new task
@@ -1486,6 +1451,7 @@
       `;
       el.innerHTML = taskHTML;
       applyDarkMode();
+      document.getElementById('settingsOverlay').classList.remove('hidden');
       // Focus on the new task name input
       setTimeout(() => {
         document.getElementById(`taskName${i}`).focus();
@@ -1516,70 +1482,25 @@
     document.getElementById('darkModeToggle').addEventListener('click', toggleDarkMode);
     document.getElementById('dropdownDarkMode').addEventListener('change', toggleDarkMode);
 
-    let isAddTaskMode = false;
-
-    function closeSettingsModal(isAddTaskMode = false) {
-      const overlay = document.getElementById('settingsOverlay');
-      const lastTask = tasks[tasks.length - 1];
-      const hasTaskName = lastTask && lastTask.name.trim() !== '';
-
-      if (isAddTaskMode && hasTaskName) {
-        // Task name filled: slide up and open settings
-        overlay.classList.add('slide-up');
-        setTimeout(() => {
-          overlay.classList.remove('slide-up');
-          overlay.classList.add('hidden');
-          save();
-          renderLegend();
-          renderCalendar();
-          if (sheetOpen) renderTaskList();
-          // Open settings modal
-          openSettingsModal();
-        }, 300);
-      } else if (isAddTaskMode && !hasTaskName) {
-        // No task name: fade out and remove empty task
-        overlay.classList.add('fade-out');
-        setTimeout(() => {
-          tasks = tasks.filter(t => t.name.trim() !== '');
-          if (tasks.length === 0) {
-            tasks = JSON.parse(JSON.stringify(DEFAULT_TASKS));
-          }
-          overlay.classList.remove('fade-out');
-          overlay.classList.add('hidden');
-          save();
-          renderLegend();
-          renderCalendar();
-          if (sheetOpen) renderTaskList();
-        }, 300);
-      } else {
-        // Normal settings close
-        tasks = tasks.filter(t => t.name.trim() !== '');
-        if (tasks.length === 0) {
-          tasks = JSON.parse(JSON.stringify(DEFAULT_TASKS));
-        }
-        overlay.classList.add('hidden');
-        save();
-        renderLegend();
-        renderCalendar();
-        if (sheetOpen) renderTaskList();
+    function closeSettingsModal() {
+      // Remove empty tasks (tasks with no name)
+      tasks = tasks.filter(t => t.name.trim() !== '');
+      if (tasks.length === 0) {
+        tasks = JSON.parse(JSON.stringify(DEFAULT_TASKS));
       }
-    }
-
-    function openSettingsModal() {
-      isAddTaskMode = false;
-      const overlay = document.getElementById('settingsOverlay');
-      overlay.classList.remove('hidden', 'slide-up', 'fade-out');
+      save();
       renderSettings({ title: 'Settings' });
-      applyDarkMode();
+      renderLegend();
+      renderCalendar();
+      if (sheetOpen) renderTaskList();
+      document.getElementById('settingsOverlay').classList.add('hidden');
     }
 
-    document.getElementById('closeSettings').addEventListener('click', () => {
-      closeSettingsModal(isAddTaskMode);
-    });
+    document.getElementById('closeSettings').addEventListener('click', closeSettingsModal);
 
     document.getElementById('settingsOverlay').addEventListener('click', (e) => {
       if (e.target === e.currentTarget) {
-        closeSettingsModal(isAddTaskMode);
+        closeSettingsModal();
       }
     });
 
