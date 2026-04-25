@@ -303,6 +303,17 @@
     </div>
   </div>
 
+  <div id="deleteTaskModal" class="settings-overlay hidden fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center px-6">
+    <div class="bg-card dark:bg-card-dark w-full max-w-sm rounded-2xl p-6 shadow-xl transition-colors duration-300">
+      <h2 class="text-base font-bold mb-1">Delete task?</h2>
+      <p class="text-sm text-gray-400 dark:text-white/40 mb-6">This task will be removed.</p>
+      <div class="flex gap-3 justify-end">
+        <button id="deleteTaskCancelBtn" class="px-4 py-2 rounded-lg text-sm font-medium bg-black/5 dark:bg-white/10 hover:bg-black/10 dark:hover:bg-white/20 transition-colors">Cancel</button>
+        <button id="deleteTaskConfirmBtn" class="px-4 py-2 rounded-lg text-sm font-medium bg-red-500 hover:bg-red-600 text-white transition-colors">Delete</button>
+      </div>
+    </div>
+  </div>
+
   <script src="./month-modal.js"></script>
   <script src="./seed.js"></script>
   <script>
@@ -354,6 +365,7 @@
     let burnoutToastTimer = null;  // its dismiss timer
     let burnoutShown      = false; // has it been shown this day session?
     let lastFillToastEl       = null;  // reference to the live last-fill toast DOM node
+    let pendingDeleteIndex = null;  // tracks which task index is pending deletion
 
     // ── Dark mode ────────────────────────────────────────
     let darkMode = localStorage.getItem('dt_darkMode') !== 'false'; // default: dark
@@ -1280,7 +1292,7 @@
 
       if (showTasks) {
         html += tasks.map((t, i) => `
-        <div class="space-y-2 pb-4 border-b border-gray-200 dark:border-white/10 last:border-b-0">
+        <div id="taskContainer-${i}" class="space-y-2 pb-4 border-b border-gray-200 dark:border-white/10 last:border-b-0 transition-all duration-700">
           <div class="flex items-center justify-between gap-2">
             <div class="flex-1">
               <label for="taskName${i}" class="text-xs text-gray-400 dark:text-white/60 font-medium block mb-1">Task ${i + 1}</label>
@@ -1421,12 +1433,78 @@
 
     function deleteTaskWithConfirm(index) {
       if (tasks.length <= 1) {
-        alert('You must have at least one task.');
+        document.getElementById('deleteTaskModal').classList.remove('hidden');
         return;
       }
-      const taskName = tasks[index].name;
-      if (confirm(`Delete "${taskName}"? This cannot be undone.`)) {
-        removeTask(index);
+      pendingDeleteIndex = index;
+      document.getElementById('deleteTaskModal').classList.remove('hidden');
+    }
+
+    function deleteAddedTask(index) {
+      if (tasks.length <= 1) {
+        document.getElementById('deleteTaskModal').classList.remove('hidden');
+        return;
+      }
+      pendingDeleteIndex = index;
+      document.getElementById('deleteTaskModal').classList.remove('hidden');
+    }
+
+    function confirmDeleteAddedTask() {
+      if (pendingDeleteIndex === null) return;
+      const index = pendingDeleteIndex;
+      pendingDeleteIndex = null;
+      document.getElementById('deleteTaskModal').classList.add('hidden');
+
+      // Fade out and collapse the task element
+      const taskEl = document.getElementById(`taskContainer-${index}`);
+      if (taskEl) {
+        const height = taskEl.offsetHeight;
+        taskEl.style.overflow = 'hidden';
+        taskEl.style.height = height + 'px';
+        taskEl.style.opacity = '0';
+        taskEl.style.marginBottom = '0';
+        taskEl.style.paddingBottom = '0';
+
+        // Trigger animation
+        setTimeout(() => {
+          taskEl.style.height = '0px';
+        }, 10);
+
+        setTimeout(() => {
+          if (isAddTaskMode) {
+            // Delete from add task modal
+            tasks.splice(index, 1);
+            Object.keys(completions).forEach(date => {
+              if (Array.isArray(completions[date])) {
+                completions[date].splice(index, 1);
+              }
+            });
+            save();
+          } else {
+            // Delete from settings modal
+            removeTask(index);
+          }
+          // Reload page after deletion
+          location.reload();
+        }, 700);
+      } else {
+        // Fallback if element not found
+        if (isAddTaskMode) {
+          tasks.splice(index, 1);
+          Object.keys(completions).forEach(date => {
+            if (Array.isArray(completions[date])) {
+              completions[date].splice(index, 1);
+            }
+          });
+          save();
+          renderLegend();
+          renderCalendar();
+          if (sheetOpen) renderTaskList();
+          document.getElementById('settingsOverlay').classList.add('hidden');
+          isAddTaskMode = false;
+        } else {
+          removeTask(index);
+        }
       }
     }
 
@@ -1449,6 +1527,7 @@
       const newTask = { name: '', color: 'blue', estimate: 0, deliveryDate: '', jiraLink: '' };
       tasks.push(newTask);
       save();
+      isAddTaskMode = true;
       // Show only the new task in settings modal (hide existing tasks, daily cap, dark mode, delete)
       renderSettings({ tasks: false, dailyCap: false, darkMode: false, deleteData: false, title: 'Add a task' });
       // Manually render only the new task
@@ -1496,7 +1575,7 @@
                   onclick="updateTaskColor(${i}, '${c}')"></button>
               `).join('')}
             </div>
-            <button onclick="deleteTaskWithConfirm(${i})" class="text-xs text-red-400 hover:text-red-300 transition-colors whitespace-nowrap" aria-label="Delete task ${i + 1}">Delete task</button>
+            <button onclick="deleteAddedTask(${i})" class="text-xs text-red-400 hover:text-red-300 transition-colors whitespace-nowrap" aria-label="Delete task ${i + 1}">Delete task</button>
           </div>
         </div>
       `;
@@ -1568,17 +1647,16 @@
       document.getElementById('deleteModal').classList.add('hidden');
       localStorage.removeItem('dt_tasks');
       localStorage.removeItem('dt_completions');
-      tasks = JSON.parse(JSON.stringify(DEFAULT_TASKS));
-      completions = {};
-      selectedDate = null;
-      save();
-      document.getElementById('settingsOverlay').classList.add('hidden');
-      closeSheet();
-      const today = new Date();
-      viewYear = today.getFullYear();
-      viewMonth = today.getMonth();
-      init();
+      // Reload page after deletion
+      setTimeout(() => location.reload(), 300);
     });
+
+    document.getElementById('deleteTaskCancelBtn').addEventListener('click', () => {
+      document.getElementById('deleteTaskModal').classList.add('hidden');
+      pendingDeleteIndex = null;
+    });
+
+    document.getElementById('deleteTaskConfirmBtn').addEventListener('click', confirmDeleteAddedTask);
 
     // ── Touch gesture for bottom sheet ────────────────────
     let touchStartY = 0;
