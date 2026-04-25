@@ -47,7 +47,7 @@
     .day-cell:hover { opacity: 0.85; }
 
     .settings-overlay {
-      transition: opacity 0.2s ease, visibility 0.2s ease;
+      transition: opacity 0.2s cubic-bezier(0.4, 0, 0.2, 1), visibility 0.2s cubic-bezier(0.4, 0, 0.2, 1);
     }
     .settings-overlay.hidden {
       opacity: 0;
@@ -55,7 +55,7 @@
     }
 
     .color-swatch {
-      transition: transform 0.15s ease, box-shadow 0.15s ease;
+      transition: transform 0.15s cubic-bezier(0.4, 0, 0.2, 1), box-shadow 0.15s cubic-bezier(0.4, 0, 0.2, 1);
     }
     .color-swatch:hover { transform: scale(1.2); }
     .color-swatch.active {
@@ -68,14 +68,14 @@
       from { opacity: 0; }
       to { opacity: 1; }
     }
-    .month-fade { animation: monthFadeIn 1s ease; }
+    .month-fade { animation: monthFadeIn 1s cubic-bezier(0.4, 0, 0.2, 1); }
 
     /* Bottom sheet task list fade — applied when day changes */
     @keyframes sheetFadeIn {
       from { opacity: 0; }
       to { opacity: 1; }
     }
-    .sheet-fade { animation: sheetFadeIn 0.8s ease; }
+    .sheet-fade { animation: sheetFadeIn 0.8s cubic-bezier(0.4, 0, 0.2, 1); }
 
     /* Selected dot spin */
     @keyframes dotSpin {
@@ -91,15 +91,65 @@
       50%      { transform: scaleY(0.95) scaleX(1.05) rotate(-2deg); opacity: 1;   }
       75%      { transform: scaleY(1.05) scaleX(0.97) rotate(1.5deg);opacity: 0.85;}
     }
-    .fire-icon { animation: fireFlicker 1.2s ease-in-out infinite; transform-origin: bottom center; display: inline-block; }
+    .fire-icon { animation: fireFlicker 1.2s cubic-bezier(0.4, 0, 0.2, 1) infinite; transform-origin: bottom center; display: inline-block; }
 
     /* Nav arrow */
     .nav-arrow {
-      transition: background 0.15s ease, opacity 0.15s ease;
+      transition: background 0.15s cubic-bezier(0.4, 0, 0.2, 1), opacity 0.15s cubic-bezier(0.4, 0, 0.2, 1);
     }
     .nav-arrow:disabled {
       opacity: 0.2;
       cursor: default;
+    }
+
+    /* Modal animations */
+    @keyframes overlayFadeIn {
+      from { opacity: 0; }
+      to { opacity: 1; }
+    }
+
+    @keyframes overlayFadeOut {
+      from { opacity: 1; }
+      to { opacity: 0; }
+    }
+
+    @keyframes modalSlideInUp {
+      from { transform: translateY(100%); }
+      to { transform: translateY(0); }
+    }
+
+    @keyframes modalSlideUpOut {
+      from { transform: translateY(0); }
+      to { transform: translateY(-100%); }
+    }
+
+    @keyframes modalFadeOut {
+      from { opacity: 1; }
+      to { opacity: 0; }
+    }
+
+    .settings-overlay:not(.hidden) {
+      animation: overlayFadeIn 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    }
+
+    .settings-overlay:not(.hidden) > div {
+      animation: modalSlideInUp 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    }
+
+    .settings-overlay.slide-up {
+      animation: overlayFadeOut 0.3s cubic-bezier(0.4, 0, 0.2, 1) forwards !important;
+    }
+
+    .settings-overlay.slide-up > div {
+      animation: modalSlideUpOut 0.3s cubic-bezier(0.4, 0, 0.2, 1) forwards !important;
+    }
+
+    .settings-overlay.fade-out {
+      animation: overlayFadeOut 0.3s cubic-bezier(0.4, 0, 0.2, 1) forwards !important;
+    }
+
+    .settings-overlay.fade-out > div {
+      animation: modalFadeOut 0.3s cubic-bezier(0.4, 0, 0.2, 1) forwards !important;
     }
   </style>
 </head>
@@ -1446,6 +1496,7 @@
                   onclick="updateTaskColor(${i}, '${c}')"></button>
               `).join('')}
             </div>
+            <button onclick="deleteTaskWithConfirm(${i})" class="text-xs text-red-400 hover:text-red-300 transition-colors whitespace-nowrap" aria-label="Delete task ${i + 1}">Delete task</button>
           </div>
         </div>
       `;
