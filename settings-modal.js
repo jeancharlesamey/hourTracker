@@ -216,9 +216,11 @@ const SettingsModal = {
             </div>
             <div>
               <label for="taskDelivery${i}" class="text-xs text-gray-400 dark:text-white/60 font-medium block mb-1">Delivery date</label>
-              <input id="taskDelivery${i}" type="date" value="${t.deliveryDate || ''}"
+              <input id="taskDelivery${i}" type="text" placeholder="DD/MM/YYYY" value="${t.deliveryDate ? formatDateToDDMMYYYY(t.deliveryDate) : ''}" pattern="\\d{2}/\\d{2}/\\d{4}" maxlength="10"
                 class="w-full bg-black/5 dark:bg-white/5 border border-gray-200 dark:border-white/10 rounded-lg px-3 py-2 text-sm text-gray-900 dark:text-white focus:outline-none focus:border-gray-400 dark:focus:border-white/30 transition-colors"
-                oninput="window._settingsModalUpdateTaskDeliveryDate(${i}, this.value)">
+                oninput="window._settingsModalFormatDeliveryDate(${i}, this)"
+                onchange="window._settingsModalUpdateTaskDeliveryDate(${i}, this.value)"
+                onblur="window._settingsModalUpdateTaskDeliveryDate(${i}, this.value)">
             </div>
           </div>
 
