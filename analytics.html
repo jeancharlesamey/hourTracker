@@ -380,7 +380,7 @@
           <!-- Requirements Card (col-5 on md+) -->
           <div id="bytaskRequirements" class="col-span-12 md:col-span-5 bg-white dark:bg-card-dark rounded-2xl p-6 shadow-sm border border-gray-100 dark:border-white/5">
             <h3 class="font-semibold text-gray-900 dark:text-white mb-4">Requirements</h3>
-            <dl class="space-y-3 text-sm"></dl>
+            <div></div>
           </div>
 
           <!-- Progress Card (col-7 on md+) -->
@@ -1180,6 +1180,7 @@
       }
 
       const thisMonthAvg = thisMonthDaysWorked > 0 ? thisMonthTotal / thisMonthDaysWorked : 0;
+      const thisMonthDaysCalc = hoursToDay(thisMonthTotal);
 
       // Before This Month
       const allDates = getAllDates().sort();
@@ -1198,27 +1199,34 @@
         }
       });
 
+      const beforeMonthAvg = beforeMonthDaysWorked > 0 ? beforeMonthTotal / beforeMonthDaysWorked : 0;
+      const beforeMonthDaysCalc = hoursToDay(beforeMonthTotal);
+
       const thisMonthEl = document.getElementById('bytaskThisMonth');
       if (thisMonthEl) {
         const div = thisMonthEl.querySelector('div');
         div.innerHTML = thisMonthDaysWorked > 0
           ? `
-            <div class="flex justify-between py-2 border-b border-gray-200 dark:border-white/10">
-              <span class="text-gray-600 dark:text-gray-400">Days worked</span>
-              <span class="font-medium">${thisMonthDaysWorked}</span>
-            </div>
-            <div class="flex justify-between py-2 border-b border-gray-200 dark:border-white/10">
-              <span class="text-gray-600 dark:text-gray-400">Total hours</span>
-              <span class="font-medium">${fmtH(thisMonthTotal)}</span>
-            </div>
-            <div class="flex justify-between py-2 border-b border-gray-200 dark:border-white/10">
-              <span class="text-gray-600 dark:text-gray-400">Best day</span>
-              <span class="font-medium">${fmtH(thisMonthBestDay)}</span>
-            </div>
-            <div class="flex justify-between py-2">
-              <span class="text-gray-600 dark:text-gray-400">Avg per worked day</span>
-              <span class="font-medium">${fmtH(thisMonthAvg)}</span>
-            </div>
+            <dl class="space-y-3 text-sm">
+              <div class="border-b border-gray-200 dark:border-white/10 pb-2">
+                <div class="flex justify-between py-1">
+                  <dt class="text-gray-600 dark:text-gray-400">Total</dt>
+                  <dd class="font-medium text-gray-900 dark:text-white">${thisMonthDaysCalc} days</dd>
+                </div>
+                <div class="flex justify-between">
+                  <dt class="text-gray-600 dark:text-gray-400"></dt>
+                  <dd class="font-medium text-gray-900 dark:text-white">${fmtH(thisMonthTotal)}</dd>
+                </div>
+              </div>
+              <div class="flex justify-between py-2 border-b border-gray-200 dark:border-white/10">
+                <dt class="text-gray-600 dark:text-gray-400">Best day</dt>
+                <dd class="font-medium text-gray-900 dark:text-white">${fmtH(thisMonthBestDay)}</dd>
+              </div>
+              <div class="flex justify-between py-2">
+                <dt class="text-gray-600 dark:text-gray-400">Avg per worked day</dt>
+                <dd class="font-medium text-gray-900 dark:text-white">${fmtH(thisMonthAvg)}</dd>
+              </div>
+            </dl>
           `
           : `<p class="text-gray-500 dark:text-gray-400">No hours logged this month</p>`;
       }
@@ -1228,22 +1236,30 @@
         const div = beforeEl.querySelector('div');
         div.innerHTML = beforeMonthDaysWorked > 0
           ? `
-            <div class="flex justify-between py-2 border-b border-gray-200 dark:border-white/10">
-              <span class="text-gray-600 dark:text-gray-400">First date</span>
-              <span class="font-medium">${firstDate ? formatDateToDDMMYYYY(firstDate) : '—'}</span>
-            </div>
-            <div class="flex justify-between py-2 border-b border-gray-200 dark:border-white/10">
-              <span class="text-gray-600 dark:text-gray-400">Total hours</span>
-              <span class="font-medium">${fmtH(beforeMonthTotal)}</span>
-            </div>
-            <div class="flex justify-between py-2 border-b border-gray-200 dark:border-white/10">
-              <span class="text-gray-600 dark:text-gray-400">Days worked</span>
-              <span class="font-medium">${beforeMonthDaysWorked}</span>
-            </div>
-            <div class="flex justify-between py-2">
-              <span class="text-gray-600 dark:text-gray-400">Cumulative hours</span>
-              <span class="font-medium">${fmtH(beforeMonthTotal + thisMonthTotal)}</span>
-            </div>
+            <dl class="space-y-3 text-sm">
+              <div class="flex justify-between py-2 border-b border-gray-200 dark:border-white/10">
+                <dt class="text-gray-600 dark:text-gray-400">First date</dt>
+                <dd class="font-medium text-gray-900 dark:text-white">${firstDate ? formatDateToDDMMYYYY(firstDate) : '—'}</dd>
+              </div>
+              <div class="border-b border-gray-200 dark:border-white/10 pb-2">
+                <div class="flex justify-between py-1">
+                  <dt class="text-gray-600 dark:text-gray-400">Total</dt>
+                  <dd class="font-medium text-gray-900 dark:text-white">${beforeMonthDaysCalc} days</dd>
+                </div>
+                <div class="flex justify-between">
+                  <dt class="text-gray-600 dark:text-gray-400"></dt>
+                  <dd class="font-medium text-gray-900 dark:text-white">${fmtH(beforeMonthTotal)}</dd>
+                </div>
+              </div>
+              <div class="flex justify-between py-2 border-b border-gray-200 dark:border-white/10">
+                <dt class="text-gray-600 dark:text-gray-400">Avg per worked day</dt>
+                <dd class="font-medium text-gray-900 dark:text-white">${fmtH(beforeMonthAvg)}</dd>
+              </div>
+              <div class="flex justify-between py-2">
+                <dt class="text-gray-600 dark:text-gray-400">Cumulative hours</dt>
+                <dd class="font-medium text-gray-900 dark:text-white">${fmtH(beforeMonthTotal + thisMonthTotal)}</dd>
+              </div>
+            </dl>
           `
           : `<p class="text-gray-500 dark:text-gray-400">No hours logged before this month</p>`;
       }
@@ -1455,9 +1471,9 @@
       if (!el) return;
 
       const task = tasks[taskIndex];
-      const dl = el.querySelector('dl');
+      const container = el.querySelector('div:not(:has(h3))') || el.querySelector('dl');
 
-      const colorDot = `<div class="w-2 h-2 rounded-full inline-block" style="background:${COLOR_HEX[task.color]}; margin-right: 6px;"></div>`;
+      const colorCircle = `<div class="w-2.5 h-2.5 rounded-full flex-shrink-0" style="background: ${COLOR_HEX[task.color]}"></div>`;
 
       const estimate = task.estimate
         ? `${task.estimate} days (${task.estimate} × ${maxCap}h = ${(task.estimate * maxCap).toFixed(1)}h)`
@@ -1471,22 +1487,28 @@
         ? `<a href="${task.jiraLink}" target="_blank" rel="noopener noreferrer" class="text-blue-600 dark:text-blue-400 hover:underline">see ticket in Jira</a>`
         : '—';
 
-      dl.innerHTML = `
-        <div class="flex justify-between py-2 border-b border-gray-200 dark:border-white/10">
-          <dt class="text-gray-600 dark:text-gray-400">Task</dt>
-          <dd class="font-medium text-gray-900 dark:text-white">${colorDot}${task.name}</dd>
-        </div>
-        <div class="flex justify-between py-2 border-b border-gray-200 dark:border-white/10">
-          <dt class="text-gray-600 dark:text-gray-400">Estimate</dt>
-          <dd class="font-medium text-gray-900 dark:text-white">${estimate}</dd>
-        </div>
-        <div class="flex justify-between py-2 border-b border-gray-200 dark:border-white/10">
-          <dt class="text-gray-600 dark:text-gray-400">Delivery</dt>
-          <dd class="font-medium text-gray-900 dark:text-white">${deliveryDate}</dd>
-        </div>
-        <div class="flex justify-between py-2">
-          <dt class="text-gray-600 dark:text-gray-400">Jira</dt>
-          <dd class="font-medium text-gray-900 dark:text-white">${jiraLink}</dd>
+      container.innerHTML = `
+        <div class="overflow-x-auto">
+          <table class="w-full text-sm table-fixed">
+            <tbody>
+              <tr class="border-b border-gray-100 dark:border-white/5 hover:bg-black/5 dark:hover:bg-white/5">
+                <td class="py-2 px-3 text-gray-900 dark:text-white flex items-center gap-2.5 w-3/5">${colorCircle}${task.name}</td>
+                <td class="py-2 px-3 text-right text-gray-700 dark:text-white/80 text-xs w-2/5">Task</td>
+              </tr>
+              <tr class="border-b border-gray-100 dark:border-white/5 hover:bg-black/5 dark:hover:bg-white/5">
+                <td class="py-2 px-3 text-gray-900 dark:text-white font-semibold text-xs">${estimate}</td>
+                <td class="py-2 px-3 text-right text-gray-700 dark:text-white/80 text-xs">Estimate</td>
+              </tr>
+              <tr class="border-b border-gray-100 dark:border-white/5 hover:bg-black/5 dark:hover:bg-white/5">
+                <td class="py-2 px-3 text-gray-900 dark:text-white font-semibold text-xs">${deliveryDate}</td>
+                <td class="py-2 px-3 text-right text-gray-700 dark:text-white/80 text-xs">Delivery</td>
+              </tr>
+              <tr class="border-b border-gray-100 dark:border-white/5 hover:bg-black/5 dark:hover:bg-white/5">
+                <td class="py-2 px-3 text-gray-900 dark:text-white font-semibold text-xs">${jiraLink}</td>
+                <td class="py-2 px-3 text-right text-gray-700 dark:text-white/80 text-xs">Jira</td>
+              </tr>
+            </tbody>
+          </table>
         </div>
       `;
     }
@@ -1586,17 +1608,29 @@
             </div>
           </div>
           <dl class="space-y-3 text-sm">
-            <div class="flex justify-between py-2 border-b border-gray-200 dark:border-white/10">
-              <dt class="text-gray-600 dark:text-gray-400">Logged</dt>
-              <dd class="font-medium text-gray-900 dark:text-white">${loggedText}</dd>
+            <div class="border-b border-gray-200 dark:border-white/10 pb-2">
+              <div class="flex justify-between py-1">
+                <dt class="text-gray-600 dark:text-gray-400">Logged</dt>
+                <dd class="font-medium text-gray-900 dark:text-white">${hoursToDay(loggedTotal)} days</dd>
+              </div>
+              <div class="flex justify-between">
+                <dt class="text-gray-600 dark:text-gray-400"></dt>
+                <dd class="font-medium text-gray-900 dark:text-white">${fmtH(loggedTotal)}</dd>
+              </div>
             </div>
             <div class="flex justify-between py-2 border-b border-gray-200 dark:border-white/10">
               <dt class="text-gray-600 dark:text-gray-400">Days remaining</dt>
               <dd class="font-medium text-gray-900 dark:text-white">${daysRemainingText}</dd>
             </div>
-            <div class="flex justify-between py-2">
-              <dt class="text-gray-600 dark:text-gray-400">This month</dt>
-              <dd class="font-medium text-gray-900 dark:text-white">${thisMonthText}</dd>
+            <div class="border-b border-gray-200 dark:border-white/10 pb-2">
+              <div class="flex justify-between py-1">
+                <dt class="text-gray-600 dark:text-gray-400">This month</dt>
+                <dd class="font-medium text-gray-900 dark:text-white">${hoursToDay(thisMonthTotal)} days</dd>
+              </div>
+              <div class="flex justify-between">
+                <dt class="text-gray-600 dark:text-gray-400"></dt>
+                <dd class="font-medium text-gray-900 dark:text-white">${fmtH(thisMonthTotal)}</dd>
+              </div>
             </div>
           </dl>
         `;
