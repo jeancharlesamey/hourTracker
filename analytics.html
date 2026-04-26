@@ -1110,8 +1110,7 @@
           maintainAspectRatio: false,
           plugins: {
             legend: {
-              display: true,
-              labels: { color: darkMode ? '#fff' : '#000' }
+              display: false
             },
             taskAverageLine: {
               avg: avgHours,
@@ -1133,17 +1132,26 @@
         plugins: [{
           id: 'taskAverageLine',
           afterDatasetsDraw(chart) {
+            if (avgHours === 0) return;
             const { ctx, chartArea } = chart;
             const yScale = chart.scales.y;
+            const xScale = chart.scales.x;
             const y = yScale.getPixelForValue(avgHours);
+
             ctx.save();
-            ctx.strokeStyle = '#999';
-            ctx.lineWidth = 1;
+            ctx.strokeStyle = darkMode ? 'rgba(255, 255, 255, 0.3)' : 'rgba(0, 0, 0, 0.2)';
+            ctx.lineWidth = 2;
             ctx.setLineDash([5, 5]);
             ctx.beginPath();
-            ctx.moveTo(chartArea.left, y);
-            ctx.lineTo(chartArea.right, y);
+            ctx.moveTo(xScale.left, y);
+            ctx.lineTo(xScale.right, y);
             ctx.stroke();
+
+            // Draw average label
+            ctx.fillStyle = darkMode ? 'rgba(255, 255, 255, 0.5)' : 'rgba(0, 0, 0, 0.4)';
+            ctx.font = '11px Inter';
+            ctx.textAlign = 'right';
+            ctx.fillText(`avg: ${avgHours.toFixed(2)}h`, xScale.right - 8, y - 8);
             ctx.restore();
           }
         }]
