@@ -266,6 +266,7 @@
   <script src="./month-modal.js"></script>
   <script src="./app-menu.js"></script>
   <script src="./settings-modal.js"></script>
+  <script src="./legend-renderer.js"></script>
   <script>
     // ── Constants ──────────────────────────────────────────
     const FIRE_ICON = `<span class="fire-icon" aria-hidden="true"><svg class="w-3.5 h-3.5 inline" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M15.362 5.214A8.252 8.252 0 0 1 12 21 8.25 8.25 0 0 1 6.038 7.048 8.287 8.287 0 0 1 9 9.6a8.983 8.983 0 0 1 3.361-6.867 8.21 8.21 0 0 0 3 2.481Z"/><path stroke-linecap="round" stroke-linejoin="round" d="M12 18a3.75 3.75 0 0 0 .495-7.468 5.99 5.99 0 0 0-1.925 3.546 5.974 5.974 0 0 1-2.133-1.001A3.75 3.75 0 0 0 12 18Z"/></svg></span>`;
@@ -656,24 +657,15 @@
 
     // ── Render Legend ──────────────────────────────────────
     function renderLegend() {
-      const el = document.getElementById('legend');
-      const daysInMonth = new Date(viewYear, viewMonth + 1, 0).getDate();
-      const todayS = todayStr();
-      el.innerHTML = tasks.map((t, i) => {
-        let total = 0;
-        for (let d = 1; d <= daysInMonth; d++) {
-          const ds = `${viewYear}-${String(viewMonth+1).padStart(2,'0')}-${String(d).padStart(2,'0')}`;
-          if (ds > todayS) break;
-          total += getCompletions(ds)[i] || 0;
-        }
-        const label = total > 0 ? `${t.name} (${fmtH(total)})` : t.name;
-        return `
-          <div class="flex items-center gap-1.5 md:gap-2">
-            <div class="w-2.5 h-2.5 md:w-3 md:h-3 rounded-full" style="background:${COLOR_HEX[t.color]}"></div>
-            <span class="text-gray-500 dark:text-white/70">${label}</span>
-          </div>
-        `;
-      }).join('');
+      LegendRenderer.render('legend', {
+        tasks,
+        getCompletions,
+        viewYear,
+        viewMonth,
+        todayStr,
+        COLOR_HEX,
+        fmtH,
+      });
     }
 
     // ── Render Month Navigation ───────────────────────────
