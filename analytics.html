@@ -1540,27 +1540,24 @@
         ? `${daysRemaining} day${daysRemaining !== 1 ? 's' : ''}`
         : '—';
 
-      // Calculate logged days and hours
-      const loggedDaysWorked = allDates.filter(d => getHours(d, taskIndex) > 0).length;
-      const loggedText = loggedDaysWorked > 0
-        ? `${loggedDaysWorked.toFixed(1)} days or ${fmtH(loggedTotal)}`
+      // Calculate logged days and hours (using maxCap)
+      const loggedText = loggedTotal > 0
+        ? `${hoursToDay(loggedTotal)} days or ${fmtH(loggedTotal)}`
         : '—';
 
-      // Calculate this month days and hours
+      // Calculate this month days and hours (using maxCap)
       const yearStr = linearViewYear.toString();
       const monthStr = String(linearViewMonth + 1).padStart(2, '0');
       let thisMonthTotal = 0;
-      let thisMonthDaysWorked = 0;
       for (let d = 1; d <= 31; d++) {
         const dateStr = `${yearStr}-${monthStr}-${String(d).padStart(2, '0')}`;
         if (dateStr > todayStr()) break;
         const hours = getHours(dateStr, taskIndex);
         thisMonthTotal += hours;
-        if (hours > 0) thisMonthDaysWorked++;
       }
 
-      const thisMonthText = thisMonthDaysWorked > 0
-        ? `${thisMonthDaysWorked.toFixed(1)} days or ${fmtH(thisMonthTotal)}`
+      const thisMonthText = thisMonthTotal > 0
+        ? `${hoursToDay(thisMonthTotal)} days or ${fmtH(thisMonthTotal)}`
         : '—';
 
       const displayPercent = Math.min(100, percentComplete);
@@ -2170,6 +2167,10 @@
     function fmtD(h) {
       const days = (h / maxCap).toFixed(2);
       return days + 'd';
+    }
+
+    function hoursToDay(h) {
+      return (h / maxCap).toFixed(1);
     }
 
     function fmtPct(h, total) {
