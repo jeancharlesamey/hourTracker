@@ -291,76 +291,80 @@
 
     <!-- Main Content -->
     <div class="flex-1 w-full mx-auto px-4 md:px-8 py-8 space-y-6 pt-20">
+      <!-- Shared Month Navigation -->
+      <div class="flex items-center justify-between">
+        <button id="prevMonthBtn" aria-label="Previous month" class="nav-arrow w-9 h-9 md:w-10 md:h-10 flex items-center justify-center rounded-lg hover:bg-black/5 dark:hover:bg-white/10">
+          <img src="./icons/chevron-left.svg" alt="" class="w-5 h-5 md:w-6 md:h-6 text-gray-900 dark:text-white forced-color-adjust-none md:forced-color-adjust-auto" aria-hidden="true">
+        </button>
+        <span id="monthLabel" class="text-sm md:text-lg font-semibold text-gray-900 dark:text-white cursor-pointer hover:opacity-80 transition-opacity"></span>
+        <button id="nextMonthBtn" aria-label="Next month" class="nav-arrow w-9 h-9 md:w-10 md:h-10 flex items-center justify-center rounded-lg hover:bg-black/5 dark:hover:bg-white/10">
+          <img src="./icons/chevron-right.svg" alt="" class="w-5 h-5 md:w-6 md:h-6 text-gray-900 dark:text-white forced-color-adjust-none md:forced-color-adjust-auto" aria-hidden="true">
+        </button>
+      </div>
+
       <!-- View Toggle -->
       <div class="flex justify-center">
         <div class="inline-flex rounded-lg bg-gray-100 dark:bg-white/5 p-1">
-          <button class="view-toggle-btn" data-view="activity" onclick="switchView('activity')">Activity</button>
-          <button class="view-toggle-btn active" data-view="linear" onclick="switchView('linear')">Intensity</button>
-          <button class="view-toggle-btn" data-view="repartition" onclick="switchView('repartition')">Repartition</button>
+          <button class="view-toggle-btn active" data-view="overview" onclick="switchView('overview')">Overview</button>
+          <button class="view-toggle-btn" data-view="bytask" onclick="switchView('bytask')">by Task</button>
         </div>
       </div>
 
-      <!-- Activity View -->
-      <div id="activityView" class="hidden space-y-6">
-      <!-- Combined View -->
-      <div class="bg-white dark:bg-card-dark rounded-2xl p-6 shadow-sm border border-gray-100 dark:border-white/5">
-        <div class="flex items-center gap-3 mb-4">
-          <div class="w-4 h-4 rounded bg-gray-400 dark:bg-gray-600"></div>
-          <h2 class="text-lg font-semibold text-gray-900 dark:text-white">All Tasks</h2>
-        </div>
-        <div id="taskLegend" class="flex flex-wrap gap-3 md:gap-4 text-xs md:text-sm mb-4 pb-4"></div>
-        <div class="legend">
-          <span class="legend-label">Less</span>
-          <div class="legend-cells" id="combinedLegend"></div>
-          <span class="legend-label">More</span>
-        </div>
-        <div class="graph-container">
-          <svg id="combinedGraph" width="100%" height="180" style="min-height: 180px;"></svg>
-        </div>
-      </div>
-
-      <!-- Individual Views -->
-      <div id="taskGraphsContainer" style="display: flex; flex-direction: column; gap: 40px;"></div>
-      </div>
-
-      <!-- Linear View -->
-      <div id="linearView" class="space-y-6">
-        <div class="bg-white dark:bg-card-dark rounded-2xl p-6 shadow-sm border border-gray-100 dark:border-white/5">
-          <!-- Month Navigation Header -->
-          <div class="flex items-center justify-between mb-6">
-            <button id="prevMonthBtn" aria-label="Previous month" class="nav-arrow w-9 h-9 md:w-10 md:h-10 flex items-center justify-center rounded-lg hover:bg-black/5 dark:hover:bg-white/10">
-              <img src="./icons/chevron-left.svg" alt="" class="w-5 h-5 md:w-6 md:h-6 text-gray-900 dark:text-white forced-color-adjust-none md:forced-color-adjust-auto" aria-hidden="true">
-            </button>
-            <span id="monthLabel" class="text-sm md:text-lg font-semibold text-gray-900 dark:text-white"></span>
-            <button id="nextMonthBtn" aria-label="Next month" class="nav-arrow w-9 h-9 md:w-10 md:h-10 flex items-center justify-center rounded-lg hover:bg-black/5 dark:hover:bg-white/10">
-              <img src="./icons/chevron-right.svg" alt="" class="w-5 h-5 md:w-6 md:h-6 text-gray-900 dark:text-white forced-color-adjust-none md:forced-color-adjust-auto" aria-hidden="true">
-            </button>
-          </div>
-          <h2 class="text-lg font-semibold text-gray-900 dark:text-white mb-6">Daily Task Hours</h2>
-          <div id="intensityTaskLegend" class="flex flex-wrap gap-3 md:gap-4 text-xs md:text-sm mb-4 pb-4"></div>
-          <div style="position: relative; height: calc(100vh - 280px); min-height: 500px; max-height: 800px;">
-            <canvas id="linearChart"></canvas>
+      <!-- Overview View -->
+      <div id="overviewView" class="space-y-6">
+        <!-- Header with Legend and Burnout Badge -->
+        <div class="flex items-center gap-4">
+          <div id="overviewTaskLegend" class="flex-1 flex flex-wrap gap-3 md:gap-4 text-xs md:text-sm"></div>
+          <div id="overviewBurnoutBadge" class="shrink-0 hidden">
+            <span class="inline-flex items-center gap-1.5 text-xs bg-red-500/20 text-red-600 dark:text-red-400 px-3 py-1 rounded-full font-medium"></span>
           </div>
         </div>
+
+        <!-- Bento Grid -->
+        <div class="grid grid-cols-12 gap-4">
+          <!-- Combined Heatmap Card -->
+          <div class="col-span-12 bg-white dark:bg-card-dark rounded-2xl p-6 shadow-sm border border-gray-100 dark:border-white/5">
+            <div class="legend mb-4">
+              <span class="legend-label">Less</span>
+              <div class="legend-cells" id="combinedLegend"></div>
+              <span class="legend-label">More</span>
+            </div>
+            <div id="combinedGraphContainer" class="graph-container">
+              <svg id="combinedGraph" width="100%" height="180" style="min-height: 180px;"></svg>
+            </div>
+          </div>
+
+          <!-- Intensity Chart Card -->
+          <div class="col-span-12 bg-white dark:bg-card-dark rounded-2xl p-6 shadow-sm border border-gray-100 dark:border-white/5">
+            <h3 class="text-lg font-semibold text-gray-900 dark:text-white mb-6">Daily Task Hours</h3>
+            <div style="position: relative; height: calc(100vh - 280px); min-height: 500px; max-height: 800px;">
+              <canvas id="linearChart"></canvas>
+            </div>
+          </div>
+
+          <!-- Repartition Chart Card -->
+          <div class="col-span-12 md:col-span-5 bg-white dark:bg-card-dark rounded-2xl p-6 shadow-sm border border-gray-100 dark:border-white/5">
+            <h3 class="text-lg font-semibold text-gray-900 dark:text-white mb-6">Task Repartition</h3>
+            <div style="position: relative; height: 340px;">
+              <canvas id="repartitionChart"></canvas>
+            </div>
+          </div>
+
+          <!-- Weekly Breakdown Table Card -->
+          <div class="col-span-12 md:col-span-7 bg-white dark:bg-card-dark rounded-2xl p-6 shadow-sm border border-gray-100 dark:border-white/5">
+            <h3 class="text-lg font-semibold text-gray-900 dark:text-white mb-6">Weekly Breakdown</h3>
+            <div id="weeklyTableContainer" class="max-h-[500px] overflow-x-auto"></div>
+          </div>
+        </div>
       </div>
 
-      <!-- Repartition View -->
-      <div id="repartitionView" class="hidden space-y-6">
-        <div class="bg-white dark:bg-card-dark rounded-2xl p-6 shadow-sm border border-gray-100 dark:border-white/5">
-          <!-- Month Navigation Header -->
-          <div class="flex items-center justify-between mb-6">
-            <button id="prevMonthBtnRep" aria-label="Previous month" class="nav-arrow w-9 h-9 md:w-10 md:h-10 flex items-center justify-center rounded-lg hover:bg-black/5 dark:hover:bg-white/10">
-              <img src="./icons/chevron-left.svg" alt="" class="w-5 h-5 md:w-6 md:h-6" aria-hidden="true">
-            </button>
-            <span id="monthLabelRep" class="text-sm md:text-lg font-semibold text-gray-900 dark:text-white"></span>
-            <button id="nextMonthBtnRep" aria-label="Next month" class="nav-arrow w-9 h-9 md:w-10 md:h-10 flex items-center justify-center rounded-lg hover:bg-black/5 dark:hover:bg-white/10">
-              <img src="./icons/chevron-right.svg" alt="" class="w-5 h-5 md:w-6 md:h-6" aria-hidden="true">
-            </button>
-          </div>
-          <h2 class="text-lg font-semibold text-gray-900 dark:text-white mb-6">Task Repartition</h2>
-          <div id="repartitionTaskLegend" class="flex flex-wrap gap-3 md:gap-4 text-xs md:text-sm mb-4 pb-4"></div>
-          <div style="position: relative; height: 600px;">
-            <canvas id="repartitionChart"></canvas>
+      <!-- by Task View -->
+      <div id="bytaskView" class="hidden space-y-6">
+        <!-- Header with Legend and Burnout Badge -->
+        <div class="flex items-center gap-4">
+          <div id="bytaskLegend" class="flex-1 flex flex-wrap gap-3 md:gap-4 text-xs md:text-sm"></div>
+          <div id="bytaskBurnoutBadge" class="shrink-0 hidden">
+            <span class="inline-flex items-center gap-1.5 text-xs bg-red-500/20 text-red-600 dark:text-red-400 px-3 py-1 rounded-full font-medium"></span>
           </div>
         </div>
       </div>
@@ -768,7 +772,7 @@
       });
 
       svg += `</svg>`;
-      const container = document.getElementById('combinedGraph').parentElement;
+      const container = document.getElementById('combinedGraphContainer');
       container.innerHTML = getDayLabelsHTML() + svg;
 
       // Setup popover events after rendering
@@ -885,16 +889,16 @@
       document.getElementById('combinedLegend').innerHTML = html;
     }
 
-    function renderActivityView() {
-      renderLegend();
-      renderCombinedGraph();
-      renderIndividualGraphs();
-    }
-
     function render() {
-      renderActivityView();
+      console.log('render() called - full re-render');
+      renderCombinedGraph();
+      renderLegend();
       renderLinearChart();
+      renderRepartitionChart();
+      renderWeeklyTable();
       renderTaskLegend();
+      renderBurnoutBadge();
+      renderedViews = {};
     }
 
     function renderTaskLegend() {
@@ -913,9 +917,8 @@
         fmtH,
       };
 
-      LegendRenderer.render('taskLegend', options);
-      LegendRenderer.render('intensityTaskLegend', options);
-      LegendRenderer.render('repartitionTaskLegend', options);
+      LegendRenderer.render('overviewTaskLegend', options);
+      LegendRenderer.render('bytaskLegend', options);
     }
 
     let linearChartInstance = null;
@@ -1059,6 +1062,13 @@
     }
 
     function renderRepartitionChart() {
+      console.log('renderRepartitionChart called', {
+        linearViewYear,
+        linearViewMonth,
+        completionsKeys: Object.keys(completions).length,
+        repartitionChartElement: document.getElementById('repartitionChart')
+      });
+
       // Get dates for the selected month
       const yearStr = linearViewYear.toString();
       const monthStr = String(linearViewMonth + 1).padStart(2, '0');
@@ -1066,7 +1076,10 @@
         .filter(d => d.startsWith(`${yearStr}-${monthStr}`))
         .sort();
 
+      console.log('monthDates found:', monthDates.length);
+
       if (monthDates.length === 0) {
+        console.log('No month dates, destroying chart instance');
         if (repartitionChartInstance) {
           repartitionChartInstance.destroy();
         }
@@ -1135,43 +1148,189 @@
           }
         }
       });
+    }
 
-      updateMonthLabelRep();
+    function renderBurnoutBadge() {
+      const daysInMonth = new Date(linearViewYear, linearViewMonth + 1, 0).getDate();
+      let burnoutCount = 0, exceededTotal = 0;
+      const yearStr = linearViewYear.toString();
+      const monthStr = String(linearViewMonth + 1).padStart(2, '0');
+      const todayS = todayStr();
+
+      for (let d = 1; d <= daysInMonth; d++) {
+        const ds = `${yearStr}-${monthStr}-${String(d).padStart(2,'0')}`;
+        if (ds > todayS) break;
+        const tot = getTotalHours(ds);
+        if (tot > maxCap) { burnoutCount++; exceededTotal += tot - maxCap; }
+      }
+
+      const overviewBadge = document.getElementById('overviewBurnoutBadge');
+      const bytaskBadge = document.getElementById('bytaskBurnoutBadge');
+
+      if (burnoutCount > 0) {
+        const text = `🔥 ${burnoutCount} burnout day${burnoutCount > 1 ? 's' : ''} +${exceededTotal.toFixed(2)}h over cap`;
+        if (overviewBadge) {
+          overviewBadge.classList.remove('hidden');
+          overviewBadge.querySelector('span').textContent = text;
+        }
+        if (bytaskBadge) {
+          bytaskBadge.classList.remove('hidden');
+          bytaskBadge.querySelector('span').textContent = text;
+        }
+      } else {
+        if (overviewBadge) overviewBadge.classList.add('hidden');
+        if (bytaskBadge) bytaskBadge.classList.add('hidden');
+      }
+    }
+
+    function renderWeeklyTable() {
+      console.log('renderWeeklyTable called', {
+        linearViewYear,
+        linearViewMonth,
+        weeklyTableElement: document.getElementById('weeklyTableContainer'),
+        tasksCount: tasks.length,
+        completionsKeys: Object.keys(completions).length
+      });
+
+      const el = document.getElementById('weeklyTableContainer');
+      if (!el) {
+        console.log('weeklyTableContainer not found');
+        return;
+      }
+
+      const daysInMonth = new Date(linearViewYear, linearViewMonth + 1, 0).getDate();
+      const firstDay = new Date(linearViewYear, linearViewMonth, 1);
+      let startDow = firstDay.getDay() - 1;
+      if (startDow < 0) startDow = 6;
+
+      // Group days by week
+      const weekGroups = {};
+      const todayS = todayStr();
+      const weekNumbers = [];
+
+      for (let d = 1; d <= daysInMonth; d++) {
+        const ds = `${linearViewYear}-${String(linearViewMonth+1).padStart(2,'0')}-${String(d).padStart(2,'0')}`;
+        if (ds > todayS) break;
+        const date = new Date(linearViewYear, linearViewMonth, d);
+        const weekNum = getWeekOfYear(date);
+        const row = Math.floor((d - 1 + startDow) / 7);
+
+        if (!weekGroups[row]) {
+          weekGroups[row] = [];
+          weekNumbers[row] = weekNum;
+        }
+        weekGroups[row].push(ds);
+      }
+
+      const rows = Object.keys(weekGroups).sort((a,b) => a-b).map(r => weekGroups[r]);
+      const weeksInMonth = rows.length;
+
+      console.log('Weekly table data:', {
+        weeksInMonth,
+        rowsLength: rows.length,
+        weekGroups: Object.keys(weekGroups).length
+      });
+
+      if (rows.length === 0) {
+        console.log('No rows in week groups');
+        el.innerHTML = `<p class="text-sm text-gray-400 dark:text-white/40 text-center py-6">No data for this month yet.</p>`;
+        return;
+      }
+
+      // Build table
+      let html = `
+        <div class="overflow-x-auto">
+          <table class="w-full text-sm">
+            <thead>
+              <tr class="border-b border-gray-200 dark:border-white/10">
+                <th class="text-left py-2 px-3 font-semibold text-gray-900 dark:text-white">Task</th>
+      `;
+
+      rows.forEach((_, i) => {
+        const weekNum = weekNumbers[i];
+        html += `<th class="text-right py-2 px-3 font-semibold text-gray-900 dark:text-white text-xs whitespace-nowrap">W${weekNum}</th>`;
+      });
+
+      html += `
+                <th class="text-right py-2 px-3 font-semibold text-gray-900 dark:text-white">Total</th>
+              </tr>
+            </thead>
+            <tbody>
+      `;
+
+      tasks.forEach((task, taskIndex) => {
+        let monthTotal = 0;
+        const weekTotals = rows.map(weekDates => {
+          const weekTotal = weekDates.reduce((sum, ds) => sum + getHours(ds, taskIndex), 0);
+          monthTotal += weekTotal;
+          return weekTotal;
+        });
+
+        const taskLink = task.jiraLink ? `<a href="${task.jiraLink}" target="_blank" class="text-blue-600 dark:text-white hover:underline">${task.name}</a>` : task.name;
+        const colorCircle = `<div class="w-2.5 h-2.5 rounded-full flex-shrink-0" style="background: ${COLOR_HEX[task.color]}"></div>`;
+
+        html += `<tr class="border-b border-gray-100 dark:border-white/5 hover:bg-black/5 dark:hover:bg-white/5">
+          <td class="py-2 px-3 text-gray-900 dark:text-white flex items-center gap-2.5">${colorCircle}${taskLink}</td>
+        `;
+
+        weekTotals.forEach(hours => {
+          const display = hours > 0 ? fmtH(hours) : '—';
+          html += `<td class="text-right py-2 px-3 text-gray-700 dark:text-white/80 text-xs">${display}</td>`;
+        });
+
+        html += `<td class="text-right py-2 px-3 font-semibold text-gray-900 dark:text-white">${monthTotal > 0 ? fmtH(monthTotal) : '—'}</td>
+        </tr>`;
+      });
+
+      html += `
+            </tbody>
+          </table>
+        </div>
+      `;
+
+      el.innerHTML = html;
     }
 
     function switchView(view) {
+      console.log('switchView called:', view, {
+        renderedViews,
+        currentOverviewStatus: document.getElementById('overviewView')?.classList.contains('hidden'),
+        currentBytaskStatus: document.getElementById('bytaskView')?.classList.contains('hidden')
+      });
+
       document.querySelectorAll('.view-toggle-btn').forEach(btn => {
         btn.classList.remove('active');
       });
       document.querySelector(`[data-view="${view}"]`).classList.add('active');
 
-      const activityView = document.getElementById('activityView');
-      const linearView = document.getElementById('linearView');
-      const repartitionView = document.getElementById('repartitionView');
+      const overviewView = document.getElementById('overviewView');
+      const bytaskView = document.getElementById('bytaskView');
 
-      activityView.classList.add('hidden');
-      linearView.classList.add('hidden');
-      repartitionView.classList.add('hidden');
+      overviewView.classList.add('hidden');
+      bytaskView.classList.add('hidden');
 
-      if (view === 'activity') {
-        activityView.classList.remove('hidden');
-        if (!renderedViews.activity) {
-          renderActivityView();
-          renderedViews.activity = true;
-        }
-      } else if (view === 'linear') {
-        linearView.classList.remove('hidden');
-        if (!renderedViews.linear) {
+      if (view === 'overview') {
+        overviewView.classList.remove('hidden');
+        if (!renderedViews.overview) {
+          console.log('First time rendering overview view - calling all render functions');
+          renderCombinedGraph();
+          renderLegend();
           renderLinearChart();
-          renderTaskLegend();
-          renderedViews.linear = true;
-        }
-      } else if (view === 'repartition') {
-        repartitionView.classList.remove('hidden');
-        if (!renderedViews.repartition) {
           renderRepartitionChart();
+          renderWeeklyTable();
           renderTaskLegend();
-          renderedViews.repartition = true;
+          renderBurnoutBadge();
+          renderedViews.overview = true;
+          console.log('Overview view rendered');
+        } else {
+          console.log('Overview view already rendered, skipping');
+        }
+      } else if (view === 'bytask') {
+        bytaskView.classList.remove('hidden');
+        if (!renderedViews.bytask) {
+          renderTaskLegend();
+          renderBurnoutBadge();
+          renderedViews.bytask = true;
         }
       }
     }
@@ -1182,11 +1341,6 @@
       document.getElementById('monthLabel').textContent = `${monthNames[linearViewMonth]} ${linearViewYear}`;
     }
 
-    function updateMonthLabelRep() {
-      const monthNames = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'];
-      document.getElementById('monthLabelRep').textContent = `${monthNames[linearViewMonth]} ${linearViewYear}`;
-    }
-
     function prevMonth() {
       linearViewMonth--;
       if (linearViewMonth < 0) {
@@ -1195,7 +1349,9 @@
       }
       renderLinearChart();
       renderRepartitionChart();
+      renderWeeklyTable();
       renderTaskLegend();
+      renderBurnoutBadge();
     }
 
     function nextMonth() {
@@ -1210,7 +1366,9 @@
       }
       renderLinearChart();
       renderRepartitionChart();
+      renderWeeklyTable();
       renderTaskLegend();
+      renderBurnoutBadge();
     }
 
     function getAllDates() {
@@ -1234,16 +1392,30 @@
     }
 
     // ── Init ──────────────────────────────────────────────
-    // Only render the default active view (linear/intensity) on page load
+    // Only render the default active view (overview) on page load
+    console.log('=== PAGE INIT START ===');
+    console.log('Initial state:', {
+      tasksCount: tasks.length,
+      completionsCount: Object.keys(completions).length,
+      linearViewYear,
+      linearViewMonth
+    });
+
+    renderCombinedGraph();
+    renderLegend();
     renderLinearChart();
+    renderRepartitionChart();
+    renderWeeklyTable();
     renderTaskLegend();
-    renderedViews.linear = true;
+    renderBurnoutBadge();
+    updateMonthLabel();
+    renderedViews.overview = true;
+
+    console.log('=== PAGE INIT END ===');
 
     // Month navigation event listeners
     document.getElementById('prevMonthBtn').addEventListener('click', prevMonth);
     document.getElementById('nextMonthBtn').addEventListener('click', nextMonth);
-    document.getElementById('prevMonthBtnRep').addEventListener('click', prevMonth);
-    document.getElementById('nextMonthBtnRep').addEventListener('click', nextMonth);
 
     // Helper function to get week of year
     function getWeekOfYear(date) {
@@ -1282,7 +1454,8 @@
     }
 
     // Render summary content with current mode
-    function renderSummaryContent() {
+    function renderSummaryContent(options = {}) {
+      const { showBurnout = true } = options;
       const daysInMonth = new Date(linearViewYear, linearViewMonth + 1, 0).getDate();
       const firstDay = new Date(linearViewYear, linearViewMonth, 1);
       let startDow = firstDay.getDay() - 1;
@@ -1365,21 +1538,23 @@
       });
 
       // Burnout info
-      let burnoutCount = 0, exceededTotal = 0;
-      const yearStr = linearViewYear.toString();
-      const monthStr = String(linearViewMonth + 1).padStart(2, '0');
-      for (let d = 1; d <= daysInMonth; d++) {
-        const ds = `${yearStr}-${monthStr}-${String(d).padStart(2,'0')}`;
-        if (ds > todayStr()) break;
-        const tot = getTotalHours(ds);
-        if (tot > maxCap) { burnoutCount++; exceededTotal += tot - maxCap; }
-      }
-      if (burnoutCount > 0) {
-        html += `<div class="mt-4 flex justify-center">
-          <span class="inline-flex items-center gap-1.5 text-xs bg-red-500/20 text-red-600 dark:text-red-400 px-3 py-1 rounded-full font-medium">
-            🔥 ${burnoutCount} burnout day${burnoutCount > 1 ? 's' : ''} +${exceededTotal.toFixed(2)}h over cap
-          </span>
-        </div>`;
+      if (showBurnout) {
+        let burnoutCount = 0, exceededTotal = 0;
+        const yearStr = linearViewYear.toString();
+        const monthStr = String(linearViewMonth + 1).padStart(2, '0');
+        for (let d = 1; d <= daysInMonth; d++) {
+          const ds = `${yearStr}-${monthStr}-${String(d).padStart(2,'0')}`;
+          if (ds > todayStr()) break;
+          const tot = getTotalHours(ds);
+          if (tot > maxCap) { burnoutCount++; exceededTotal += tot - maxCap; }
+        }
+        if (burnoutCount > 0) {
+          html += `<div class="mt-4 flex justify-center">
+            <span class="inline-flex items-center gap-1.5 text-xs bg-red-500/20 text-red-600 dark:text-red-400 px-3 py-1 rounded-full font-medium">
+              🔥 ${burnoutCount} burnout day${burnoutCount > 1 ? 's' : ''} +${exceededTotal.toFixed(2)}h over cap
+            </span>
+          </div>`;
+        }
       }
 
       return html;
@@ -1390,6 +1565,7 @@
       const monthNames = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'];
       const title = `${monthNames[linearViewMonth]} ${linearViewYear}`;
       MonthModal.setContent(title, renderSummaryContent());
+      renderWeeklyTable();
     }
 
     // Month label click - open modal with detailed breakdown
@@ -1401,7 +1577,6 @@
     }
 
     document.getElementById('monthLabel').addEventListener('click', openMonthSummaryModal);
-    document.getElementById('monthLabelRep').addEventListener('click', openMonthSummaryModal);
 
     // Re-render when data changes in another tab
     window.addEventListener('storage', () => {
