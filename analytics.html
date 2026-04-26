@@ -1283,7 +1283,7 @@
           <table class="w-full text-sm table-fixed">
             <thead>
               <tr class="border-b border-gray-200 dark:border-white/10">
-                <th class="text-left py-2 px-3 font-semibold text-gray-900 dark:text-white w-1/4">Task</th>
+                <th class="text-left py-2 px-3 font-semibold text-gray-900 dark:text-white w-4/5">Task</th>
       `;
 
       rows.forEach((_, i) => {
@@ -1311,7 +1311,7 @@
         const colorCircle = `<div class="w-2.5 h-2.5 rounded-full flex-shrink-0" style="background: ${COLOR_HEX[task.color]}"></div>`;
 
         html += `<tr class="border-b border-gray-100 dark:border-white/5 hover:bg-black/5 dark:hover:bg-white/5">
-          <td class="py-2 px-3 text-gray-900 dark:text-white flex items-center gap-2.5 w-1/4 overflow-hidden">${colorCircle}${taskLink}</td>
+          <td class="py-2 px-3 text-gray-900 dark:text-white flex items-center gap-2.5 w-4/5 overflow-hidden">${colorCircle}${taskLink}</td>
         `;
 
         weekTotals.forEach((hours, idx) => {
