@@ -374,6 +374,55 @@
             <span class="inline-flex items-center gap-1.5 text-xs bg-red-500/20 text-red-600 dark:text-red-400 px-3 py-1 rounded-full font-medium"></span>
           </div>
         </div>
+
+        <!-- Bento Grid -->
+        <div class="grid grid-cols-12 gap-4">
+          <!-- Requirements Card (col-5 on md+) -->
+          <div id="bytaskRequirements" class="col-span-12 md:col-span-5 bg-white dark:bg-card-dark rounded-2xl p-6 shadow-sm border border-gray-100 dark:border-white/5">
+            <h3 class="font-semibold text-gray-900 dark:text-white mb-4">Requirements</h3>
+            <dl class="space-y-3 text-sm"></dl>
+          </div>
+
+          <!-- Progress Card (col-7 on md+) -->
+          <div id="bytaskProgress" class="col-span-12 md:col-span-7 bg-white dark:bg-card-dark rounded-2xl p-6 shadow-sm border border-gray-100 dark:border-white/5">
+            <h3 class="font-semibold text-gray-900 dark:text-white mb-4">Progress</h3>
+            <div class="space-y-4"></div>
+          </div>
+
+          <!-- Burn Chart Card (full width) -->
+          <div class="col-span-12 bg-white dark:bg-card-dark rounded-2xl p-6 shadow-sm border border-gray-100 dark:border-white/5">
+            <h3 class="font-semibold text-gray-900 dark:text-white mb-4">Burn Chart</h3>
+            <div class="relative" style="min-height: 400px; height: 40vh; max-height: 500px;">
+              <canvas id="bytaskBurnChart"></canvas>
+            </div>
+          </div>
+
+          <!-- Daily Hours Card (full width) -->
+          <div class="col-span-12 bg-white dark:bg-card-dark rounded-2xl p-6 shadow-sm border border-gray-100 dark:border-white/5">
+            <h3 class="font-semibold text-gray-900 dark:text-white mb-4">Daily Hours</h3>
+            <div class="relative" style="min-height: 500px; height: calc(100vh - 280px); max-height: 700px;">
+              <canvas id="bytaskDailyChart"></canvas>
+            </div>
+          </div>
+
+          <!-- This Month Card (col-6 on md+) -->
+          <div id="bytaskThisMonth" class="col-span-12 md:col-span-6 bg-white dark:bg-card-dark rounded-2xl p-6 shadow-sm border border-gray-100 dark:border-white/5">
+            <h3 class="font-semibold text-gray-900 dark:text-white mb-4">This Month</h3>
+            <div class="space-y-2 text-sm"></div>
+          </div>
+
+          <!-- Before This Month Card (col-6 on md+) -->
+          <div id="bytaskBefore" class="col-span-12 md:col-span-6 bg-white dark:bg-card-dark rounded-2xl p-6 shadow-sm border border-gray-100 dark:border-white/5">
+            <h3 class="font-semibold text-gray-900 dark:text-white mb-4">Before This Month</h3>
+            <div class="space-y-2 text-sm"></div>
+          </div>
+
+          <!-- Year Heatmap Card (full width) -->
+          <div class="col-span-12 bg-white dark:bg-card-dark rounded-2xl p-6 shadow-sm border border-gray-100 dark:border-white/5">
+            <h3 class="font-semibold text-gray-900 dark:text-white mb-4">Year Heatmap</h3>
+            <div id="bytaskHeatmapContainer" class="graph-container"></div>
+          </div>
+        </div>
       </div>
     </div>
   </div>
@@ -407,6 +456,9 @@
     let completions = loadJSON('dt_completions', {});
     let maxCap = parseFloat(localStorage.getItem('dt_maxCap')) || 7.5;
     let renderedViews = {}; // Track which views have been rendered
+    let activeTaskIndex = 0;
+    let taskBurnChartInstance = null;
+    let taskDailyChartInstance = null;
 
     // ── Dark Mode ─────────────────────────────────────────
     let darkMode = localStorage.getItem('dt_darkMode') !== 'false';
@@ -881,6 +933,385 @@
       setTimeout(() => setupDeliveryDatePopovers(), 0);
     }
 
+    function renderTaskBurnChart(taskIndex) {
+      const canvas = document.getElementById('bytaskBurnChart');
+      if (!canvas) return;
+
+      const task = tasks[taskIndex];
+      const estimate = task.estimate || 0;
+      const deliveryDate = task.deliveryDate || '';
+
+      // Get all dates with data for this task
+      const allDates = getAllDates().filter(d => getHours(d, taskIndex) > 0);
+
+      if (allDates.length === 0) {
+        // Show empty state
+        const ctx = canvas.getContext('2d');
+        ctx.fillStyle = '#999';
+        ctx.textAlign = 'center';
+        ctx.fillText('No data logged for this task', canvas.width / 2, canvas.height / 2);
+        if (taskBurnChartInstance) {
+          taskBurnChartInstance.destroy();
+          taskBurnChartInstance = null;
+        }
+        return;
+      }
+
+      // Determine date range: from first logged date to delivery date or today
+      const startDate = allDates[0];
+      const endDate = deliveryDate && deliveryDate > todayStr() ? deliveryDate : todayStr();
+
+      // Generate all dates in range
+      const [startYear, startMonth, startDay] = startDate.split('-').map(Number);
+      const [endYear, endMonth, endDay] = endDate.split('-').map(Number);
+      const start = new Date(startYear, startMonth - 1, startDay);
+      const end = new Date(endYear, endMonth - 1, endDay);
+
+      const labels = [];
+      const actualData = [];
+      const idealData = [];
+      let cumulative = 0;
+      const totalEstimatedHours = estimate * maxCap;
+      const daysInRange = Math.ceil((end - start) / (1000 * 60 * 60 * 24)) + 1;
+      const dailyIdeal = totalEstimatedHours / daysInRange;
+
+      let current = new Date(start);
+      while (current <= end) {
+        const dateStr = current.toISOString().split('T')[0];
+        const hours = getHours(dateStr, taskIndex);
+        cumulative += hours;
+        actualData.push(cumulative);
+
+        const daysElapsed = Math.ceil((current - start) / (1000 * 60 * 60 * 24));
+        idealData.push(Math.max(0, totalEstimatedHours - (daysElapsed * dailyIdeal)));
+
+        const monthNames = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+        const label = `${current.getDate()} ${monthNames[current.getMonth()]}`;
+        labels.push(label);
+
+        current.setDate(current.getDate() + 1);
+      }
+
+      if (taskBurnChartInstance) {
+        taskBurnChartInstance.destroy();
+      }
+
+      const ctx = canvas.getContext('2d');
+      taskBurnChartInstance = new Chart(ctx, {
+        type: 'line',
+        data: {
+          labels: labels,
+          datasets: [
+            {
+              label: 'Actual',
+              data: actualData,
+              borderColor: COLOR_HEX[task.color],
+              backgroundColor: COLOR_HEX[task.color] + '20',
+              borderWidth: 2,
+              fill: true,
+              tension: 0.1,
+            },
+            ...(estimate && deliveryDate ? [{
+              label: 'Ideal',
+              data: idealData,
+              borderColor: '#999',
+              borderDash: [5, 5],
+              borderWidth: 1,
+              fill: false,
+              tension: 0.1,
+            }] : [])
+          ]
+        },
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          plugins: {
+            legend: {
+              display: true,
+              labels: {
+                color: darkMode ? '#fff' : '#000',
+                usePointStyle: true,
+              }
+            }
+          },
+          scales: {
+            y: {
+              beginAtZero: true,
+              ticks: { color: darkMode ? '#fff' : '#000' },
+              grid: { color: darkMode ? '#333' : '#eee' }
+            },
+            x: {
+              ticks: { color: darkMode ? '#fff' : '#000' },
+              grid: { color: darkMode ? '#333' : '#eee' }
+            }
+          }
+        }
+      });
+    }
+
+    function renderTaskDailyHours(taskIndex) {
+      const canvas = document.getElementById('bytaskDailyChart');
+      if (!canvas) return;
+
+      const task = tasks[taskIndex];
+
+      const allDates = getAllDates().sort();
+      const yearStr = linearViewYear.toString();
+      const monthStr = String(linearViewMonth + 1).padStart(2, '0');
+      const monthDates = allDates.filter(d => d.startsWith(`${yearStr}-${monthStr}`));
+
+      if (monthDates.length === 0) {
+        const ctx = canvas.getContext('2d');
+        ctx.fillStyle = '#999';
+        ctx.textAlign = 'center';
+        ctx.fillText('No data for this month', canvas.width / 2, canvas.height / 2);
+        if (taskDailyChartInstance) {
+          taskDailyChartInstance.destroy();
+          taskDailyChartInstance = null;
+        }
+        return;
+      }
+
+      const labels = monthDates.map(d => {
+        const [y, m, day] = d.split('-');
+        return day;
+      });
+
+      const data = monthDates.map(d => getHours(d, taskIndex));
+
+      const totalHours = data.reduce((a, b) => a + b, 0);
+      const avgHours = monthDates.length > 0 ? totalHours / monthDates.length : 0;
+
+      if (taskDailyChartInstance) {
+        taskDailyChartInstance.destroy();
+      }
+
+      const ctx = canvas.getContext('2d');
+      taskDailyChartInstance = new Chart(ctx, {
+        type: 'bar',
+        data: {
+          labels: labels,
+          datasets: [{
+            label: task.name,
+            data: data,
+            backgroundColor: COLOR_HEX[task.color],
+            borderColor: COLOR_HEX[task.color],
+            borderWidth: 0
+          }]
+        },
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          plugins: {
+            legend: {
+              display: true,
+              labels: { color: darkMode ? '#fff' : '#000' }
+            },
+            taskAverageLine: {
+              avg: avgHours,
+              color: darkMode ? '#888' : '#ccc'
+            }
+          },
+          scales: {
+            y: {
+              beginAtZero: true,
+              ticks: { color: darkMode ? '#fff' : '#000' },
+              grid: { color: darkMode ? '#333' : '#eee' }
+            },
+            x: {
+              ticks: { color: darkMode ? '#fff' : '#000' },
+              grid: { color: darkMode ? '#333' : '#eee' }
+            }
+          }
+        },
+        plugins: [{
+          id: 'taskAverageLine',
+          afterDatasetsDraw(chart) {
+            const { ctx, chartArea } = chart;
+            const yScale = chart.scales.y;
+            const y = yScale.getPixelForValue(avgHours);
+            ctx.save();
+            ctx.strokeStyle = '#999';
+            ctx.lineWidth = 1;
+            ctx.setLineDash([5, 5]);
+            ctx.beginPath();
+            ctx.moveTo(chartArea.left, y);
+            ctx.lineTo(chartArea.right, y);
+            ctx.stroke();
+            ctx.restore();
+          }
+        }]
+      });
+    }
+
+    function renderTaskAchievements(taskIndex) {
+      const task = tasks[taskIndex];
+
+      // This Month
+      const yearStr = linearViewYear.toString();
+      const monthStr = String(linearViewMonth + 1).padStart(2, '0');
+      const daysInMonth = new Date(linearViewYear, linearViewMonth + 1, 0).getDate();
+
+      let thisMonthDaysWorked = 0;
+      let thisMonthTotal = 0;
+      let thisMonthBestDay = 0;
+
+      for (let d = 1; d <= daysInMonth; d++) {
+        const dateStr = `${yearStr}-${monthStr}-${String(d).padStart(2, '0')}`;
+        if (dateStr > todayStr()) break;
+        const hours = getHours(dateStr, taskIndex);
+        if (hours > 0) thisMonthDaysWorked++;
+        thisMonthTotal += hours;
+        thisMonthBestDay = Math.max(thisMonthBestDay, hours);
+      }
+
+      const thisMonthAvg = thisMonthDaysWorked > 0 ? thisMonthTotal / thisMonthDaysWorked : 0;
+
+      // Before This Month
+      const allDates = getAllDates().sort();
+      let beforeMonthTotal = 0;
+      let beforeMonthDaysWorked = 0;
+      let firstDate = null;
+
+      allDates.forEach(d => {
+        if (!d.startsWith(`${yearStr}-${monthStr}`)) {
+          const hours = getHours(d, taskIndex);
+          if (hours > 0) {
+            beforeMonthDaysWorked++;
+            if (!firstDate) firstDate = d;
+          }
+          beforeMonthTotal += hours;
+        }
+      });
+
+      const thisMonthEl = document.getElementById('bytaskThisMonth');
+      if (thisMonthEl) {
+        const div = thisMonthEl.querySelector('div');
+        div.innerHTML = thisMonthDaysWorked > 0
+          ? `
+            <div class="flex justify-between py-2 border-b border-gray-200 dark:border-white/10">
+              <span class="text-gray-600 dark:text-gray-400">Days worked</span>
+              <span class="font-medium">${thisMonthDaysWorked}</span>
+            </div>
+            <div class="flex justify-between py-2 border-b border-gray-200 dark:border-white/10">
+              <span class="text-gray-600 dark:text-gray-400">Total hours</span>
+              <span class="font-medium">${fmtH(thisMonthTotal)}</span>
+            </div>
+            <div class="flex justify-between py-2 border-b border-gray-200 dark:border-white/10">
+              <span class="text-gray-600 dark:text-gray-400">Best day</span>
+              <span class="font-medium">${fmtH(thisMonthBestDay)}</span>
+            </div>
+            <div class="flex justify-between py-2">
+              <span class="text-gray-600 dark:text-gray-400">Avg per worked day</span>
+              <span class="font-medium">${fmtH(thisMonthAvg)}</span>
+            </div>
+          `
+          : `<p class="text-gray-500 dark:text-gray-400">No hours logged this month</p>`;
+      }
+
+      const beforeEl = document.getElementById('bytaskBefore');
+      if (beforeEl) {
+        const div = beforeEl.querySelector('div');
+        div.innerHTML = beforeMonthDaysWorked > 0
+          ? `
+            <div class="flex justify-between py-2 border-b border-gray-200 dark:border-white/10">
+              <span class="text-gray-600 dark:text-gray-400">First date</span>
+              <span class="font-medium">${firstDate ? formatDateToDDMMYYYY(firstDate) : '—'}</span>
+            </div>
+            <div class="flex justify-between py-2 border-b border-gray-200 dark:border-white/10">
+              <span class="text-gray-600 dark:text-gray-400">Total hours</span>
+              <span class="font-medium">${fmtH(beforeMonthTotal)}</span>
+            </div>
+            <div class="flex justify-between py-2 border-b border-gray-200 dark:border-white/10">
+              <span class="text-gray-600 dark:text-gray-400">Days worked</span>
+              <span class="font-medium">${beforeMonthDaysWorked}</span>
+            </div>
+            <div class="flex justify-between py-2">
+              <span class="text-gray-600 dark:text-gray-400">Cumulative hours</span>
+              <span class="font-medium">${fmtH(beforeMonthTotal + thisMonthTotal)}</span>
+            </div>
+          `
+          : `<p class="text-gray-500 dark:text-gray-400">No hours logged before this month</p>`;
+      }
+    }
+
+    function renderTaskHeatmap(taskIndex) {
+      const el = document.getElementById('bytaskHeatmapContainer');
+      if (!el) return;
+
+      const task = tasks[taskIndex];
+      const weeks = getWeeksInCalendarYear();
+      const graphWidth = weeks.length * (CELL_SIZE + CELL_MARGIN) + 20;
+      const graphHeight = MONTH_LABELS_HEIGHT + 7 * (CELL_SIZE + CELL_MARGIN) + 20;
+
+      let svg = `<svg width="${graphWidth}" height="${graphHeight}" viewBox="0 0 ${graphWidth} ${graphHeight}" class="text-gray-900 dark:text-white/70">`;
+
+      // Month labels and cells
+      let lastMonth = null;
+      weeks.forEach((week, wi) => {
+        const x = wi * (CELL_SIZE + CELL_MARGIN) + 10;
+
+        const firstDateStr = week[0];
+        const firstDate = parseDate(firstDateStr);
+        const currentMonth = firstDate.getMonth();
+
+        if (lastMonth !== currentMonth) {
+          const monthNames = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+          svg += `<text x="${x}" y="12" class="month-label">${monthNames[currentMonth]}</text>`;
+          lastMonth = currentMonth;
+        }
+
+        week.forEach(dateStr => {
+          const date = parseDate(dateStr);
+          const dayOfWeek = (date.getDay() + 6) % 7;
+          const y = MONTH_LABELS_HEIGHT + dayOfWeek * (CELL_SIZE + CELL_MARGIN) + 2;
+
+          const hours = getHours(dateStr, taskIndex);
+          const intensity = Math.min(hours / maxCap, 1);
+          const cellColor = getIntensityColor(COLOR_HEX[task.color], intensity);
+
+          let strokeColor = 'none';
+          let strokeWidth = '0';
+          let hasDelivery = false;
+
+          if (task.deliveryDate === dateStr) {
+            strokeColor = COLOR_HEX[task.color];
+            strokeWidth = '1.5';
+            hasDelivery = true;
+          }
+
+          svg += `
+            <g>
+              <rect x="${x}" y="${y}" width="${CELL_SIZE}" height="${CELL_SIZE}"
+                    fill="${cellColor}" rx="2" ry="2" class="heatmap-cell delivery-cell"
+                    stroke="${strokeColor}" stroke-width="${strokeWidth}"
+                    data-task-name="${hasDelivery ? task.name : ''}"
+                    data-delivery-date="${dateStr}"
+                    data-working-days="${hasDelivery ? getWorkingDaysTo(dateStr) : '0'}"
+                    style="cursor: ${hasDelivery ? 'pointer' : 'default'};"></rect>`;
+
+          if (hasDelivery) {
+            const dotX = x + CELL_SIZE - 1;
+            const dotY = y - 1;
+            const dotId = `delivery-dot-${Math.random().toString(36).substr(2, 9)}`;
+            const workingDays = getWorkingDaysTo(dateStr);
+            svg += `<circle id="${dotId}" cx="${dotX}" cy="${dotY}" r="4" fill="${COLOR_HEX[task.color]}" class="delivery-dot"
+              data-task="${task.name}" data-date="${dateStr}" data-days="${workingDays}"
+              style="filter: drop-shadow(0 1px 2px rgba(0,0,0,0.3)); cursor: pointer;">
+            </circle>`;
+          }
+
+          svg += `</g>`;
+        });
+      });
+
+      svg += `</svg>`;
+
+      el.innerHTML = `${getDayLabelsHTML()}${svg}`;
+
+      setTimeout(() => setupDeliveryDatePopovers(), 0);
+    }
+
     function renderLegend() {
       const steps = [0, 0.25, 0.5, 0.75, 1];
       let html = '';
@@ -905,6 +1336,9 @@
       renderWeeklyTable();
       renderTaskLegend();
       renderBurnoutBadge();
+      if (!document.getElementById('bytaskView').classList.contains('hidden')) {
+        renderByTaskView(activeTaskIndex);
+      }
       renderedViews = {};
     }
 
@@ -925,7 +1359,232 @@
       };
 
       LegendRenderer.render('overviewTaskLegend', options);
-      LegendRenderer.render('bytaskLegend', options);
+
+      // Custom inline render for bytaskLegend - shows all tasks with active/inactive styling
+      const bytaskLegendEl = document.getElementById('bytaskLegend');
+      if (bytaskLegendEl) {
+        bytaskLegendEl.innerHTML = tasks
+          .map((task, i) => {
+            const isActive = i === activeTaskIndex;
+            const classes = isActive
+              ? ''
+              : 'line-through opacity-50';
+            return `
+              <div data-taskindex="${i}" class="flex items-center gap-1.5 cursor-pointer select-none transition-opacity hover:opacity-100 ${classes}">
+                <div class="w-2.5 h-2.5 md:w-3 md:h-3 rounded-full" style="background:${COLOR_HEX[task.color]}"></div>
+                <span class="text-gray-500 dark:text-white/70">${task.name}</span>
+              </div>
+            `;
+          })
+          .join('');
+
+        _setupBytaskLegendSelectors();
+      }
+    }
+
+    function _setupBytaskLegendSelectors() {
+      const items = document.querySelectorAll('#bytaskLegend [data-taskindex]');
+      items.forEach(item => {
+        item.addEventListener('click', () => {
+          const idx = parseInt(item.dataset.taskindex, 10);
+          renderByTaskView(idx);
+        });
+      });
+    }
+
+    function renderByTaskView(taskIndex) {
+      if (taskIndex >= tasks.length) taskIndex = 0;
+      activeTaskIndex = taskIndex;
+
+      renderTaskLegend();
+      renderBurnoutBadgeForTask(taskIndex);
+      renderTaskRequirementsCard(taskIndex);
+      renderTaskProgressCard(taskIndex);
+      renderTaskBurnChart(taskIndex);
+      renderTaskDailyHours(taskIndex);
+      renderTaskAchievements(taskIndex);
+      renderTaskHeatmap(taskIndex);
+    }
+
+    function renderBurnoutBadgeForTask(taskIndex) {
+      const el = document.getElementById('bytaskBurnoutBadge');
+      if (!el) return;
+
+      const task = tasks[taskIndex];
+      const estimate = task.estimate || 0;
+      const deliveryDate = task.deliveryDate || '';
+
+      if (!estimate || !deliveryDate) {
+        el.classList.add('hidden');
+        return;
+      }
+
+      const totalEstimatedHours = estimate * maxCap;
+      let loggedTotal = 0;
+      const allDates = getAllDates();
+      allDates.forEach(dateStr => {
+        loggedTotal += getHours(dateStr, taskIndex);
+      });
+
+      const isBurnedOut = loggedTotal > totalEstimatedHours;
+      if (isBurnedOut) {
+        el.classList.remove('hidden');
+        const extraHours = (loggedTotal - totalEstimatedHours).toFixed(1);
+        el.querySelector('span').textContent = `Burned out by ${extraHours}h`;
+      } else {
+        el.classList.add('hidden');
+      }
+    }
+
+    function renderTaskRequirementsCard(taskIndex) {
+      const el = document.getElementById('bytaskRequirements');
+      if (!el) return;
+
+      const task = tasks[taskIndex];
+      const dl = el.querySelector('dl');
+
+      const colorDot = `<div class="w-2 h-2 rounded-full inline-block" style="background:${COLOR_HEX[task.color]}; margin-right: 6px;"></div>`;
+
+      const estimate = task.estimate
+        ? `${task.estimate} days (${task.estimate} × ${maxCap}h = ${(task.estimate * maxCap).toFixed(1)}h)`
+        : '—';
+
+      const deliveryDate = task.deliveryDate
+        ? formatDateToDDMMYYYY(task.deliveryDate)
+        : '—';
+
+      const jiraLink = task.jiraLink
+        ? `<a href="${task.jiraLink}" target="_blank" rel="noopener noreferrer" class="text-blue-600 dark:text-blue-400 hover:underline">see ticket in Jira</a>`
+        : '—';
+
+      dl.innerHTML = `
+        <div class="flex justify-between py-2 border-b border-gray-200 dark:border-white/10">
+          <dt class="text-gray-600 dark:text-gray-400">Task</dt>
+          <dd class="font-medium text-gray-900 dark:text-white">${colorDot}${task.name}</dd>
+        </div>
+        <div class="flex justify-between py-2 border-b border-gray-200 dark:border-white/10">
+          <dt class="text-gray-600 dark:text-gray-400">Estimate</dt>
+          <dd class="font-medium text-gray-900 dark:text-white">${estimate}</dd>
+        </div>
+        <div class="flex justify-between py-2 border-b border-gray-200 dark:border-white/10">
+          <dt class="text-gray-600 dark:text-gray-400">Delivery</dt>
+          <dd class="font-medium text-gray-900 dark:text-white">${deliveryDate}</dd>
+        </div>
+        <div class="flex justify-between py-2">
+          <dt class="text-gray-600 dark:text-gray-400">Jira</dt>
+          <dd class="font-medium text-gray-900 dark:text-white">${jiraLink}</dd>
+        </div>
+      `;
+    }
+
+    function renderTaskProgressCard(taskIndex) {
+      const el = document.getElementById('bytaskProgress');
+      if (!el) return;
+
+      const task = tasks[taskIndex];
+      const container = el.querySelector('div');
+
+      const estimate = task.estimate || 0;
+      const deliveryDate = task.deliveryDate || '';
+
+      const totalEstimatedHours = estimate > 0 ? estimate * maxCap : 0;
+      let loggedTotal = 0;
+      const allDates = getAllDates();
+      allDates.forEach(dateStr => {
+        loggedTotal += getHours(dateStr, taskIndex);
+      });
+
+      const percentComplete = totalEstimatedHours > 0
+        ? (loggedTotal / totalEstimatedHours) * 100
+        : 0;
+
+      let statusBadge = 'Not started';
+      let statusColor = 'bg-gray-500/20 text-gray-600 dark:text-gray-300';
+
+      if (loggedTotal > 0) {
+        if (loggedTotal > totalEstimatedHours) {
+          // Overlogged - show Alert
+          statusBadge = 'Alert';
+          statusColor = 'bg-orange-500/20 text-orange-600 dark:text-orange-400';
+        } else if (percentComplete >= 100) {
+          statusBadge = 'Completed';
+          statusColor = 'bg-green-500/20 text-green-600 dark:text-green-400';
+        } else if (deliveryDate) {
+          const daysRemaining = getWorkingDaysTo(deliveryDate);
+          const daysWorked = allDates.filter(d => getHours(d, taskIndex) > 0).length;
+
+          if (percentComplete >= 80) {
+            statusBadge = 'On track';
+            statusColor = 'bg-blue-500/20 text-blue-600 dark:text-blue-400';
+          } else if (daysRemaining < 0) {
+            statusBadge = 'Late';
+            statusColor = 'bg-red-500/20 text-red-600 dark:text-red-400';
+          } else {
+            statusBadge = 'In progress';
+            statusColor = 'bg-yellow-500/20 text-yellow-600 dark:text-yellow-400';
+          }
+        } else {
+          statusBadge = 'In progress';
+          statusColor = 'bg-yellow-500/20 text-yellow-600 dark:text-yellow-400';
+        }
+      }
+
+      const daysRemaining = deliveryDate ? getWorkingDaysTo(deliveryDate) : null;
+      const daysRemainingText = daysRemaining !== null
+        ? `${daysRemaining} day${daysRemaining !== 1 ? 's' : ''}`
+        : '—';
+
+      // Calculate logged days and hours
+      const loggedDaysWorked = allDates.filter(d => getHours(d, taskIndex) > 0).length;
+      const loggedText = loggedDaysWorked > 0
+        ? `${loggedDaysWorked.toFixed(1)} days or ${fmtH(loggedTotal)}`
+        : '—';
+
+      // Calculate this month days and hours
+      const yearStr = linearViewYear.toString();
+      const monthStr = String(linearViewMonth + 1).padStart(2, '0');
+      let thisMonthTotal = 0;
+      let thisMonthDaysWorked = 0;
+      for (let d = 1; d <= 31; d++) {
+        const dateStr = `${yearStr}-${monthStr}-${String(d).padStart(2, '0')}`;
+        if (dateStr > todayStr()) break;
+        const hours = getHours(dateStr, taskIndex);
+        thisMonthTotal += hours;
+        if (hours > 0) thisMonthDaysWorked++;
+      }
+
+      const thisMonthText = thisMonthDaysWorked > 0
+        ? `${thisMonthDaysWorked.toFixed(1)} days or ${fmtH(thisMonthTotal)}`
+        : '—';
+
+      const displayPercent = Math.min(100, percentComplete);
+
+      container.innerHTML = `
+        <div class="flex items-center justify-between">
+          <h3 class="font-semibold text-gray-900 dark:text-white">Progress</h3>
+          <span class="inline-flex items-center gap-1.5 text-xs px-2.5 py-1 rounded-full font-medium ${statusColor}">${statusBadge}</span>
+        </div>
+        <div class="mt-2">
+          <div class="text-xs text-gray-600 dark:text-gray-400 mb-1">${displayPercent.toFixed(0)}%</div>
+          <div class="w-full bg-gray-200 dark:bg-gray-700 rounded-full h-2">
+            <div class="bg-blue-500 h-2 rounded-full" style="width: ${displayPercent}%"></div>
+          </div>
+        </div>
+        <div class="mt-4 space-y-2 text-xs">
+          <div class="flex justify-between">
+            <span class="text-gray-600 dark:text-gray-400">Logged</span>
+            <span class="font-medium text-gray-900 dark:text-white">${loggedText}</span>
+          </div>
+          <div class="flex justify-between">
+            <span class="text-gray-600 dark:text-gray-400">Days remaining</span>
+            <span class="font-medium text-gray-900 dark:text-white">${daysRemainingText}</span>
+          </div>
+          <div class="flex justify-between">
+            <span class="text-gray-600 dark:text-gray-400">This month</span>
+            <span class="font-medium text-gray-900 dark:text-white">${thisMonthText}</span>
+          </div>
+        </div>
+      `;
     }
 
     let linearChartInstance = null;
@@ -1384,8 +2043,7 @@
       } else if (view === 'bytask') {
         bytaskView.classList.remove('hidden');
         if (!renderedViews.bytask) {
-          renderTaskLegend();
-          renderBurnoutBadge();
+          renderByTaskView(activeTaskIndex);
           renderedViews.bytask = true;
         }
       }
@@ -1408,6 +2066,9 @@
       renderWeeklyTable();
       renderTaskLegend();
       renderBurnoutBadge();
+      if (!document.getElementById('bytaskView').classList.contains('hidden')) {
+        renderByTaskView(activeTaskIndex);
+      }
     }
 
     function nextMonth() {
@@ -1425,6 +2086,9 @@
       renderWeeklyTable();
       renderTaskLegend();
       renderBurnoutBadge();
+      if (!document.getElementById('bytaskView').classList.contains('hidden')) {
+        renderByTaskView(activeTaskIndex);
+      }
     }
 
     function getAllDates() {
