@@ -514,12 +514,22 @@ window._settingsModalUpdateTaskColor = (i, c) => {
   if (tasks[i]) {
     tasks[i].color = c;
     SettingsModal.config.onSave?.();
-    if (SettingsModal.state.isAddTaskMode) {
-      SettingsModal.renderSettings({ tasks: false, dailyCap: false, deleteData: false, title: 'Add a task' });
-    } else {
-      SettingsModal.renderSettings();
+
+    // Update only the color swatch active state, don't re-render
+    const allSwatches = document.querySelectorAll('button.color-swatch');
+    allSwatches.forEach(swatch => {
+      swatch.classList.remove('active');
+    });
+    // Find and activate the clicked color swatch
+    allSwatches.forEach(swatch => {
+      if (swatch.getAttribute('aria-label')?.toLowerCase() === c.toLowerCase()) {
+        swatch.classList.add('active');
+      }
+    });
+
+    if (!SettingsModal.state.isAddTaskMode) {
+      SettingsModal.config.onTasksChanged?.();
     }
-    SettingsModal.config.onTasksChanged?.();
   }
 };
 
