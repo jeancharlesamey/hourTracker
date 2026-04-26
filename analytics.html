@@ -352,7 +352,13 @@
 
           <!-- Weekly Breakdown Table Card -->
           <div class="col-span-12 md:col-span-7 bg-white dark:bg-card-dark rounded-2xl p-6 shadow-sm border border-gray-100 dark:border-white/5">
-            <h3 class="text-lg font-semibold text-gray-900 dark:text-white mb-6">Weekly Breakdown</h3>
+            <div class="flex items-center justify-between gap-4 mb-6">
+              <div class="flex items-center gap-4">
+                <h3 class="text-lg font-semibold text-gray-900 dark:text-white">Weekly Breakdown</h3>
+                <div id="weeklyBreakdownControls"></div>
+              </div>
+              <div id="weeklyBreakdownHelper"></div>
+            </div>
             <div id="weeklyTableContainer" class="max-h-[500px] overflow-x-auto"></div>
           </div>
         </div>
@@ -1189,7 +1195,8 @@
         linearViewMonth,
         weeklyTableElement: document.getElementById('weeklyTableContainer'),
         tasksCount: tasks.length,
-        completionsKeys: Object.keys(completions).length
+        completionsKeys: Object.keys(completions).length,
+        summaryCachingMode
       });
 
       const el = document.getElementById('weeklyTableContainer');
@@ -1237,22 +1244,56 @@
         return;
       }
 
+      const isHours = summaryCachingMode === 'hours';
+      const isDays = summaryCachingMode === 'days';
+      const isPct = summaryCachingMode === 'pct';
+
+      // Calculate total hours for percentage calculations
+      let grandTotal = 0;
+      tasks.forEach((_, taskIndex) => {
+        rows.forEach(weekDates => {
+          grandTotal += weekDates.reduce((sum, ds) => sum + getHours(ds, taskIndex), 0);
+        });
+      });
+
+      let helperText = '';
+      if (isHours) helperText = '0.25 = 15min · 0.5 = 30min · 0.75 = 45min';
+      else if (isDays) helperText = `1 day = ${maxCap}h (daily cap)`;
+      else if (isPct) helperText = 'share of total hours';
+
+      // Update controls and helper in the card header
+      const controlsEl = document.getElementById('weeklyBreakdownControls');
+      if (controlsEl) {
+        controlsEl.innerHTML = `
+          <div class="inline-flex rounded-lg bg-black/5 dark:bg-white/5 p-0.5">
+            <button onclick="setSummaryMode('hours')" class="px-3 py-1 text-xs font-medium rounded-md transition-colors ${isHours ? 'bg-white dark:bg-white/15 text-gray-900 dark:text-white shadow-sm' : 'text-gray-400 dark:text-white/40 hover:text-gray-600 dark:hover:text-white/60'}">Hours</button>
+            <button onclick="setSummaryMode('days')" class="px-3 py-1 text-xs font-medium rounded-md transition-colors ${isDays ? 'bg-white dark:bg-white/15 text-gray-900 dark:text-white shadow-sm' : 'text-gray-400 dark:text-white/40 hover:text-gray-600 dark:hover:text-white/60'}">Days</button>
+            <button onclick="setSummaryMode('pct')" class="px-3 py-1 text-xs font-medium rounded-md transition-colors ${isPct ? 'bg-white dark:bg-white/15 text-gray-900 dark:text-white shadow-sm' : 'text-gray-400 dark:text-white/40 hover:text-gray-600 dark:hover:text-white/60'}">%</button>
+          </div>
+        `;
+      }
+
+      const helperEl = document.getElementById('weeklyBreakdownHelper');
+      if (helperEl) {
+        helperEl.innerHTML = `<p class="text-[10px] text-gray-400 dark:text-white/30 text-right flex-shrink-0">${helperText}</p>`;
+      }
+
       // Build table
-      let html = `
-        <div class="overflow-x-auto">
-          <table class="w-full text-sm">
+      let html = `<div class="overflow-x-auto">
+          <table class="w-full text-sm table-fixed">
             <thead>
               <tr class="border-b border-gray-200 dark:border-white/10">
-                <th class="text-left py-2 px-3 font-semibold text-gray-900 dark:text-white">Task</th>
+                <th class="text-left py-2 px-3 font-semibold text-gray-900 dark:text-white w-1/4">Task</th>
       `;
 
       rows.forEach((_, i) => {
         const weekNum = weekNumbers[i];
-        html += `<th class="text-right py-2 px-3 font-semibold text-gray-900 dark:text-white text-xs whitespace-nowrap">W${weekNum}</th>`;
+        const colWidth = (3 / (4 * (rows.length + 1))) * 100;
+        html += `<th class="text-right py-2 px-3 font-semibold text-gray-900 dark:text-white text-xs whitespace-nowrap" style="width: ${colWidth}%">W${weekNum}</th>`;
       });
 
       html += `
-                <th class="text-right py-2 px-3 font-semibold text-gray-900 dark:text-white">Total</th>
+                <th class="text-right py-2 px-3 font-semibold text-gray-900 dark:text-white text-xs" style="width: ${(3 / (4 * (rows.length + 1))) * 100}%">Total</th>
               </tr>
             </thead>
             <tbody>
@@ -1270,15 +1311,29 @@
         const colorCircle = `<div class="w-2.5 h-2.5 rounded-full flex-shrink-0" style="background: ${COLOR_HEX[task.color]}"></div>`;
 
         html += `<tr class="border-b border-gray-100 dark:border-white/5 hover:bg-black/5 dark:hover:bg-white/5">
-          <td class="py-2 px-3 text-gray-900 dark:text-white flex items-center gap-2.5">${colorCircle}${taskLink}</td>
+          <td class="py-2 px-3 text-gray-900 dark:text-white flex items-center gap-2.5 w-1/4 overflow-hidden">${colorCircle}${taskLink}</td>
         `;
 
-        weekTotals.forEach(hours => {
-          const display = hours > 0 ? fmtH(hours) : '—';
-          html += `<td class="text-right py-2 px-3 text-gray-700 dark:text-white/80 text-xs">${display}</td>`;
+        weekTotals.forEach((hours, idx) => {
+          let display = '—';
+          if (hours > 0) {
+            if (isHours) display = fmtH(hours);
+            else if (isDays) display = fmtD(hours);
+            else if (isPct) display = fmtPct(hours, grandTotal);
+          }
+          const colWidth = (3 / (4 * (rows.length + 1))) * 100;
+          html += `<td class="text-right py-2 px-3 text-gray-700 dark:text-white/80 text-xs" style="width: ${colWidth}%">${display}</td>`;
         });
 
-        html += `<td class="text-right py-2 px-3 font-semibold text-gray-900 dark:text-white">${monthTotal > 0 ? fmtH(monthTotal) : '—'}</td>
+        let totalDisplay = '—';
+        if (monthTotal > 0) {
+          if (isHours) totalDisplay = fmtH(monthTotal);
+          else if (isDays) totalDisplay = fmtD(monthTotal);
+          else if (isPct) totalDisplay = fmtPct(monthTotal, grandTotal);
+        }
+
+        const totalColWidth = (3 / (4 * (rows.length + 1))) * 100;
+        html += `<td class="text-right py-2 px-3 font-semibold text-gray-900 dark:text-white text-xs" style="width: ${totalColWidth}%">${totalDisplay}</td>
         </tr>`;
       });
 
