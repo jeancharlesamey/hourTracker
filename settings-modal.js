@@ -34,9 +34,7 @@ const SettingsModal = {
     setCompletions: null,
     getMaxCap: null,
     setMaxCap: null,
-    getDarkMode: null,
     onSave: null,
-    onDarkModeSync: null,
     onTasksChanged: null,
     onSheetOpen: null,
     onReload: null,
@@ -100,16 +98,6 @@ const SettingsModal = {
               <img src="./icons/close-icon.svg" alt="" class="w-5 h-5 text-gray-400 dark:text-white/50" aria-hidden="true">
             </button>
           </div>
-          <div id="settingsDarkModeSection" class="flex items-center justify-between mb-5 pb-5 border-b border-gray-200 dark:border-white/10">
-            <div>
-              <span class="text-sm font-medium">Dark mode</span>
-              <p class="text-xs text-gray-400 dark:text-white/40 mt-0.5">Switch between light and dark theme</p>
-            </div>
-            <button id="darkModeToggle" role="switch" aria-checked="true" aria-label="Dark mode"
-              class="relative w-11 h-6 rounded-full bg-gray-300 dark:bg-emerald-500 transition-colors duration-200 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-emerald-500">
-              <span id="darkModeKnob" class="absolute top-0.5 left-0.5 w-5 h-5 rounded-full bg-white shadow transition-transform duration-200 translate-x-5"></span>
-            </button>
-          </div>
           <div id="settingsTasks" class="space-y-5"></div>
           <div id="settingsDeleteSection" class="mt-6 pt-4 border-t border-gray-200 dark:border-white/10">
             <button id="resetBtn" class="w-full py-2.5 rounded-lg bg-red-500 hover:bg-red-600 text-white text-sm font-medium transition-colors">Delete all data</button>
@@ -155,7 +143,6 @@ const SettingsModal = {
 
   _wireEventListeners() {
     const closeSettings = document.getElementById('closeSettings');
-    const darkModeToggle = document.getElementById('darkModeToggle');
     const resetBtn = document.getElementById('resetBtn');
     const deleteCancelBtn = document.getElementById('deleteCancelBtn');
     const deleteConfirmBtn = document.getElementById('deleteConfirmBtn');
@@ -165,7 +152,6 @@ const SettingsModal = {
     const cancelAddTaskConfirmBtn = document.getElementById('cancelAddTaskConfirmBtn');
 
     closeSettings?.addEventListener('click', () => this.close());
-    darkModeToggle?.addEventListener('click', () => this._handleDarkModeToggle());
     resetBtn?.addEventListener('click', () => this._showDeleteModal());
     deleteCancelBtn?.addEventListener('click', () => this._hideDeleteModal());
     deleteConfirmBtn?.addEventListener('click', () => this._confirmDeleteAllData());
@@ -182,7 +168,7 @@ const SettingsModal = {
   },
 
   renderSettings(options = {}) {
-    const { tasks: showTasks = true, dailyCap: showDailyCap = true, darkMode: showDarkMode = true, deleteData: showDeleteData = true, title = 'Settings' } = options;
+    const { tasks: showTasks = true, dailyCap: showDailyCap = true, deleteData: showDeleteData = true, title = 'Settings' } = options;
     const el = document.getElementById('settingsTasks');
     const titleEl = document.getElementById('settingsTitle');
     if (titleEl) titleEl.textContent = title;
@@ -190,7 +176,6 @@ const SettingsModal = {
 
     const tasks = this.config.getTasks();
     const maxCap = this.config.getMaxCap();
-    const darkMode = this.config.getDarkMode();
 
     if (showDailyCap) {
       html += `
@@ -260,29 +245,8 @@ const SettingsModal = {
     if (el) el.innerHTML = html;
 
     // Show/hide sections
-    const darkModeSection = document.getElementById('settingsDarkModeSection');
-    if (darkModeSection) darkModeSection.style.display = showDarkMode ? 'flex' : 'none';
-
     const deleteSection = document.getElementById('settingsDeleteSection');
     if (deleteSection) deleteSection.style.display = showDeleteData ? 'block' : 'none';
-
-    // Sync dark mode knob
-    this._updateDarkModeKnob();
-  },
-
-  _updateDarkModeKnob() {
-    const darkMode = this.config.getDarkMode();
-    const knob = document.getElementById('darkModeKnob');
-    if (knob) {
-      knob.style.transform = darkMode ? 'translateX(20px)' : 'translateX(0)';
-    }
-  },
-
-  _handleDarkModeToggle() {
-    // This is handled by the page's toggleDarkMode function
-    // The module just triggers the callback
-    if (this.config.onDarkModeSync) this.config.onDarkModeSync();
-    this._updateDarkModeKnob();
   },
 
   _showDeleteModal() {
@@ -476,7 +440,7 @@ const SettingsModal = {
     this.config.onSave?.();
     this.state.isAddTaskMode = true;
 
-    this.renderSettings({ tasks: false, dailyCap: false, darkMode: false, deleteData: false, title: 'Add a task' });
+    this.renderSettings({ tasks: false, dailyCap: false, deleteData: false, title: 'Add a task' });
 
     const el = document.getElementById('settingsTasks');
     const i = tasks.length - 1;
@@ -534,12 +498,6 @@ const SettingsModal = {
     }, 100);
   },
 
-  updateDarkModeKnob(isDark) {
-    const knob = document.getElementById('darkModeKnob');
-    if (knob) {
-      knob.style.transform = isDark ? 'translateX(20px)' : 'translateX(0)';
-    }
-  },
 };
 
 // Expose global functions for inline oninput handlers
@@ -557,7 +515,7 @@ window._settingsModalUpdateTaskColor = (i, c) => {
     tasks[i].color = c;
     SettingsModal.config.onSave?.();
     if (SettingsModal.state.isAddTaskMode) {
-      SettingsModal.renderSettings({ tasks: false, dailyCap: false, darkMode: false, deleteData: false, title: 'Add a task' });
+      SettingsModal.renderSettings({ tasks: false, dailyCap: false, deleteData: false, title: 'Add a task' });
     } else {
       SettingsModal.renderSettings();
     }
