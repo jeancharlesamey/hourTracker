@@ -942,7 +942,13 @@
 
       const task = tasks[taskIndex];
       const estimate = task.estimate || 0;
-      const deliveryDate = task.deliveryDate || '';
+      let deliveryDate = task.deliveryDate || '';
+
+      // Convert DD/MM/YYYY to YYYY-MM-DD if needed
+      if (deliveryDate && deliveryDate.includes('/')) {
+        const [day, month, year] = deliveryDate.split('/');
+        deliveryDate = `${year}-${month}-${day}`;
+      }
 
       // Get all dates with data for this task
       const allDates = getAllDates().filter(d => getHours(d, taskIndex) > 0);
@@ -960,9 +966,9 @@
         return;
       }
 
-      // Determine date range: from first logged date to delivery date or today
+      // Determine date range: from first logged date to delivery date (or today if no delivery date)
       const startDate = allDates[0];
-      const endDate = deliveryDate && deliveryDate > todayStr() ? deliveryDate : todayStr();
+      const endDate = deliveryDate || todayStr();
 
       // Generate all dates in range
       const [startYear, startMonth, startDay] = startDate.split('-').map(Number);
@@ -1020,11 +1026,13 @@
             ...(estimate && deliveryDate ? [{
               label: 'Ideal',
               data: idealData,
-              borderColor: '#999',
-              borderDash: [5, 5],
+              borderColor: darkMode ? '#666' : '#ccc',
+              borderDash: [3, 3],
               borderWidth: 1,
               fill: false,
               tension: 0.1,
+              pointRadius: 0,
+              pointHoverRadius: 0,
             }] : [])
           ]
         },
@@ -1525,7 +1533,7 @@
 
       const daysRemaining = task.deliveryDate ? getWorkingDaysTo(task.deliveryDate) : null;
       const remainingText = daysRemaining !== null
-        ? (daysRemaining < 0 ? `${Math.abs(daysRemaining)} days ago` : `${daysRemaining} days`)
+        ? (daysRemaining < 0 ? `${Math.abs(daysRemaining)} day${Math.abs(daysRemaining) !== 1 ? 's' : ''} ago` : `${daysRemaining} day${daysRemaining !== 1 ? 's' : ''}`)
         : '—';
 
       container.innerHTML = `
@@ -1674,7 +1682,7 @@
                   <td class="py-2 px-3 text-right text-gray-900 dark:text-white font-semibold text-xs w-1.5/5">${hoursToDay(loggedTotal)}</td>
                   <td class="py-2 px-3 text-right text-gray-900 dark:text-white font-semibold text-xs w-1.5/5">${fmtH(loggedTotal)}</td>
                 </tr>
-                <tr${isOverdone ? ' class="border-b border-gray-100 dark:border-white/5 hover:bg-black/5 dark:hover:bg-white/5"' : ''}>
+                <tr class="border-b border-gray-100 dark:border-white/5 hover:bg-black/5 dark:hover:bg-white/5">
                   <td class="py-2 px-3 text-left${isOverdone ? ' text-orange-600 dark:text-orange-400' : ' text-gray-700 dark:text-white/80'} text-xs w-2/5">${remainingLabel}</td>
                   <td class="py-2 px-3 text-right${isOverdone ? ' text-orange-600 dark:text-orange-400' : ' text-gray-900 dark:text-white'} font-semibold text-xs w-1.5/5">${daysRemainingText}</td>
                   <td class="py-2 px-3 text-right${isOverdone ? ' text-orange-600 dark:text-orange-400' : ' text-gray-900 dark:text-white'} font-semibold text-xs w-1.5/5">${hoursRemainingText}</td>

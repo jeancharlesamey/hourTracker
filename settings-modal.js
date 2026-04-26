@@ -474,7 +474,8 @@ const SettingsModal = {
             <input id="taskDelivery${i}" type="text" placeholder="DD/MM/YYYY" value="${t.deliveryDate ? formatDateToDDMMYYYY(t.deliveryDate) : ''}" pattern="\\d{2}/\\d{2}/\\d{4}" maxlength="10"
               class="w-full bg-black/5 dark:bg-white/5 border border-gray-200 dark:border-white/10 rounded-lg px-3 py-2 text-sm text-gray-900 dark:text-white focus:outline-none focus:border-gray-400 dark:focus:border-white/30 transition-colors"
               oninput="window._settingsModalFormatDeliveryDate(${i}, this)"
-              onchange="window._settingsModalUpdateTaskDeliveryDate(${i}, this.value)">
+              onchange="window._settingsModalUpdateTaskDeliveryDate(${i}, this.value)"
+              onblur="window._settingsModalUpdateTaskDeliveryDate(${i}, this.value)">
           </div>
         </div>
 
@@ -545,11 +546,18 @@ window._settingsModalUpdateTaskEstimate = (i, v) => {
 window._settingsModalUpdateTaskDeliveryDate = (i, v) => {
   const tasks = SettingsModal.config.getTasks();
   if (tasks[i]) {
-    // Convert DD/MM/YYYY to YYYY-MM-DD for storage
-    const dateRegex = /^\d{2}\/\d{2}\/\d{4}$/;
-    if (dateRegex.test(v)) {
-      const [day, month, year] = v.split('/');
-      tasks[i].deliveryDate = `${year}-${month}-${day}`;
+    // Handle both YYYY-MM-DD (from native date input) and DD/MM/YYYY (from text input) formats
+    if (v && v.length === 10) {
+      if (v.includes('/')) {
+        // DD/MM/YYYY format
+        const [day, month, year] = v.split('/');
+        tasks[i].deliveryDate = `${year}-${month}-${day}`;
+      } else if (v.includes('-')) {
+        // YYYY-MM-DD format (already correct)
+        tasks[i].deliveryDate = v;
+      } else {
+        tasks[i].deliveryDate = '';
+      }
     } else {
       tasks[i].deliveryDate = '';
     }
