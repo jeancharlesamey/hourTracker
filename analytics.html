@@ -984,9 +984,10 @@
         return;
       }
 
-      // Determine date range: from first logged date to delivery date (or today if no delivery date)
+      // Determine date range: from first logged date to delivery date (if available) or last logged date
       const startDate = allDates[0];
-      const endDate = deliveryDate || todayStr();
+      const lastLoggedDate = allDates[allDates.length - 1];
+      const endDate = deliveryDate || lastLoggedDate;
 
       // Generate all dates in range
       const [startYear, startMonth, startDay] = startDate.split('-').map(Number);
@@ -1003,23 +1004,36 @@
       const dailyIdeal = totalEstimatedHours / daysInRange;
 
       let current = new Date(start);
+      let dateIndex = 0;
+      const totalDays = daysInRange;
       while (current <= end) {
         const dateStr = current.toISOString().split('T')[0];
         const hours = getHours(dateStr, taskIndex);
-        cumulativeLogged += hours;
 
-        // Actual data shows remaining hours (estimate - logged)
+        // Only accumulate if there are hours
+        if (dateStr <= lastLoggedDate) {
+          cumulativeLogged += hours;
+        }
+
+        // Actual data shows remaining hours (estimate - logged), only until last logged date
         const remaining = totalEstimatedHours - cumulativeLogged;
-        actualData.push(remaining);
+        actualData.push(dateStr <= lastLoggedDate ? remaining : null);
 
-        const daysElapsed = Math.ceil((current - start) / (1000 * 60 * 60 * 24));
-        idealData.push(Math.max(0, totalEstimatedHours - (daysElapsed * dailyIdeal)));
+        // Ideal data: only show at first day and last day (delivery date)
+        if (dateIndex === 0) {
+          idealData.push(totalEstimatedHours);
+        } else if (dateIndex === totalDays - 1) {
+          idealData.push(0);
+        } else {
+          idealData.push(null);
+        }
 
         const monthNames = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
         const label = `${current.getDate()} ${monthNames[current.getMonth()]}`;
         labels.push(label);
 
         current.setDate(current.getDate() + 1);
+        dateIndex++;
       }
 
       if (taskBurnChartInstance) {
@@ -1033,13 +1047,14 @@
           labels: labels,
           datasets: [
             {
-              label: 'Remaining',
+              label: 'Done',
               data: actualData,
               borderColor: COLOR_HEX[task.color],
               backgroundColor: COLOR_HEX[task.color] + '20',
               borderWidth: 2,
               fill: true,
               tension: 0.1,
+              spanGaps: true,
             },
             ...(estimate && deliveryDate ? [{
               label: 'Ideal',
@@ -1049,8 +1064,11 @@
               borderWidth: 1,
               fill: false,
               tension: 0.1,
-              pointRadius: 0,
-              pointHoverRadius: 0,
+              pointRadius: 4,
+              pointBackgroundColor: darkMode ? '#666' : '#ccc',
+              pointBorderColor: darkMode ? '#666' : '#ccc',
+              pointHoverRadius: 6,
+              spanGaps: true,
             }] : [])
           ]
         },
