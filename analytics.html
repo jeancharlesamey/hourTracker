@@ -308,6 +308,7 @@
           <div class="w-4 h-4 rounded bg-gray-400 dark:bg-gray-600"></div>
           <h2 class="text-lg font-semibold text-gray-900 dark:text-white">All Tasks</h2>
         </div>
+        <div id="taskLegend" class="flex flex-wrap gap-3 md:gap-4 text-xs md:text-sm mb-4 pb-4"></div>
         <div class="legend">
           <span class="legend-label">Less</span>
           <div class="legend-cells" id="combinedLegend"></div>
@@ -336,6 +337,7 @@
             </button>
           </div>
           <h2 class="text-lg font-semibold text-gray-900 dark:text-white mb-6">Daily Task Hours</h2>
+          <div id="intensityTaskLegend" class="flex flex-wrap gap-3 md:gap-4 text-xs md:text-sm mb-4 pb-4"></div>
           <div style="position: relative; height: calc(100vh - 280px); min-height: 500px; max-height: 800px;">
             <canvas id="linearChart"></canvas>
           </div>
@@ -356,6 +358,7 @@
             </button>
           </div>
           <h2 class="text-lg font-semibold text-gray-900 dark:text-white mb-6">Task Repartition</h2>
+          <div id="repartitionTaskLegend" class="flex flex-wrap gap-3 md:gap-4 text-xs md:text-sm mb-4 pb-4"></div>
           <div style="position: relative; height: 600px;">
             <canvas id="repartitionChart"></canvas>
           </div>
@@ -369,6 +372,7 @@
   <script src="./popover.js"></script>
   <script src="./app-menu.js"></script>
   <script src="./settings-modal.js"></script>
+  <script src="./legend-renderer.js"></script>
   <script>
     // ── Config ────────────────────────────────────────────
 
@@ -890,6 +894,28 @@
     function render() {
       renderActivityView();
       renderLinearChart();
+      renderTaskLegend();
+    }
+
+    function renderTaskLegend() {
+      const getCompletions = (dateStr) => {
+        const comp = completions[dateStr];
+        return Array.isArray(comp) ? comp : [];
+      };
+
+      const options = {
+        tasks,
+        getCompletions,
+        viewYear: linearViewYear,
+        viewMonth: linearViewMonth,
+        todayStr,
+        COLOR_HEX,
+        fmtH,
+      };
+
+      LegendRenderer.render('taskLegend', options);
+      LegendRenderer.render('intensityTaskLegend', options);
+      LegendRenderer.render('repartitionTaskLegend', options);
     }
 
     let linearChartInstance = null;
@@ -1011,7 +1037,7 @@
           },
           plugins: {
             legend: {
-              display: true,
+              display: false,
               position: 'top',
               labels: {
                 color: darkMode ? 'rgba(255, 255, 255, 0.7)' : 'rgb(55, 65, 81)',
@@ -1076,7 +1102,7 @@
           maintainAspectRatio: false,
           plugins: {
             legend: {
-              display: true,
+              display: false,
               position: 'bottom',
               labels: {
                 color: darkMode ? 'rgba(255, 255, 255, 0.7)' : 'rgb(55, 65, 81)',
@@ -1137,12 +1163,14 @@
         linearView.classList.remove('hidden');
         if (!renderedViews.linear) {
           renderLinearChart();
+          renderTaskLegend();
           renderedViews.linear = true;
         }
       } else if (view === 'repartition') {
         repartitionView.classList.remove('hidden');
         if (!renderedViews.repartition) {
           renderRepartitionChart();
+          renderTaskLegend();
           renderedViews.repartition = true;
         }
       }
@@ -1167,6 +1195,7 @@
       }
       renderLinearChart();
       renderRepartitionChart();
+      renderTaskLegend();
     }
 
     function nextMonth() {
@@ -1181,6 +1210,7 @@
       }
       renderLinearChart();
       renderRepartitionChart();
+      renderTaskLegend();
     }
 
     function getAllDates() {
@@ -1206,6 +1236,7 @@
     // ── Init ──────────────────────────────────────────────
     // Only render the default active view (linear/intensity) on page load
     renderLinearChart();
+    renderTaskLegend();
     renderedViews.linear = true;
 
     // Month navigation event listeners
