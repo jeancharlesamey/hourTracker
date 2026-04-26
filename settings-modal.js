@@ -163,7 +163,7 @@ const SettingsModal = {
     // Delegated event listeners for save/cancel task buttons
     document.addEventListener('click', (e) => {
       if (e.target.id === 'saveAddTaskBtn') this._handleSaveAddTask();
-      if (e.target.id === 'cancelAddTaskBtn') this._showCancelAddTaskModal();
+      if (e.target.id === 'cancelAddTaskBtn') this._handleDiscardTask();
     });
   },
 
@@ -446,7 +446,7 @@ const SettingsModal = {
     const i = tasks.length - 1;
     const t = tasks[i];
     const taskHTML = `
-      <div class="space-y-2 pb-4 border-b border-gray-200 dark:border-white/10 last:border-b-0">
+      <div class="space-y-2 pb-4">
         <div class="flex items-center justify-between gap-2">
           <div class="flex-1">
             <label for="taskName${i}" class="text-xs text-gray-400 dark:text-white/60 font-medium block mb-1">New Task</label>
@@ -471,13 +471,14 @@ const SettingsModal = {
           </div>
           <div>
             <label for="taskDelivery${i}" class="text-xs text-gray-400 dark:text-white/60 font-medium block mb-1">Delivery date</label>
-            <input id="taskDelivery${i}" type="date" value="${t.deliveryDate || ''}"
+            <input id="taskDelivery${i}" type="text" placeholder="DD/MM/YYYY" value="${t.deliveryDate ? formatDateToDDMMYYYY(t.deliveryDate) : ''}" pattern="\\d{2}/\\d{2}/\\d{4}" maxlength="10"
               class="w-full bg-black/5 dark:bg-white/5 border border-gray-200 dark:border-white/10 rounded-lg px-3 py-2 text-sm text-gray-900 dark:text-white focus:outline-none focus:border-gray-400 dark:focus:border-white/30 transition-colors"
-              oninput="window._settingsModalUpdateTaskDeliveryDate(${i}, this.value)">
+              oninput="window._settingsModalFormatDeliveryDate(${i}, this)"
+              onchange="window._settingsModalUpdateTaskDeliveryDate(${i}, this.value)">
           </div>
         </div>
 
-        <div style="display: grid; grid-template-columns: repeat(9, 1fr); gap: 8px; pt-1">
+        <div class="grid grid-cols-9 gap-2 pt-2.5">
           ${PALETTE.map(c => `
             <button class="color-swatch w-7 h-7 rounded-full ${c === t.color ? 'active' : ''}"
               style="background:${COLOR_HEX[c]};color:${COLOR_HEX[c]}"
@@ -486,7 +487,7 @@ const SettingsModal = {
           `).join('')}
         </div>
       </div>
-      <div class="flex gap-3 justify-end mt-6 pt-4 border-t border-gray-200 dark:border-white/10">
+      <div class="flex gap-3 justify-end mt-6">
         <button id="cancelAddTaskBtn" class="px-4 py-2 rounded-lg text-sm font-medium bg-black/5 dark:bg-white/10 hover:bg-black/10 dark:hover:bg-white/20 transition-colors">Cancel</button>
         <button id="saveAddTaskBtn" class="px-4 py-2 rounded-lg text-sm font-medium bg-emerald-500 hover:bg-emerald-600 text-white transition-colors">Save task</button>
       </div>
@@ -544,7 +545,14 @@ window._settingsModalUpdateTaskEstimate = (i, v) => {
 window._settingsModalUpdateTaskDeliveryDate = (i, v) => {
   const tasks = SettingsModal.config.getTasks();
   if (tasks[i]) {
-    tasks[i].deliveryDate = v;
+    // Convert DD/MM/YYYY to YYYY-MM-DD for storage
+    const dateRegex = /^\d{2}\/\d{2}\/\d{4}$/;
+    if (dateRegex.test(v)) {
+      const [day, month, year] = v.split('/');
+      tasks[i].deliveryDate = `${year}-${month}-${day}`;
+    } else {
+      tasks[i].deliveryDate = '';
+    }
     SettingsModal.config.onSave?.();
   }
 };
@@ -580,6 +588,36 @@ window._settingsModalUpdateMaxCap = (v) => {
     SettingsModal.config.onSave?.();
     SettingsModal.config.onTasksChanged?.();
   }
+};
+
+// Date formatting utilities
+function formatDateToDDMMYYYY(dateStr) {
+  if (!dateStr) return '';
+  const [year, month, day] = dateStr.split('-');
+  return `${day}/${month}/${year}`;
+}
+
+function formatDateToYYYYMMDD(dateStr) {
+  if (!dateStr) return '';
+  const parts = dateStr.replace(/\D/g, '').match(/.{1,2}/g);
+  if (!parts || parts.length !== 3) return '';
+  const [day, month, year] = parts;
+  return `${year}-${month}-${day}`;
+}
+
+window.formatDateToDDMMYYYY = formatDateToDDMMYYYY;
+
+window._settingsModalFormatDeliveryDate = (i, input) => {
+  let value = input.value.replace(/\D/g, '');
+
+  if (value.length >= 2) {
+    value = value.slice(0, 2) + '/' + value.slice(2);
+  }
+  if (value.length >= 5) {
+    value = value.slice(0, 5) + '/' + value.slice(5, 9);
+  }
+
+  input.value = value;
 };
 
 // Export constants for use across pages
