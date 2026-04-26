@@ -784,7 +784,7 @@
         const firstDate = parseDate(firstDateStr);
         const currentMonth = firstDate.getMonth();
 
-        if (lastMonth !== currentMonth) {
+        if (lastMonth !== currentMonth && !(currentMonth === 11 && lastMonth === null)) {
           const monthNames = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
           svg += `<text x="${x}" y="12" class="month-label">${monthNames[currentMonth]}</text>`;
           lastMonth = currentMonth;
@@ -878,7 +878,7 @@
           const firstDate = parseDate(firstDateStr);
           const currentMonth = firstDate.getMonth();
 
-          if (lastMonth !== currentMonth) {
+          if (lastMonth !== currentMonth && !(currentMonth === 11 && lastMonth === null)) {
             const monthNames = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
             svg += `<text x="${x}" y="12" class="month-label">${monthNames[currentMonth]}</text>`;
             lastMonth = currentMonth;
@@ -1365,7 +1365,7 @@
         const firstDate = parseDate(firstDateStr);
         const currentMonth = firstDate.getMonth();
 
-        if (lastMonth !== currentMonth) {
+        if (lastMonth !== currentMonth && !(currentMonth === 11 && lastMonth === null)) {
           const monthNames = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
           svg += `<text x="${x}" y="12" class="month-label">${monthNames[currentMonth]}</text>`;
           lastMonth = currentMonth;
