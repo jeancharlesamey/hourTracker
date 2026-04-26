@@ -536,6 +536,24 @@
       return new Date(y, m - 1, d);
     }
 
+    function formatDateToDDMMYYYY(dateStr) {
+      if (!dateStr) return '';
+      const [year, month, day] = dateStr.split('-');
+      return `${day}/${month}/${year}`;
+    }
+
+    function formatDateToLongFormat(dateStr) {
+      if (!dateStr) return '';
+      const [year, month, day] = dateStr.split('-');
+      const monthNames = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'];
+      const monthIndex = parseInt(month) - 1;
+      const dayNum = parseInt(day);
+      const ordinal = dayNum === 1 || dayNum === 21 || dayNum === 31 ? 'st' :
+                      dayNum === 2 || dayNum === 22 ? 'nd' :
+                      dayNum === 3 || dayNum === 23 ? 'rd' : 'th';
+      return `${monthNames[monthIndex]} ${dayNum}${ordinal} ${year}`;
+    }
+
     // Get Monday of the week
     function getMonday(date) {
       const d = new Date(date);
@@ -709,7 +727,7 @@
           const content = `
             <div style="display: flex; gap: 6px;">
               <div style="width: 10px; height: 10px; border-radius: 50%; background: ${taskColor}; flex-shrink: 0; margin-top: 1px;"></div>
-              <div>${taskName}<br>${deliveryDate}<br><span style="color: ${statusColor};">${statusText}</span></div>
+              <div>${taskName}<br>${formatDateToDDMMYYYY(deliveryDate)}<br><span style="color: ${statusColor};">${statusText}</span></div>
             </div>
           `;
           Popover.open(cell, content);
@@ -791,14 +809,14 @@
 
           const deliveryDates = getDeliveryDatesForDate(dateStr);
 
-          let tooltipText = `${dateStr}: ${totalHours.toFixed(2)}h`;
+          let tooltipText = `${formatDateToDDMMYYYY(dateStr)}: ${totalHours.toFixed(2)}h`;
           let strokeColor = 'none';
           let strokeWidth = '0';
 
           if (deliveryDates.length > 0) {
             const deliveryInfo = deliveryDates.map(d => {
               const workingDays = getWorkingDaysTo(dateStr);
-              return `${d.name} • ${dateStr} • ${workingDays}d remaining`;
+              return `${d.name} • ${formatDateToDDMMYYYY(dateStr)} • ${workingDays}d remaining`;
             }).join('\n');
             tooltipText += '\n' + deliveryInfo;
             strokeColor = deliveryDates[0].color;
@@ -1519,12 +1537,12 @@
 
       const colorCircle = `<div class="w-2.5 h-2.5 rounded-full flex-shrink-0" style="background: ${COLOR_HEX[task.color]}"></div>`;
 
-      const estimate = task.estimate
-        ? `${task.estimate} days (${task.estimate} × ${maxCap}h = ${(task.estimate * maxCap).toFixed(1)}h)`
+      const estimateDisplay = task.estimate
+        ? `<span title="${(task.estimate * maxCap).toFixed(1)}h">${task.estimate}d</span>`
         : '—';
 
       const deliveryDate = task.deliveryDate
-        ? formatDateToDDMMYYYY(task.deliveryDate)
+        ? formatDateToLongFormat(task.deliveryDate)
         : '—';
 
       const jiraLink = task.jiraLink
@@ -1542,14 +1560,14 @@
             <tbody>
               <tr class="border-b border-gray-100 dark:border-white/5 hover:bg-black/5 dark:hover:bg-white/5">
                 <td class="py-2 px-3 text-left text-gray-700 dark:text-white/80 text-xs w-2/5">Estimate</td>
-                <td class="py-2 px-3 text-right text-gray-900 dark:text-white font-semibold text-xs w-3/5">${estimate}</td>
+                <td class="py-2 px-3 text-right text-gray-900 dark:text-white font-semibold text-xs w-3/5">${estimateDisplay}</td>
               </tr>
               <tr class="border-b border-gray-100 dark:border-white/5 hover:bg-black/5 dark:hover:bg-white/5">
                 <td class="py-2 px-3 text-left text-gray-700 dark:text-white/80 text-xs w-2/5">Delivery</td>
                 <td class="py-2 px-3 text-right text-gray-900 dark:text-white font-semibold text-xs w-3/5">${deliveryDate}</td>
               </tr>
               <tr class="border-b border-gray-100 dark:border-white/5 hover:bg-black/5 dark:hover:bg-white/5">
-                <td class="py-2 px-3 text-left text-gray-700 dark:text-white/80 text-xs w-2/5">Remaining</td>
+                <td class="py-2 px-3 text-left text-gray-700 dark:text-white/80 text-xs w-2/5">Week days remaining</td>
                 <td class="py-2 px-3 text-right text-gray-900 dark:text-white font-semibold text-xs w-3/5">${remainingText}</td>
               </tr>
               <tr class="border-b border-gray-100 dark:border-white/5 hover:bg-black/5 dark:hover:bg-white/5">
