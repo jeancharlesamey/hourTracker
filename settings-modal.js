@@ -556,7 +556,11 @@ window._settingsModalUpdateTaskColor = (i, c) => {
   if (tasks[i]) {
     tasks[i].color = c;
     SettingsModal.config.onSave?.();
-    SettingsModal.renderSettings();
+    if (SettingsModal.state.isAddTaskMode) {
+      SettingsModal.renderSettings({ tasks: false, dailyCap: false, darkMode: false, deleteData: false, title: 'Add a task' });
+    } else {
+      SettingsModal.renderSettings();
+    }
     SettingsModal.config.onTasksChanged?.();
   }
 };
