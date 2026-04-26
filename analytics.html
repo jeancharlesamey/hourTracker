@@ -400,11 +400,27 @@
             </div>
           </div>
 
-          <!-- Daily Hours Card (full width) -->
-          <div class="col-span-12 bg-white dark:bg-card-dark rounded-2xl p-6 shadow-sm border border-gray-100 dark:border-white/5">
-            <h3 class="font-semibold text-gray-900 dark:text-white mb-4">Daily Hours</h3>
-            <div class="relative" style="min-height: 500px; height: calc(100vh - 280px); max-height: 700px;">
-              <canvas id="bytaskDailyChart"></canvas>
+          <!-- Hours View Toggle Group -->
+          <div class="col-span-12 flex justify-center mt-1">
+            <div class="inline-flex rounded-lg border border-gray-200 dark:border-white/10 bg-gray-50 dark:bg-white/5 p-1">
+              <button id="hoursViewWeek" class="px-4 py-2 text-sm font-medium rounded text-gray-700 dark:text-white bg-white dark:bg-white/10 shadow-sm" data-view="week">Week</button>
+              <button id="hoursViewDay" class="px-4 py-2 text-sm font-medium rounded text-gray-600 dark:text-white/60 hover:text-gray-900 dark:hover:text-white" data-view="day">Day</button>
+            </div>
+          </div>
+
+          <!-- Week Hours Card -->
+          <div id="weekHoursCard" class="col-span-12 bg-white dark:bg-card-dark rounded-2xl p-6 shadow-sm border border-gray-100 dark:border-white/5">
+            <h3 class="font-semibold text-gray-900 dark:text-white mb-4">Hours Done - Week</h3>
+            <div class="relative" style="min-height: 400px; height: calc(100vh - 280px); max-height: 700px;">
+              <canvas id="bytaskWeekChart"></canvas>
+            </div>
+          </div>
+
+          <!-- Day Hours Card (hidden by default) -->
+          <div id="dayHoursCard" class="col-span-12 bg-white dark:bg-card-dark rounded-2xl p-6 shadow-sm border border-gray-100 dark:border-white/5 hidden">
+            <h3 class="font-semibold text-gray-900 dark:text-white mb-4">Hours Done - Day</h3>
+            <div class="relative" style="min-height: 400px; height: calc(100vh - 280px); max-height: 700px;">
+              <canvas id="bytaskDayChart"></canvas>
             </div>
           </div>
 
@@ -461,7 +477,8 @@
     let renderedViews = {}; // Track which views have been rendered
     let activeTaskIndex = 0;
     let taskBurnChartInstance = null;
-    let taskDailyChartInstance = null;
+    let taskWeekChartInstance = null;
+    let taskDayChartInstance = null;
 
     // ── Dark Mode ─────────────────────────────────────────
     let darkMode = localStorage.getItem('dt_darkMode') !== 'false';
@@ -524,6 +541,48 @@
 
     // Initialize dropdown dark mode knob position
     AppMenu.updateDarkModeKnob(darkMode);
+
+    // Hours view toggle buttons
+    const hoursViewWeek = document.getElementById('hoursViewWeek');
+    const hoursViewDay = document.getElementById('hoursViewDay');
+    const weekHoursCard = document.getElementById('weekHoursCard');
+    const dayHoursCard = document.getElementById('dayHoursCard');
+
+    if (hoursViewWeek && hoursViewDay) {
+      hoursViewWeek.addEventListener('click', () => {
+        // Update button styles
+        hoursViewWeek.classList.add('bg-white', 'dark:bg-white/10', 'shadow-sm', 'text-gray-700', 'dark:text-white');
+        hoursViewWeek.classList.remove('text-gray-600', 'dark:text-white/60', 'hover:text-gray-900', 'dark:hover:text-white');
+        hoursViewDay.classList.remove('bg-white', 'dark:bg-white/10', 'shadow-sm', 'text-gray-700', 'dark:text-white');
+        hoursViewDay.classList.add('text-gray-600', 'dark:text-white/60', 'hover:text-gray-900', 'dark:hover:text-white');
+
+        // Show/hide cards
+        weekHoursCard.classList.remove('hidden');
+        dayHoursCard.classList.add('hidden');
+
+        // Re-render week chart
+        if (selectedTaskIndex >= 0) {
+          renderTaskWeekChart(selectedTaskIndex);
+        }
+      });
+
+      hoursViewDay.addEventListener('click', () => {
+        // Update button styles
+        hoursViewDay.classList.add('bg-white', 'dark:bg-white/10', 'shadow-sm', 'text-gray-700', 'dark:text-white');
+        hoursViewDay.classList.remove('text-gray-600', 'dark:text-white/60', 'hover:text-gray-900', 'dark:hover:text-white');
+        hoursViewWeek.classList.remove('bg-white', 'dark:bg-white/10', 'shadow-sm', 'text-gray-700', 'dark:text-white');
+        hoursViewWeek.classList.add('text-gray-600', 'dark:text-white/60', 'hover:text-gray-900', 'dark:hover:text-white');
+
+        // Show/hide cards
+        weekHoursCard.classList.add('hidden');
+        dayHoursCard.classList.remove('hidden');
+
+        // Re-render day chart
+        if (selectedTaskIndex >= 0) {
+          renderTaskDayChart(selectedTaskIndex);
+        }
+      });
+    }
 
     // ── Date Utilities ────────────────────────────────────
     function todayStr() {
@@ -1099,12 +1158,17 @@
       });
     }
 
-    function renderTaskDailyHours(taskIndex) {
-      const canvas = document.getElementById('bytaskDailyChart');
+    function formatDateForChart(dateStr) {
+      const [year, month, day] = dateStr.split('-');
+      const monthNames = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+      return `${monthNames[parseInt(month) - 1]} ${parseInt(day)}`;
+    }
+
+    function renderTaskWeekChart(taskIndex) {
+      const canvas = document.getElementById('bytaskWeekChart');
       if (!canvas) return;
 
       const task = tasks[taskIndex];
-
       const allDates = getAllDates().sort();
       const yearStr = linearViewYear.toString();
       const monthStr = String(linearViewMonth + 1).padStart(2, '0');
@@ -1115,29 +1179,43 @@
         ctx.fillStyle = '#999';
         ctx.textAlign = 'center';
         ctx.fillText('No data for this month', canvas.width / 2, canvas.height / 2);
-        if (taskDailyChartInstance) {
-          taskDailyChartInstance.destroy();
-          taskDailyChartInstance = null;
+        if (taskWeekChartInstance) {
+          taskWeekChartInstance.destroy();
+          taskWeekChartInstance = null;
         }
         return;
       }
 
-      const labels = monthDates.map(d => {
-        const [y, m, day] = d.split('-');
-        return day;
+      // Week mode
+      const weekMap = {};
+      monthDates.forEach(d => {
+        const weekNum = getWeekNumber(d);
+        if (!weekMap[weekNum]) {
+          weekMap[weekNum] = [];
+        }
+        weekMap[weekNum].push(d);
       });
 
-      const data = monthDates.map(d => getHours(d, taskIndex));
+      const weeks = Object.keys(weekMap).sort((a, b) => Number(a) - Number(b));
+      const labels = weeks.map(weekNum => `W${weekNum}`);
 
-      const totalHours = data.reduce((a, b) => a + b, 0);
-      const avgHours = monthDates.length > 0 ? totalHours / monthDates.length : 0;
+      const data = weeks.map(weekNum => {
+        return weekMap[weekNum].reduce((sum, d) => sum + getHours(d, taskIndex), 0);
+      });
 
-      if (taskDailyChartInstance) {
-        taskDailyChartInstance.destroy();
+      const tooltipData = data.map(hours => {
+        const days = (hours / maxCap).toFixed(1);
+        return `${hours.toFixed(1)}h\n${days}d`;
+      });
+
+      const avgHours = weeks.length > 0 ? data.reduce((a, b) => a + b, 0) / weeks.length : 0;
+
+      if (taskWeekChartInstance) {
+        taskWeekChartInstance.destroy();
       }
 
       const ctx = canvas.getContext('2d');
-      taskDailyChartInstance = new Chart(ctx, {
+      taskWeekChartInstance = new Chart(ctx, {
         type: 'bar',
         data: {
           labels: labels,
@@ -1155,6 +1233,13 @@
           plugins: {
             legend: {
               display: false
+            },
+            tooltip: {
+              callbacks: {
+                afterLabel: function(context) {
+                  return tooltipData[context.dataIndex];
+                }
+              }
             },
             taskAverageLine: {
               avg: avgHours,
@@ -1191,7 +1276,122 @@
             ctx.lineTo(xScale.right, y);
             ctx.stroke();
 
-            // Draw average label
+            ctx.fillStyle = darkMode ? 'rgba(255, 255, 255, 0.5)' : 'rgba(0, 0, 0, 0.4)';
+            ctx.font = '11px Inter';
+            ctx.textAlign = 'right';
+            ctx.fillText(`avg: ${avgHours.toFixed(2)}h`, xScale.right - 8, y - 8);
+            ctx.restore();
+          }
+        }]
+      });
+    }
+
+    function getWeekNumber(dateStr) {
+      const [year, month, day] = dateStr.split('-').map(Number);
+      const date = new Date(year, month - 1, day);
+      const firstDayOfYear = new Date(year, 0, 1);
+      const dayDiff = Math.floor((date - firstDayOfYear) / (1000 * 60 * 60 * 24));
+      return Math.ceil((dayDiff + firstDayOfYear.getDay() + 1) / 7);
+    }
+
+    function renderTaskDayChart(taskIndex) {
+      const canvas = document.getElementById('bytaskDayChart');
+      if (!canvas) return;
+
+      const task = tasks[taskIndex];
+      const allDates = getAllDates().sort();
+      const yearStr = linearViewYear.toString();
+      const monthStr = String(linearViewMonth + 1).padStart(2, '0');
+      const monthDates = allDates.filter(d => d.startsWith(`${yearStr}-${monthStr}`));
+
+      if (monthDates.length === 0) {
+        const ctx = canvas.getContext('2d');
+        ctx.fillStyle = '#999';
+        ctx.textAlign = 'center';
+        ctx.fillText('No data for this month', canvas.width / 2, canvas.height / 2);
+        if (taskDayChartInstance) {
+          taskDayChartInstance.destroy();
+          taskDayChartInstance = null;
+        }
+        return;
+      }
+
+      const labels = monthDates.map(d => formatDateForChart(d));
+      const data = monthDates.map(d => getHours(d, taskIndex));
+
+      const tooltipData = data.map(hours => {
+        const days = (hours / maxCap).toFixed(1);
+        return `${hours.toFixed(1)}h\n${days}d`;
+      });
+
+      const avgHours = monthDates.length > 0 ? data.reduce((a, b) => a + b, 0) / monthDates.length : 0;
+
+      if (taskDayChartInstance) {
+        taskDayChartInstance.destroy();
+      }
+
+      const ctx = canvas.getContext('2d');
+      taskDayChartInstance = new Chart(ctx, {
+        type: 'bar',
+        data: {
+          labels: labels,
+          datasets: [{
+            label: task.name,
+            data: data,
+            backgroundColor: COLOR_HEX[task.color],
+            borderColor: COLOR_HEX[task.color],
+            borderWidth: 0
+          }]
+        },
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          plugins: {
+            legend: {
+              display: false
+            },
+            tooltip: {
+              callbacks: {
+                afterLabel: function(context) {
+                  return tooltipData[context.dataIndex];
+                }
+              }
+            },
+            taskAverageLine: {
+              avg: avgHours,
+              color: darkMode ? '#888' : '#ccc'
+            }
+          },
+          scales: {
+            y: {
+              beginAtZero: true,
+              ticks: { color: darkMode ? '#fff' : '#000' },
+              grid: { color: darkMode ? '#333' : '#eee' }
+            },
+            x: {
+              ticks: { color: darkMode ? '#fff' : '#000' },
+              grid: { color: darkMode ? '#333' : '#eee' }
+            }
+          }
+        },
+        plugins: [{
+          id: 'taskAverageLine',
+          afterDatasetsDraw(chart) {
+            if (avgHours === 0) return;
+            const { ctx, chartArea } = chart;
+            const yScale = chart.scales.y;
+            const xScale = chart.scales.x;
+            const y = yScale.getPixelForValue(avgHours);
+
+            ctx.save();
+            ctx.strokeStyle = darkMode ? 'rgba(255, 255, 255, 0.3)' : 'rgba(0, 0, 0, 0.2)';
+            ctx.lineWidth = 2;
+            ctx.setLineDash([5, 5]);
+            ctx.beginPath();
+            ctx.moveTo(xScale.left, y);
+            ctx.lineTo(xScale.right, y);
+            ctx.stroke();
+
             ctx.fillStyle = darkMode ? 'rgba(255, 255, 255, 0.5)' : 'rgba(0, 0, 0, 0.4)';
             ctx.font = '11px Inter';
             ctx.textAlign = 'right';
@@ -1511,7 +1711,8 @@
       renderTaskRequirementsCard(taskIndex);
       renderTaskProgressCard(taskIndex);
       renderTaskBurnChart(taskIndex);
-      renderTaskDailyHours(taskIndex);
+      renderTaskWeekChart(taskIndex);
+      renderTaskDayChart(taskIndex);
       renderTaskAchievements(taskIndex);
       renderTaskHeatmap(taskIndex);
     }
