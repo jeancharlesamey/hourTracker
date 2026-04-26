@@ -410,7 +410,7 @@
 
           <!-- This Month Card (col-6 on md+) -->
           <div id="bytaskThisMonth" class="col-span-12 md:col-span-6 bg-white dark:bg-card-dark rounded-2xl p-6 shadow-sm border border-gray-100 dark:border-white/5">
-            <h3 class="font-semibold text-gray-900 dark:text-white mb-4">This Month</h3>
+            <h3 class="font-semibold text-gray-900 dark:text-white mb-4">Logged this month</h3>
             <div class="space-y-2 text-sm"></div>
           </div>
 
@@ -1169,6 +1169,7 @@
       let thisMonthDaysWorked = 0;
       let thisMonthTotal = 0;
       let thisMonthBestDay = 0;
+      let thisMonthBestDayDate = null;
 
       for (let d = 1; d <= daysInMonth; d++) {
         const dateStr = `${yearStr}-${monthStr}-${String(d).padStart(2, '0')}`;
@@ -1176,57 +1177,88 @@
         const hours = getHours(dateStr, taskIndex);
         if (hours > 0) thisMonthDaysWorked++;
         thisMonthTotal += hours;
-        thisMonthBestDay = Math.max(thisMonthBestDay, hours);
+        if (hours > thisMonthBestDay) {
+          thisMonthBestDay = hours;
+          thisMonthBestDayDate = dateStr;
+        }
       }
 
       const thisMonthAvg = thisMonthDaysWorked > 0 ? thisMonthTotal / thisMonthDaysWorked : 0;
       const thisMonthDaysCalc = hoursToDay(thisMonthTotal);
+      const thisMonthAvgDaysCalc = thisMonthDaysWorked > 0 ? hoursToDay(thisMonthAvg) : '—';
+
+      const monthNames = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+      const dayNames = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
+      const ordinals = ['st', 'nd', 'rd', 'th'];
+
+      const formatDayName = (dateStr) => {
+        if (!dateStr) return '—';
+        const [y, m, d] = dateStr.split('-').map(Number);
+        const date = new Date(y, m - 1, d);
+        const month = monthNames[date.getMonth()];
+        const day = date.getDate();
+        const ordinal = ordinals[Math.min(3, (day % 10 === 1 && day !== 11 ? 0 : day % 10 === 2 && day !== 12 ? 1 : day % 10 === 3 && day !== 13 ? 2 : 3))];
+        return `${month} ${day}${ordinal}`;
+      };
 
       // Before This Month
       const allDates = getAllDates().sort();
       let beforeMonthTotal = 0;
       let beforeMonthDaysWorked = 0;
-      let firstDate = null;
+      let beforeMonthBestDay = 0;
+      let beforeMonthBestDayDate = null;
 
       allDates.forEach(d => {
         if (!d.startsWith(`${yearStr}-${monthStr}`)) {
           const hours = getHours(d, taskIndex);
           if (hours > 0) {
             beforeMonthDaysWorked++;
-            if (!firstDate) firstDate = d;
           }
           beforeMonthTotal += hours;
+          if (hours > beforeMonthBestDay) {
+            beforeMonthBestDay = hours;
+            beforeMonthBestDayDate = d;
+          }
         }
       });
 
       const beforeMonthAvg = beforeMonthDaysWorked > 0 ? beforeMonthTotal / beforeMonthDaysWorked : 0;
       const beforeMonthDaysCalc = hoursToDay(beforeMonthTotal);
+      const beforeMonthAvgDaysCalc = beforeMonthDaysWorked > 0 ? hoursToDay(beforeMonthAvg) : '—';
 
       const thisMonthEl = document.getElementById('bytaskThisMonth');
       if (thisMonthEl) {
         const div = thisMonthEl.querySelector('div');
         div.innerHTML = thisMonthDaysWorked > 0
           ? `
-            <dl class="space-y-3 text-sm">
-              <div class="border-b border-gray-200 dark:border-white/10 pb-2">
-                <div class="flex justify-between py-1">
-                  <dt class="text-gray-600 dark:text-gray-400">Total</dt>
-                  <dd class="font-medium text-gray-900 dark:text-white">${thisMonthDaysCalc} days</dd>
-                </div>
-                <div class="flex justify-between">
-                  <dt class="text-gray-600 dark:text-gray-400"></dt>
-                  <dd class="font-medium text-gray-900 dark:text-white">${fmtH(thisMonthTotal)}</dd>
-                </div>
-              </div>
-              <div class="flex justify-between py-2 border-b border-gray-200 dark:border-white/10">
-                <dt class="text-gray-600 dark:text-gray-400">Best day</dt>
-                <dd class="font-medium text-gray-900 dark:text-white">${fmtH(thisMonthBestDay)}</dd>
-              </div>
-              <div class="flex justify-between py-2">
-                <dt class="text-gray-600 dark:text-gray-400">Avg per worked day</dt>
-                <dd class="font-medium text-gray-900 dark:text-white">${fmtH(thisMonthAvg)}</dd>
-              </div>
-            </dl>
+            <div class="overflow-x-auto">
+              <table class="w-full text-sm table-fixed">
+                <thead>
+                  <tr class="border-b border-gray-200 dark:border-white/10">
+                    <th class="py-2 px-3 text-left text-gray-700 dark:text-white/80 text-xs font-semibold w-2/5"></th>
+                    <th class="py-2 px-3 text-right text-gray-700 dark:text-white/80 text-xs font-semibold w-1.5/5">Days</th>
+                    <th class="py-2 px-3 text-right text-gray-700 dark:text-white/80 text-xs font-semibold w-1.5/5">Hours</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr class="border-b border-gray-100 dark:border-white/5 hover:bg-black/5 dark:hover:bg-white/5">
+                    <td class="py-2 px-3 text-left text-gray-700 dark:text-white/80 text-xs w-2/5">Total logged</td>
+                    <td class="py-2 px-3 text-right text-gray-900 dark:text-white font-semibold text-xs w-1.5/5">${thisMonthDaysCalc}</td>
+                    <td class="py-2 px-3 text-right text-gray-900 dark:text-white font-semibold text-xs w-1.5/5">${fmtH(thisMonthTotal)}</td>
+                  </tr>
+                  <tr class="border-b border-gray-100 dark:border-white/5 hover:bg-black/5 dark:hover:bg-white/5">
+                    <td class="py-2 px-3 text-left text-gray-700 dark:text-white/80 text-xs w-2/5">Best day</td>
+                    <td class="py-2 px-3 text-right text-gray-900 dark:text-white font-semibold text-xs w-1.5/5">${formatDayName(thisMonthBestDayDate)}</td>
+                    <td class="py-2 px-3 text-right text-gray-900 dark:text-white font-semibold text-xs w-1.5/5">${fmtH(thisMonthBestDay)}</td>
+                  </tr>
+                  <tr>
+                    <td class="py-2 px-3 text-left text-gray-700 dark:text-white/80 text-xs w-2/5">Avg per worked day</td>
+                    <td class="py-2 px-3 text-right text-gray-900 dark:text-white font-semibold text-xs w-1.5/5">${thisMonthAvgDaysCalc}</td>
+                    <td class="py-2 px-3 text-right text-gray-900 dark:text-white font-semibold text-xs w-1.5/5">${fmtH(thisMonthAvg)}</td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
           `
           : `<p class="text-gray-500 dark:text-gray-400">No hours logged this month</p>`;
       }
@@ -1236,30 +1268,34 @@
         const div = beforeEl.querySelector('div');
         div.innerHTML = beforeMonthDaysWorked > 0
           ? `
-            <dl class="space-y-3 text-sm">
-              <div class="flex justify-between py-2 border-b border-gray-200 dark:border-white/10">
-                <dt class="text-gray-600 dark:text-gray-400">First date</dt>
-                <dd class="font-medium text-gray-900 dark:text-white">${firstDate ? formatDateToDDMMYYYY(firstDate) : '—'}</dd>
-              </div>
-              <div class="border-b border-gray-200 dark:border-white/10 pb-2">
-                <div class="flex justify-between py-1">
-                  <dt class="text-gray-600 dark:text-gray-400">Total</dt>
-                  <dd class="font-medium text-gray-900 dark:text-white">${beforeMonthDaysCalc} days</dd>
-                </div>
-                <div class="flex justify-between">
-                  <dt class="text-gray-600 dark:text-gray-400"></dt>
-                  <dd class="font-medium text-gray-900 dark:text-white">${fmtH(beforeMonthTotal)}</dd>
-                </div>
-              </div>
-              <div class="flex justify-between py-2 border-b border-gray-200 dark:border-white/10">
-                <dt class="text-gray-600 dark:text-gray-400">Avg per worked day</dt>
-                <dd class="font-medium text-gray-900 dark:text-white">${fmtH(beforeMonthAvg)}</dd>
-              </div>
-              <div class="flex justify-between py-2">
-                <dt class="text-gray-600 dark:text-gray-400">Cumulative hours</dt>
-                <dd class="font-medium text-gray-900 dark:text-white">${fmtH(beforeMonthTotal + thisMonthTotal)}</dd>
-              </div>
-            </dl>
+            <div class="overflow-x-auto">
+              <table class="w-full text-sm table-fixed">
+                <thead>
+                  <tr class="border-b border-gray-200 dark:border-white/10">
+                    <th class="py-2 px-3 text-left text-gray-700 dark:text-white/80 text-xs font-semibold w-2/5"></th>
+                    <th class="py-2 px-3 text-right text-gray-700 dark:text-white/80 text-xs font-semibold w-1.5/5">Days</th>
+                    <th class="py-2 px-3 text-right text-gray-700 dark:text-white/80 text-xs font-semibold w-1.5/5">Hours</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr class="border-b border-gray-100 dark:border-white/5 hover:bg-black/5 dark:hover:bg-white/5">
+                    <td class="py-2 px-3 text-left text-gray-700 dark:text-white/80 text-xs w-2/5">Total logged</td>
+                    <td class="py-2 px-3 text-right text-gray-900 dark:text-white font-semibold text-xs w-1.5/5">${beforeMonthDaysCalc}</td>
+                    <td class="py-2 px-3 text-right text-gray-900 dark:text-white font-semibold text-xs w-1.5/5">${fmtH(beforeMonthTotal)}</td>
+                  </tr>
+                  <tr class="border-b border-gray-100 dark:border-white/5 hover:bg-black/5 dark:hover:bg-white/5">
+                    <td class="py-2 px-3 text-left text-gray-700 dark:text-white/80 text-xs w-2/5">Best day</td>
+                    <td class="py-2 px-3 text-right text-gray-900 dark:text-white font-semibold text-xs w-1.5/5">${formatDayName(beforeMonthBestDayDate)}</td>
+                    <td class="py-2 px-3 text-right text-gray-900 dark:text-white font-semibold text-xs w-1.5/5">${fmtH(beforeMonthBestDay)}</td>
+                  </tr>
+                  <tr>
+                    <td class="py-2 px-3 text-left text-gray-700 dark:text-white/80 text-xs w-2/5">Avg per worked day</td>
+                    <td class="py-2 px-3 text-right text-gray-900 dark:text-white font-semibold text-xs w-1.5/5">${beforeMonthAvgDaysCalc}</td>
+                    <td class="py-2 px-3 text-right text-gray-900 dark:text-white font-semibold text-xs w-1.5/5">${fmtH(beforeMonthAvg)}</td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
           `
           : `<p class="text-gray-500 dark:text-gray-400">No hours logged before this month</p>`;
       }
@@ -1487,25 +1523,30 @@
         ? `<a href="${task.jiraLink}" target="_blank" rel="noopener noreferrer" class="text-blue-600 dark:text-blue-400 hover:underline">see ticket in Jira</a>`
         : '—';
 
+      const daysRemaining = task.deliveryDate ? getWorkingDaysTo(task.deliveryDate) : null;
+      const remainingText = daysRemaining !== null
+        ? (daysRemaining < 0 ? `${Math.abs(daysRemaining)} days ago` : `${daysRemaining} days`)
+        : '—';
+
       container.innerHTML = `
         <div class="overflow-x-auto">
           <table class="w-full text-sm table-fixed">
             <tbody>
               <tr class="border-b border-gray-100 dark:border-white/5 hover:bg-black/5 dark:hover:bg-white/5">
-                <td class="py-2 px-3 text-gray-900 dark:text-white flex items-center gap-2.5 w-3/5">${colorCircle}${task.name}</td>
-                <td class="py-2 px-3 text-right text-gray-700 dark:text-white/80 text-xs w-2/5">Task</td>
+                <td class="py-2 px-3 text-left text-gray-700 dark:text-white/80 text-xs w-2/5">Estimate</td>
+                <td class="py-2 px-3 text-right text-gray-900 dark:text-white font-semibold text-xs w-3/5">${estimate}</td>
               </tr>
               <tr class="border-b border-gray-100 dark:border-white/5 hover:bg-black/5 dark:hover:bg-white/5">
-                <td class="py-2 px-3 text-gray-900 dark:text-white font-semibold text-xs">${estimate}</td>
-                <td class="py-2 px-3 text-right text-gray-700 dark:text-white/80 text-xs">Estimate</td>
+                <td class="py-2 px-3 text-left text-gray-700 dark:text-white/80 text-xs w-2/5">Delivery</td>
+                <td class="py-2 px-3 text-right text-gray-900 dark:text-white font-semibold text-xs w-3/5">${deliveryDate}</td>
               </tr>
               <tr class="border-b border-gray-100 dark:border-white/5 hover:bg-black/5 dark:hover:bg-white/5">
-                <td class="py-2 px-3 text-gray-900 dark:text-white font-semibold text-xs">${deliveryDate}</td>
-                <td class="py-2 px-3 text-right text-gray-700 dark:text-white/80 text-xs">Delivery</td>
+                <td class="py-2 px-3 text-left text-gray-700 dark:text-white/80 text-xs w-2/5">Remaining</td>
+                <td class="py-2 px-3 text-right text-gray-900 dark:text-white font-semibold text-xs w-3/5">${remainingText}</td>
               </tr>
               <tr class="border-b border-gray-100 dark:border-white/5 hover:bg-black/5 dark:hover:bg-white/5">
-                <td class="py-2 px-3 text-gray-900 dark:text-white font-semibold text-xs">${jiraLink}</td>
-                <td class="py-2 px-3 text-right text-gray-700 dark:text-white/80 text-xs">Jira</td>
+                <td class="py-2 px-3 text-left text-gray-700 dark:text-white/80 text-xs w-2/5">Jira</td>
+                <td class="py-2 px-3 text-right text-gray-900 dark:text-white font-semibold text-xs w-3/5">${jiraLink}</td>
               </tr>
             </tbody>
           </table>
@@ -1565,32 +1606,33 @@
         }
       }
 
-      const daysRemaining = deliveryDate ? getWorkingDaysTo(deliveryDate) : null;
-      const daysRemainingText = daysRemaining !== null
-        ? `${daysRemaining} day${daysRemaining !== 1 ? 's' : ''}`
-        : '—';
+      // Calculate if overdone (logged > estimate)
+      const extraHours = Math.max(0, loggedTotal - totalEstimatedHours);
+      const extraDays = extraHours > 0 ? hoursToDay(extraHours) : null;
 
-      // Calculate logged days and hours (using maxCap)
-      const loggedText = loggedTotal > 0
-        ? `${hoursToDay(loggedTotal)} days or ${fmtH(loggedTotal)}`
-        : '—';
+      let remainingLabel = 'Remaining';
+      let daysRemainingText = '—';
+      let hoursRemainingText = '—';
+      let isOverdone = false;
 
-      // Calculate this month days and hours (using maxCap)
-      const yearStr = linearViewYear.toString();
-      const monthStr = String(linearViewMonth + 1).padStart(2, '0');
-      let thisMonthTotal = 0;
-      for (let d = 1; d <= 31; d++) {
-        const dateStr = `${yearStr}-${monthStr}-${String(d).padStart(2, '0')}`;
-        if (dateStr > todayStr()) break;
-        const hours = getHours(dateStr, taskIndex);
-        thisMonthTotal += hours;
+      if (extraHours > 0) {
+        // Overdone - show extra hours/days beyond estimate
+        remainingLabel = 'Overdone';
+        daysRemainingText = `${extraDays} days`;
+        hoursRemainingText = fmtH(extraHours);
+        isOverdone = true;
+      } else if (totalEstimatedHours > 0) {
+        // Not overdone - show remaining hours/days to complete estimate
+        const remainingHours = totalEstimatedHours - loggedTotal;
+        const remainingDays = hoursToDay(remainingHours);
+        daysRemainingText = `${remainingDays} days`;
+        hoursRemainingText = fmtH(remainingHours);
       }
 
-      const thisMonthText = thisMonthTotal > 0
-        ? `${hoursToDay(thisMonthTotal)} days or ${fmtH(thisMonthTotal)}`
+      // Calculate estimate with "+X days" if overlogged
+      const estimateText = estimate
+        ? `${estimate} days${extraDays ? ` +${extraDays}` : ''}`
         : '—';
-
-      const displayPercent = Math.min(100, percentComplete);
 
       // Set the status badge in the header
       const badgeEl = document.getElementById('bytaskProgressBadge');
@@ -1600,39 +1642,46 @@
 
       // Set the progress content
       if (container) {
+        // Progress bar with task color (or orange if overdone), allow percentage over 100%
+        const displayPercent = percentComplete;
+        const progressBarWidth = Math.min(displayPercent, 100);
+        const progressBarColor = isOverdone ? '#f97316' : COLOR_HEX[task.color];
+
         container.innerHTML = `
           <div class="mb-4">
-            <div class="text-xs text-gray-600 dark:text-gray-400 mb-2">${displayPercent.toFixed(0)}%</div>
+            <div class="text-xs text-gray-600 dark:text-gray-400 mb-2">${percentComplete.toFixed(0)}%</div>
             <div class="w-full bg-gray-200 dark:bg-gray-700 rounded-full h-2">
-              <div class="bg-blue-500 h-2 rounded-full" style="width: ${displayPercent}%"></div>
+              <div class="h-2 rounded-full" style="background:${progressBarColor}; width: ${progressBarWidth}%"></div>
             </div>
           </div>
-          <dl class="space-y-3 text-sm">
-            <div class="border-b border-gray-200 dark:border-white/10 pb-2">
-              <div class="flex justify-between py-1">
-                <dt class="text-gray-600 dark:text-gray-400">Logged</dt>
-                <dd class="font-medium text-gray-900 dark:text-white">${hoursToDay(loggedTotal)} days</dd>
-              </div>
-              <div class="flex justify-between">
-                <dt class="text-gray-600 dark:text-gray-400"></dt>
-                <dd class="font-medium text-gray-900 dark:text-white">${fmtH(loggedTotal)}</dd>
-              </div>
-            </div>
-            <div class="flex justify-between py-2 border-b border-gray-200 dark:border-white/10">
-              <dt class="text-gray-600 dark:text-gray-400">Days remaining</dt>
-              <dd class="font-medium text-gray-900 dark:text-white">${daysRemainingText}</dd>
-            </div>
-            <div class="border-b border-gray-200 dark:border-white/10 pb-2">
-              <div class="flex justify-between py-1">
-                <dt class="text-gray-600 dark:text-gray-400">This month</dt>
-                <dd class="font-medium text-gray-900 dark:text-white">${hoursToDay(thisMonthTotal)} days</dd>
-              </div>
-              <div class="flex justify-between">
-                <dt class="text-gray-600 dark:text-gray-400"></dt>
-                <dd class="font-medium text-gray-900 dark:text-white">${fmtH(thisMonthTotal)}</dd>
-              </div>
-            </div>
-          </dl>
+          <div class="overflow-x-auto">
+            <table class="w-full text-sm table-fixed">
+              <thead>
+                <tr class="border-b border-gray-200 dark:border-white/10">
+                  <th class="py-2 px-3 text-left text-gray-700 dark:text-white/80 text-xs font-semibold w-2/5"></th>
+                  <th class="py-2 px-3 text-right text-gray-700 dark:text-white/80 text-xs font-semibold w-1.5/5">Days</th>
+                  <th class="py-2 px-3 text-right text-gray-700 dark:text-white/80 text-xs font-semibold w-1.5/5">Hours</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr class="border-b border-gray-100 dark:border-white/5 hover:bg-black/5 dark:hover:bg-white/5">
+                  <td class="py-2 px-3 text-left text-gray-700 dark:text-white/80 text-xs w-2/5">Estimate</td>
+                  <td class="py-2 px-3 text-right text-gray-900 dark:text-white font-semibold text-xs w-1.5/5">${estimate}</td>
+                  <td class="py-2 px-3 text-right text-gray-900 dark:text-white font-semibold text-xs w-1.5/5">—</td>
+                </tr>
+                <tr class="border-b border-gray-100 dark:border-white/5 hover:bg-black/5 dark:hover:bg-white/5">
+                  <td class="py-2 px-3 text-left text-gray-700 dark:text-white/80 text-xs w-2/5">Total logged</td>
+                  <td class="py-2 px-3 text-right text-gray-900 dark:text-white font-semibold text-xs w-1.5/5">${hoursToDay(loggedTotal)}</td>
+                  <td class="py-2 px-3 text-right text-gray-900 dark:text-white font-semibold text-xs w-1.5/5">${fmtH(loggedTotal)}</td>
+                </tr>
+                <tr${isOverdone ? ' class="border-b border-gray-100 dark:border-white/5 hover:bg-black/5 dark:hover:bg-white/5"' : ''}>
+                  <td class="py-2 px-3 text-left${isOverdone ? ' text-orange-600 dark:text-orange-400' : ' text-gray-700 dark:text-white/80'} text-xs w-2/5">${remainingLabel}</td>
+                  <td class="py-2 px-3 text-right${isOverdone ? ' text-orange-600 dark:text-orange-400' : ' text-gray-900 dark:text-white'} font-semibold text-xs w-1.5/5">${daysRemainingText}</td>
+                  <td class="py-2 px-3 text-right${isOverdone ? ' text-orange-600 dark:text-orange-400' : ' text-gray-900 dark:text-white'} font-semibold text-xs w-1.5/5">${hoursRemainingText}</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
         `;
       }
     }
