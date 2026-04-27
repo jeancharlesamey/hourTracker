@@ -6,6 +6,12 @@
   <meta name="color-scheme" content="light dark">
   <title>Hour Tracker</title>
   <!-- Beta-1.0.1 -->
+  <script>
+    if (localStorage.getItem('dt_darkMode') !== 'false') {
+      document.documentElement.classList.add('dark');
+      document.documentElement.style.colorScheme = 'dark';
+    }
+  </script>
   <style>
     html { background-color: #f5f5f5; }
     html.dark { background-color: #1a1a2e; }
