@@ -1,6 +1,6 @@
 ◷ **HOUR TRACKER** — one file. no server. no fuss.
 
-**beta-1.2.1**
+**v1.3.0-beta.2**
 
 A minimal, offline-first hour tracker that lives in your browser. No login, no server, no complications.
 
@@ -107,12 +107,12 @@ Data stored locally: your task list, colors, hours per day, daily cap, and last 
 
 ## Recent Updates
 
-**beta-1.2.1** — Bug fixes
+**v1.2.1-beta.2** — Bug fixes
 - Color Picker: Fixed visual glitch where picker state switched across all tasks (Issue #8)
 - Back Navigation: Changed from folder link to history.back() for clean navigation (Issue #9)
 - Dark Mode Flash: Added synchronous dark mode check in page head to prevent light mode flash on navigation
 
-**beta-1.2.0** — Delivery tracking, charts, full-year heatmap
+**v1.2.0-beta.2** — Delivery tracking, charts, full-year heatmap
 - Burn Chart: Refined visualization with ideal trajectory line
 - Date Formatting: Consistent display + "Month Day Year" in requirements
 - Hours Done Views: Toggle between Week (W14) and Day (Apr 1) with tooltips
