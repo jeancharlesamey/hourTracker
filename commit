@@ -1,0 +1,16 @@
+#!/bin/bash
+
+# Usage: ./commit add dark mode to icons
+# Or: ./commit "add dark mode to icons"
+
+if [ $# -eq 0 ]; then
+  echo "Error: Commit message required"
+  echo "Usage: ./commit message here"
+  exit 1
+fi
+
+# Join all arguments into a single message
+MESSAGE="$@"
+
+git add -A
+git commit -m "$MESSAGE"

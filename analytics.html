@@ -154,6 +154,25 @@
       border-radius: 2px;
     }
 
+    @keyframes deliveryDotBlink {
+      0%, 100% { opacity: 1; }
+      50% { opacity: 0.4; }
+    }
+
+    .delivery-dot {
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      animation: deliveryDotBlink 1.5s ease-in-out infinite;
+      pointer-events: auto;
+      filter: drop-shadow(0 1px 2px rgba(0, 0, 0, 0.3));
+      cursor: pointer;
+    }
+
+    .delivery-dot:hover {
+      filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.4));
+    }
+
     .settings-overlay {
       transition: opacity 0.2s ease, visibility 0.2s ease;
     }
@@ -233,157 +252,208 @@
       cursor: not-allowed;
     }
 
+    /* SVG icon styling for light/dark mode */
+    img[src*="icons/"] {
+      filter: brightness(0.4);
+    }
+    html.dark img[src*="icons/"] {
+      filter: brightness(0) invert(1);
+    }
+
   </style>
 </head>
 <body class="bg-surface dark:bg-surface-dark transition-colors">
   <div class="min-h-screen flex flex-col">
     <!-- Header -->
     <header class="fixed top-0 left-0 right-0 flex items-center justify-between px-4 md:px-8 py-3 md:py-4 bg-card/80 dark:bg-card-dark/80 backdrop-blur-sm border-b border-gray-200 dark:border-white/5 z-30 transition-colors duration-300">
-      <div class="flex items-center gap-3">
-        <a href="/" aria-label="Back" class="w-8 h-8 md:w-9 md:h-9 flex items-center justify-center rounded-lg hover:bg-black/5 dark:hover:bg-white/10 transition-colors text-gray-600 dark:text-gray-400">
-          <svg aria-hidden="true" class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"/>
-          </svg>
-        </a>
+      <a href="./" aria-label="Back to home" class="flex items-center gap-2 hover:opacity-80 transition-opacity">
+        <img src="./icons/back-arrow.svg" alt="" class="w-6 h-6 text-gray-900 dark:text-white forced-color-adjust-none md:forced-color-adjust-auto" aria-hidden="true">
         <h1 class="text-lg md:text-xl font-bold tracking-tight text-gray-900 dark:text-white">Analytics</h1>
+      </a>
+      <div class="relative">
+        <button id="appMenuBtn" aria-label="App menu" class="flex items-center gap-2 hover:opacity-80 transition-opacity">
+          <img src="./icons/menu-dots.svg" alt="" class="w-4 h-4 text-gray-600 dark:text-gray-400 forced-color-adjust-none md:forced-color-adjust-auto" aria-hidden="true">
+        </button>
+        <div id="appMenu" class="hidden absolute right-0 top-full mt-2 bg-card dark:bg-card-dark rounded-lg shadow-lg border border-gray-200 dark:border-white/10 w-56 z-50">
+          <div class="flex items-center justify-between px-4 py-2 border-b border-gray-200 dark:border-white/5">
+            <label class="flex items-center gap-3 text-sm text-gray-700 dark:text-white cursor-pointer flex-1">
+              <img src="./icons/moon-icon.svg" alt="" class="w-5 h-5 text-gray-700 dark:text-white forced-color-adjust-none md:forced-color-adjust-auto" aria-hidden="true">
+              Dark mode
+            </label>
+            <button id="dropdownDarkMode" role="switch" aria-label="Dark mode"
+              class="relative w-10 h-6 rounded-full bg-gray-300 dark:bg-emerald-500 transition-colors duration-200 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-emerald-500">
+              <span id="dropdownDarkModeKnob" class="absolute top-0.5 left-0.5 w-5 h-5 rounded-full bg-white shadow transition-transform duration-200 translate-x-4"></span>
+            </button>
+          </div>
+        </div>
       </div>
-      <button id="settingsBtn" aria-label="Settings" class="w-8 h-8 md:w-9 md:h-9 flex items-center justify-center rounded-lg hover:bg-black/5 dark:hover:bg-white/10 transition-colors text-gray-600 dark:text-gray-400" style="display: none;">
-        <svg aria-hidden="true" class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.066 2.573c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.573 1.066c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.066-2.573c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"/>
-          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/>
-        </svg>
-      </button>
     </header>
 
     <!-- Main Content -->
     <div class="flex-1 w-full mx-auto px-4 md:px-8 py-8 space-y-6 pt-20">
+      <!-- Shared Month Navigation -->
+      <div class="flex items-center justify-between">
+        <button id="prevMonthBtn" aria-label="Previous month" class="nav-arrow w-9 h-9 md:w-10 md:h-10 flex items-center justify-center rounded-lg hover:bg-black/5 dark:hover:bg-white/10">
+          <img src="./icons/chevron-left.svg" alt="" class="w-5 h-5 md:w-6 md:h-6 text-gray-900 dark:text-white forced-color-adjust-none md:forced-color-adjust-auto" aria-hidden="true">
+        </button>
+        <span id="monthLabel" class="text-sm md:text-lg font-semibold text-gray-900 dark:text-white cursor-pointer hover:opacity-80 transition-opacity"></span>
+        <button id="nextMonthBtn" aria-label="Next month" class="nav-arrow w-9 h-9 md:w-10 md:h-10 flex items-center justify-center rounded-lg hover:bg-black/5 dark:hover:bg-white/10">
+          <img src="./icons/chevron-right.svg" alt="" class="w-5 h-5 md:w-6 md:h-6 text-gray-900 dark:text-white forced-color-adjust-none md:forced-color-adjust-auto" aria-hidden="true">
+        </button>
+      </div>
+
       <!-- View Toggle -->
       <div class="flex justify-center">
         <div class="inline-flex rounded-lg bg-gray-100 dark:bg-white/5 p-1">
-          <button class="view-toggle-btn" data-view="activity" onclick="switchView('activity')">Activity</button>
-          <button class="view-toggle-btn active" data-view="linear" onclick="switchView('linear')">Intensity</button>
-          <button class="view-toggle-btn" data-view="repartition" onclick="switchView('repartition')">Repartition</button>
+          <button class="view-toggle-btn active" data-view="overview" onclick="switchView('overview')">Overview</button>
+          <button class="view-toggle-btn" data-view="bytask" onclick="switchView('bytask')">by Task</button>
         </div>
       </div>
 
-      <!-- Activity View -->
-      <div id="activityView" class="hidden space-y-6">
-      <!-- Combined View -->
-      <div class="bg-white dark:bg-card-dark rounded-2xl p-6 shadow-sm border border-gray-100 dark:border-white/5">
-        <div class="flex items-center gap-3 mb-4">
-          <div class="w-4 h-4 rounded bg-gray-400 dark:bg-gray-600"></div>
-          <h2 class="text-lg font-semibold text-gray-900 dark:text-white">All Tasks</h2>
-        </div>
-        <div class="legend">
-          <span class="legend-label">Less</span>
-          <div class="legend-cells" id="combinedLegend"></div>
-          <span class="legend-label">More</span>
-        </div>
-        <div class="graph-container">
-          <svg id="combinedGraph" width="100%" height="180" style="min-height: 180px;"></svg>
-        </div>
-      </div>
-
-      <!-- Individual Views -->
-      <div id="taskGraphsContainer" style="display: flex; flex-direction: column; gap: 40px;"></div>
-      </div>
-
-      <!-- Linear View -->
-      <div id="linearView" class="space-y-6">
-        <div class="bg-white dark:bg-card-dark rounded-2xl p-6 shadow-sm border border-gray-100 dark:border-white/5">
-          <!-- Month Navigation Header -->
-          <div class="flex items-center justify-between mb-6">
-            <button id="prevMonthBtn" aria-label="Previous month" class="nav-arrow w-9 h-9 md:w-10 md:h-10 flex items-center justify-center rounded-lg hover:bg-black/5 dark:hover:bg-white/10">
-              <svg aria-hidden="true" class="w-5 h-5 md:w-6 md:h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"/></svg>
-            </button>
-            <span id="monthLabel" class="text-sm md:text-lg font-semibold text-gray-900 dark:text-white"></span>
-            <button id="nextMonthBtn" aria-label="Next month" class="nav-arrow w-9 h-9 md:w-10 md:h-10 flex items-center justify-center rounded-lg hover:bg-black/5 dark:hover:bg-white/10">
-              <svg aria-hidden="true" class="w-5 h-5 md:w-6 md:h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/></svg>
-            </button>
-          </div>
-          <h2 class="text-lg font-semibold text-gray-900 dark:text-white mb-6">Daily Task Hours</h2>
-          <div style="position: relative; height: calc(100vh - 280px); min-height: 500px; max-height: 800px;">
-            <canvas id="linearChart"></canvas>
+      <!-- Overview View -->
+      <div id="overviewView" class="space-y-6">
+        <!-- Header with Legend and Burnout Badge -->
+        <div class="flex items-center gap-4">
+          <div id="overviewTaskLegend" class="flex-1 flex flex-wrap gap-3 md:gap-4 text-xs md:text-sm"></div>
+          <div id="overviewBurnoutBadge" class="shrink-0 hidden">
+            <span class="inline-flex items-center gap-1.5 text-xs bg-red-500/20 text-red-600 dark:text-red-400 px-3 py-1 rounded-full font-medium"></span>
           </div>
         </div>
+
+        <!-- Bento Grid -->
+        <div class="grid grid-cols-12 gap-4">
+          <!-- Intensity Chart Card -->
+          <div class="col-span-12 bg-white dark:bg-card-dark rounded-2xl p-6 shadow-sm border border-gray-100 dark:border-white/5">
+            <h3 class="text-lg font-semibold text-gray-900 dark:text-white mb-6">Daily Task Hours</h3>
+            <div style="position: relative; height: calc(100vh - 280px); min-height: 500px; max-height: 800px;">
+              <canvas id="linearChart"></canvas>
+            </div>
+          </div>
+
+          <!-- Repartition Chart Card -->
+          <div class="col-span-12 md:col-span-5 bg-white dark:bg-card-dark rounded-2xl p-6 shadow-sm border border-gray-100 dark:border-white/5">
+            <h3 class="text-lg font-semibold text-gray-900 dark:text-white mb-6">Task Repartition</h3>
+            <div style="position: relative; height: 340px;">
+              <canvas id="repartitionChart"></canvas>
+            </div>
+          </div>
+
+          <!-- Weekly Breakdown Table Card -->
+          <div class="col-span-12 md:col-span-7 bg-white dark:bg-card-dark rounded-2xl p-6 shadow-sm border border-gray-100 dark:border-white/5">
+            <div class="flex items-center justify-between gap-4 mb-6">
+              <div class="flex items-center gap-4">
+                <h3 class="text-lg font-semibold text-gray-900 dark:text-white">Weekly Breakdown</h3>
+                <div id="weeklyBreakdownControls"></div>
+              </div>
+              <div id="weeklyBreakdownHelper"></div>
+            </div>
+            <div id="weeklyTableContainer" class="max-h-[500px] overflow-x-auto"></div>
+          </div>
+
+          <!-- Year Heatmap Card -->
+          <div class="col-span-12 bg-white dark:bg-card-dark rounded-2xl p-6 shadow-sm border border-gray-100 dark:border-white/5">
+            <h3 class="text-lg font-semibold text-gray-900 dark:text-white mb-6">Year Heatmap</h3>
+            <div class="legend mb-4">
+              <span class="legend-label">Less</span>
+              <div class="legend-cells" id="combinedLegend"></div>
+              <span class="legend-label">More</span>
+            </div>
+            <div id="combinedGraphContainer" class="graph-container">
+              <svg id="combinedGraph" width="100%" height="180" style="min-height: 180px;"></svg>
+            </div>
+          </div>
+        </div>
       </div>
 
-      <!-- Repartition View -->
-      <div id="repartitionView" class="hidden space-y-6">
-        <div class="bg-white dark:bg-card-dark rounded-2xl p-6 shadow-sm border border-gray-100 dark:border-white/5">
-          <!-- Month Navigation Header -->
-          <div class="flex items-center justify-between mb-6">
-            <button id="prevMonthBtnRep" aria-label="Previous month" class="nav-arrow w-9 h-9 md:w-10 md:h-10 flex items-center justify-center rounded-lg hover:bg-black/5 dark:hover:bg-white/10">
-              <svg aria-hidden="true" class="w-5 h-5 md:w-6 md:h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"/></svg>
-            </button>
-            <span id="monthLabelRep" class="text-sm md:text-lg font-semibold text-gray-900 dark:text-white"></span>
-            <button id="nextMonthBtnRep" aria-label="Next month" class="nav-arrow w-9 h-9 md:w-10 md:h-10 flex items-center justify-center rounded-lg hover:bg-black/5 dark:hover:bg-white/10">
-              <svg aria-hidden="true" class="w-5 h-5 md:w-6 md:h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/></svg>
-            </button>
+      <!-- by Task View -->
+      <div id="bytaskView" class="hidden space-y-6">
+        <!-- Header with Legend and Burnout Badge -->
+        <div class="flex items-center gap-4">
+          <div id="bytaskLegend" class="flex-1 flex flex-wrap gap-3 md:gap-4 text-xs md:text-sm"></div>
+          <div id="bytaskBurnoutBadge" class="shrink-0 hidden">
+            <span class="inline-flex items-center gap-1.5 text-xs bg-red-500/20 text-red-600 dark:text-red-400 px-3 py-1 rounded-full font-medium"></span>
           </div>
-          <h2 class="text-lg font-semibold text-gray-900 dark:text-white mb-6">Task Repartition</h2>
-          <div style="position: relative; height: 600px;">
-            <canvas id="repartitionChart"></canvas>
+        </div>
+
+        <!-- Bento Grid -->
+        <div class="grid grid-cols-12 gap-4">
+          <!-- Requirements Card (col-5 on md+) -->
+          <div id="bytaskRequirements" class="col-span-12 md:col-span-5 bg-white dark:bg-card-dark rounded-2xl p-6 shadow-sm border border-gray-100 dark:border-white/5">
+            <h3 class="font-semibold text-gray-900 dark:text-white mb-4">Requirements</h3>
+            <div></div>
+          </div>
+
+          <!-- Progress Card (col-7 on md+) -->
+          <div id="bytaskProgress" class="col-span-12 md:col-span-7 bg-white dark:bg-card-dark rounded-2xl p-6 shadow-sm border border-gray-100 dark:border-white/5">
+            <div class="flex items-center justify-between mb-4">
+              <h3 class="font-semibold text-gray-900 dark:text-white">Progress</h3>
+              <div id="bytaskProgressBadge"></div>
+            </div>
+            <div class="space-y-4"></div>
+          </div>
+
+          <!-- Burn Chart Card (full width) -->
+          <div class="col-span-12 bg-white dark:bg-card-dark rounded-2xl p-6 shadow-sm border border-gray-100 dark:border-white/5">
+            <h3 class="font-semibold text-gray-900 dark:text-white mb-4">Burn Chart</h3>
+            <div class="relative" style="min-height: 400px; height: 40vh; max-height: 500px;">
+              <canvas id="bytaskBurnChart"></canvas>
+            </div>
+          </div>
+
+          <!-- Hours View Toggle Group -->
+          <div class="col-span-12 flex justify-center mt-1">
+            <div class="inline-flex rounded-lg border border-gray-200 dark:border-white/10 bg-gray-50 dark:bg-white/5 p-1">
+              <button id="hoursViewWeek" class="px-4 py-2 text-sm font-medium rounded text-gray-700 dark:text-white bg-white dark:bg-white/10 shadow-sm" data-view="week">Week</button>
+              <button id="hoursViewDay" class="px-4 py-2 text-sm font-medium rounded text-gray-600 dark:text-white/60 hover:text-gray-900 dark:hover:text-white" data-view="day">Day</button>
+            </div>
+          </div>
+
+          <!-- Week Hours Card -->
+          <div id="weekHoursCard" class="col-span-12 bg-white dark:bg-card-dark rounded-2xl p-6 shadow-sm border border-gray-100 dark:border-white/5">
+            <h3 class="font-semibold text-gray-900 dark:text-white mb-4">Hours Done - Week</h3>
+            <div class="relative" style="min-height: 400px; height: calc(100vh - 280px); max-height: 700px;">
+              <canvas id="bytaskWeekChart"></canvas>
+            </div>
+          </div>
+
+          <!-- Day Hours Card (hidden by default) -->
+          <div id="dayHoursCard" class="col-span-12 bg-white dark:bg-card-dark rounded-2xl p-6 shadow-sm border border-gray-100 dark:border-white/5 hidden">
+            <h3 class="font-semibold text-gray-900 dark:text-white mb-4">Hours Done - Day</h3>
+            <div class="relative" style="min-height: 400px; height: calc(100vh - 280px); max-height: 700px;">
+              <canvas id="bytaskDayChart"></canvas>
+            </div>
+          </div>
+
+          <!-- This Month Card (col-6 on md+) -->
+          <div id="bytaskThisMonth" class="col-span-12 md:col-span-6 bg-white dark:bg-card-dark rounded-2xl p-6 shadow-sm border border-gray-100 dark:border-white/5">
+            <h3 class="font-semibold text-gray-900 dark:text-white mb-4">Logged this month</h3>
+            <div class="space-y-2 text-sm"></div>
+          </div>
+
+          <!-- Before This Month Card (col-6 on md+) -->
+          <div id="bytaskBefore" class="col-span-12 md:col-span-6 bg-white dark:bg-card-dark rounded-2xl p-6 shadow-sm border border-gray-100 dark:border-white/5">
+            <h3 class="font-semibold text-gray-900 dark:text-white mb-4">Before This Month</h3>
+            <div class="space-y-2 text-sm"></div>
+          </div>
+
+          <!-- Year Heatmap Card (full width) -->
+          <div class="col-span-12 bg-white dark:bg-card-dark rounded-2xl p-6 shadow-sm border border-gray-100 dark:border-white/5">
+            <h3 class="font-semibold text-gray-900 dark:text-white mb-4">Year Heatmap</h3>
+            <div id="bytaskHeatmapContainer" class="graph-container"></div>
           </div>
         </div>
       </div>
     </div>
   </div>
 
-  <!-- Settings Overlay -->
-  <div id="settingsOverlay" role="dialog" aria-modal="true" aria-label="Settings" class="settings-overlay hidden fixed inset-0 bg-black/60 backdrop-blur-sm z-40 flex items-end sm:items-center justify-center">
-    <div class="bg-card dark:bg-card-dark w-full max-w-md rounded-t-2xl sm:rounded-2xl p-6 max-h-[85vh] overflow-y-auto transition-colors duration-300">
-      <div class="flex items-center justify-between mb-6">
-        <h2 class="text-lg font-bold">Settings</h2>
-        <button id="closeSettings" aria-label="Close settings" class="w-8 h-8 flex items-center justify-center rounded-lg hover:bg-black/5 dark:hover:bg-white/10">
-          <svg aria-hidden="true" class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
-          </svg>
-        </button>
-      </div>
-      <!-- Dark mode toggle -->
-      <div class="flex items-center justify-between mb-5 pb-5 border-b border-gray-200 dark:border-white/10">
-        <div>
-          <span class="text-sm font-medium">Dark mode</span>
-          <p class="text-xs text-gray-400 dark:text-white/40 mt-0.5">Switch between light and dark theme</p>
-        </div>
-        <button id="darkModeToggle" role="switch" aria-checked="true" aria-label="Dark mode"
-          class="relative w-11 h-6 rounded-full bg-gray-300 dark:bg-emerald-500 transition-colors duration-200 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-emerald-500">
-          <span id="darkModeKnob" class="absolute top-0.5 left-0.5 w-5 h-5 rounded-full bg-white shadow transition-transform duration-200 translate-x-5"></span>
-        </button>
-      </div>
-      <!-- Daily cap -->
-      <div class="mb-5 pb-5 border-b border-gray-200 dark:border-white/10">
-        <label for="maxCapInput" class="block text-sm font-medium mb-2">Daily hour cap</label>
-        <input type="number" id="maxCapInput" step="0.25" min="0.5" class="w-full bg-black/5 dark:bg-white/10 border border-gray-200 dark:border-white/10 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-gray-400 dark:focus:border-white/30 transition-colors" placeholder="7.5">
-      </div>
-      <div class="mt-6 pt-4 border-t border-gray-200 dark:border-white/10">
-        <button id="resetBtn" class="w-full py-2.5 rounded-lg bg-red-500 hover:bg-red-600 text-white text-sm font-medium transition-colors">Delete all data</button>
-      </div>
-    </div>
-  </div>
-
-  <!-- Delete confirm modal -->
-  <div id="deleteModal" class="settings-overlay hidden fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center px-6">
-    <div class="bg-card dark:bg-card-dark w-full max-w-sm rounded-2xl p-6 shadow-xl transition-colors duration-300">
-      <h2 class="text-base font-bold mb-1">Delete — Are you sure?</h2>
-      <p class="text-sm text-gray-400 dark:text-white/40 mb-6">All data will be permanently removed. This cannot be undone.</p>
-      <div class="flex gap-3 justify-end">
-        <button id="deleteCancelBtn" class="px-4 py-2 rounded-lg text-sm font-medium bg-black/5 dark:bg-white/10 hover:bg-black/10 dark:hover:bg-white/20 transition-colors">Cancel</button>
-        <button id="deleteConfirmBtn" class="px-4 py-2 rounded-lg text-sm font-medium bg-red-500 hover:bg-red-600 text-white transition-colors">Delete</button>
-      </div>
-    </div>
-  </div>
 
   <script src="./month-modal.js"></script>
+  <script src="./popover.js"></script>
+  <script src="./app-menu.js"></script>
+  <script src="./settings-modal.js"></script>
+  <script src="./legend-renderer.js"></script>
   <script>
     // ── Config ────────────────────────────────────────────
-    const DEFAULT_TASKS = [
-      { name: 'Exercise', color: '#22c55e' },
-      { name: 'Read', color: '#3b82f6' },
-      { name: 'Meditate', color: '#a855f7' },
-      { name: 'Journal', color: '#f59e0b' },
-    ];
 
     const CELL_SIZE = 13;
     const CELL_MARGIN = 2;
@@ -404,6 +474,11 @@
     let tasks = loadJSON('dt_tasks', DEFAULT_TASKS);
     let completions = loadJSON('dt_completions', {});
     let maxCap = parseFloat(localStorage.getItem('dt_maxCap')) || 7.5;
+    let renderedViews = {}; // Track which views have been rendered
+    let activeTaskIndex = 0;
+    let taskBurnChartInstance = null;
+    let taskWeekChartInstance = null;
+    let taskDayChartInstance = null;
 
     // ── Dark Mode ─────────────────────────────────────────
     let darkMode = localStorage.getItem('dt_darkMode') !== 'false';
@@ -414,22 +489,6 @@
       } else {
         document.documentElement.classList.remove('dark');
       }
-      updateDarkModeButton();
-    }
-
-    function updateDarkModeButton() {
-      const toggle = document.getElementById('darkModeToggle');
-      const knob = document.getElementById('darkModeKnob');
-      if (toggle && knob) {
-        toggle.setAttribute('aria-checked', darkMode);
-        if (darkMode) {
-          knob.classList.add('translate-x-5');
-          knob.classList.remove('translate-x-0');
-        } else {
-          knob.classList.remove('translate-x-5');
-          knob.classList.add('translate-x-0');
-        }
-      }
     }
 
     function toggleDarkMode() {
@@ -437,61 +496,93 @@
       localStorage.setItem('dt_darkMode', darkMode);
       applyDarkMode();
       render();
+      AppMenu.updateDarkModeKnob(darkMode);
+      SettingsModal.updateDarkModeKnob(darkMode);
     }
 
     applyDarkMode();
-    document.getElementById('darkModeToggle').addEventListener('click', toggleDarkMode);
-    document.getElementById('settingsBtn').addEventListener('click', () => {
-      document.getElementById('settingsOverlay').classList.remove('hidden');
-    });
-    document.getElementById('closeSettings').addEventListener('click', () => {
-      document.getElementById('settingsOverlay').classList.add('hidden');
-    });
 
-    // Max cap input
-    document.getElementById('maxCapInput').addEventListener('change', (e) => {
-      const val = parseFloat(e.target.value);
-      if (val > 0) {
-        maxCap = val;
+    // Initialize settings modal with callbacks
+    SettingsModal.init({
+      getTasks: () => tasks,
+      setTasks: (t) => { tasks = t; },
+      getCompletions: () => completions,
+      setCompletions: (c) => { completions = c; },
+      getMaxCap: () => maxCap,
+      setMaxCap: (v) => { maxCap = v; },
+      getDarkMode: () => darkMode,
+      onSave: () => {
+        localStorage.setItem('dt_tasks', JSON.stringify(tasks));
+        localStorage.setItem('dt_completions', JSON.stringify(completions));
         localStorage.setItem('dt_maxCap', maxCap);
-        render();
-      }
+      },
+      onDarkModeSync: applyDarkMode,
+      onTasksChanged: () => render(),
+      onSheetOpen: null,
+      onReload: () => location.reload(),
+      showAddTask: true,
+      showDailyCap: true,
     });
 
-    // Close settings on outside click
-    document.getElementById('settingsOverlay').addEventListener('click', (e) => {
-      if (e.target === document.getElementById('settingsOverlay')) {
-        document.getElementById('settingsOverlay').classList.add('hidden');
-      }
+    // Setup app menu with callbacks
+    AppMenu.init({
+      settingsCallback: () => SettingsModal.open(),
+      darkModeToggleCallback: () => toggleDarkMode(),
     });
 
-    // Delete data button
-    document.getElementById('resetBtn').addEventListener('click', () => {
-      document.getElementById('deleteModal').classList.remove('hidden');
-    });
+    // Setup appMenuBtn toggle
+    const appMenuBtn = document.getElementById('appMenuBtn');
+    if (appMenuBtn) {
+      appMenuBtn.addEventListener('click', (e) => {
+        e.stopPropagation();
+        AppMenu.toggleMenu();
+      });
+    }
 
-    document.getElementById('deleteCancelBtn').addEventListener('click', () => {
-      document.getElementById('deleteModal').classList.add('hidden');
-    });
+    // Initialize dropdown dark mode knob position
+    AppMenu.updateDarkModeKnob(darkMode);
 
-    document.getElementById('deleteConfirmBtn').addEventListener('click', () => {
-      localStorage.removeItem('dt_tasks');
-      localStorage.removeItem('dt_completions');
-      tasks = JSON.parse(JSON.stringify(DEFAULT_TASKS));
-      completions = {};
-      localStorage.setItem('dt_tasks', JSON.stringify(tasks));
-      localStorage.setItem('dt_completions', JSON.stringify(completions));
-      document.getElementById('deleteModal').classList.add('hidden');
-      document.getElementById('settingsOverlay').classList.add('hidden');
-      render();
-    });
+    // Hours view toggle buttons
+    const hoursViewWeek = document.getElementById('hoursViewWeek');
+    const hoursViewDay = document.getElementById('hoursViewDay');
+    const weekHoursCard = document.getElementById('weekHoursCard');
+    const dayHoursCard = document.getElementById('dayHoursCard');
 
-    // Close delete modal on outside click
-    document.getElementById('deleteModal').addEventListener('click', (e) => {
-      if (e.target === document.getElementById('deleteModal')) {
-        document.getElementById('deleteModal').classList.add('hidden');
-      }
-    });
+    if (hoursViewWeek && hoursViewDay) {
+      hoursViewWeek.addEventListener('click', () => {
+        // Update button styles
+        hoursViewWeek.classList.add('bg-white', 'dark:bg-white/10', 'shadow-sm', 'text-gray-700', 'dark:text-white');
+        hoursViewWeek.classList.remove('text-gray-600', 'dark:text-white/60', 'hover:text-gray-900', 'dark:hover:text-white');
+        hoursViewDay.classList.remove('bg-white', 'dark:bg-white/10', 'shadow-sm', 'text-gray-700', 'dark:text-white');
+        hoursViewDay.classList.add('text-gray-600', 'dark:text-white/60', 'hover:text-gray-900', 'dark:hover:text-white');
+
+        // Show/hide cards
+        weekHoursCard.classList.remove('hidden');
+        dayHoursCard.classList.add('hidden');
+
+        // Re-render week chart
+        if (selectedTaskIndex >= 0) {
+          renderTaskWeekChart(selectedTaskIndex);
+        }
+      });
+
+      hoursViewDay.addEventListener('click', () => {
+        // Update button styles
+        hoursViewDay.classList.add('bg-white', 'dark:bg-white/10', 'shadow-sm', 'text-gray-700', 'dark:text-white');
+        hoursViewDay.classList.remove('text-gray-600', 'dark:text-white/60', 'hover:text-gray-900', 'dark:hover:text-white');
+        hoursViewWeek.classList.remove('bg-white', 'dark:bg-white/10', 'shadow-sm', 'text-gray-700', 'dark:text-white');
+        hoursViewWeek.classList.add('text-gray-600', 'dark:text-white/60', 'hover:text-gray-900', 'dark:hover:text-white');
+
+        // Show/hide cards
+        weekHoursCard.classList.add('hidden');
+        dayHoursCard.classList.remove('hidden');
+
+        // Re-render day chart
+        if (selectedTaskIndex >= 0) {
+          renderTaskDayChart(selectedTaskIndex);
+        }
+      });
+    }
 
     // ── Date Utilities ────────────────────────────────────
     function todayStr() {
@@ -502,6 +593,24 @@
     function parseDate(dateStr) {
       const [y, m, d] = dateStr.split('-').map(Number);
       return new Date(y, m - 1, d);
+    }
+
+    function formatDateToDDMMYYYY(dateStr) {
+      if (!dateStr) return '';
+      const [year, month, day] = dateStr.split('-');
+      return `${day}/${month}/${year}`;
+    }
+
+    function formatDateToLongFormat(dateStr) {
+      if (!dateStr) return '';
+      const [year, month, day] = dateStr.split('-');
+      const monthNames = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'];
+      const monthIndex = parseInt(month) - 1;
+      const dayNum = parseInt(day);
+      const ordinal = dayNum === 1 || dayNum === 21 || dayNum === 31 ? 'st' :
+                      dayNum === 2 || dayNum === 22 ? 'nd' :
+                      dayNum === 3 || dayNum === 23 ? 'rd' : 'th';
+      return `${monthNames[monthIndex]} ${dayNum}${ordinal} ${year}`;
     }
 
     // Get Monday of the week
@@ -522,6 +631,29 @@
       let current = new Date(startMonday);
 
       while (current <= today) {
+        const week = [];
+        for (let i = 0; i < 7; i++) {
+          const dateStr = `${current.getFullYear()}-${String(current.getMonth() + 1).padStart(2, '0')}-${String(current.getDate()).padStart(2, '0')}`;
+          week.push(dateStr);
+          current.setDate(current.getDate() + 1);
+        }
+        weeks.push(week);
+      }
+
+      return weeks;
+    }
+
+    // Get all weeks for full calendar year (Jan 1 - Dec 31)
+    function getWeeksInCalendarYear() {
+      const year = new Date().getFullYear();
+      const jan1 = new Date(year, 0, 1);
+      const dec31 = new Date(year, 11, 31);
+      const startMonday = getMonday(jan1);
+
+      const weeks = [];
+      let current = new Date(startMonday);
+
+      while (current <= dec31) {
         const week = [];
         for (let i = 0; i < 7; i++) {
           const dateStr = `${current.getFullYear()}-${String(current.getMonth() + 1).padStart(2, '0')}-${String(current.getDate()).padStart(2, '0')}`;
@@ -587,9 +719,115 @@
       }
     }
 
+    // Get delivery dates for a given date string
+    function getDeliveryDatesForDate(dateStr) {
+      const matches = [];
+      tasks.forEach((task, i) => {
+        if (task.deliveryDate === dateStr) {
+          matches.push({ taskIndex: i, color: COLOR_HEX[task.color], name: task.name });
+        }
+      });
+      return matches;
+    }
+
+    // Calculate working days late from delivery date to activity date
+    function calculateDaysLate(deliveryDateStr, activityDateStr) {
+      const deliveryDate = parseDate(deliveryDateStr);
+      const activityDate = parseDate(activityDateStr);
+
+      if (activityDate <= deliveryDate) return 0;
+
+      let count = 0;
+      let current = new Date(deliveryDate);
+      current.setDate(current.getDate() + 1);
+
+      while (current < activityDate) {
+        const dow = current.getDay();
+        if (dow !== 0 && dow !== 6) count++;
+        current.setDate(current.getDate() + 1);
+      }
+
+      return count + 1;
+    }
+
+    // Setup popover events for delivery date squares
+    function setupDeliveryDatePopovers() {
+      // Attach to cells with delivery dates
+      document.querySelectorAll('.delivery-cell[data-task-name]').forEach(cell => {
+        const taskName = cell.getAttribute('data-task-name');
+        const deliveryDate = cell.getAttribute('data-delivery-date');
+
+        if (!taskName) return;
+
+        const taskColor = getTaskColorByName(taskName);
+
+        const showPopover = () => {
+          let statusText = '';
+          let statusColor = 'inherit';
+
+          const todayObj = new Date();
+          const today = `${todayObj.getFullYear()}-${String(todayObj.getMonth() + 1).padStart(2, '0')}-${String(todayObj.getDate()).padStart(2, '0')}`;
+
+          if (deliveryDate < today) {
+            // Delivery date is in the past - show days late
+            const daysLate = calculateDaysLate(deliveryDate, today);
+            statusText = `${daysLate} days late`;
+            statusColor = '#f97316'; // Orange
+          } else if (deliveryDate === today) {
+            // Delivery date is today
+            statusText = 'Due today';
+            statusColor = '#eab308'; // Yellow
+          } else {
+            // Delivery date is in the future
+            const workingDays = getWorkingDaysTo(deliveryDate);
+            statusText = `${workingDays} working days to go`;
+          }
+
+          const content = `
+            <div style="display: flex; gap: 6px;">
+              <div style="width: 10px; height: 10px; border-radius: 50%; background: ${taskColor}; flex-shrink: 0; margin-top: 1px;"></div>
+              <div>${taskName}<br>${formatDateToDDMMYYYY(deliveryDate)}<br><span style="color: ${statusColor};">${statusText}</span></div>
+            </div>
+          `;
+          Popover.open(cell, content);
+        };
+
+        cell.addEventListener('mouseenter', showPopover);
+        cell.addEventListener('mouseleave', () => Popover.close());
+        cell.addEventListener('click', showPopover);
+      });
+    }
+
+    // Helper to get task color by name
+    function getTaskColorByName(taskName) {
+      const task = tasks.find(t => t.name === taskName);
+      return task ? COLOR_HEX[task.color] : '#999999';
+    }
+
+    // Calculate working days (Mon-Fri) from today to a target date
+    function getWorkingDaysTo(targetDateStr) {
+      const today = parseDate(todayStr());
+      const targetDate = parseDate(targetDateStr);
+
+      if (targetDate < today) return 0;
+      if (targetDate.getTime() === today.getTime()) return 0;
+
+      let count = 0;
+      let current = new Date(today);
+      current.setDate(current.getDate() + 1);
+
+      while (current <= targetDate) {
+        const dow = current.getDay();
+        if (dow !== 0 && dow !== 6) count++;
+        current.setDate(current.getDate() + 1);
+      }
+
+      return count;
+    }
+
     // ── Rendering ──────────────────────────────────────────
     function renderCombinedGraph() {
-      const weeks = getWeeksInPastYear();
+      const weeks = getWeeksInCalendarYear();
       const graphWidth = weeks.length * (CELL_SIZE + CELL_MARGIN) + 20;
       const graphHeight = MONTH_LABELS_HEIGHT + 7 * (CELL_SIZE + CELL_MARGIN) + 20;
 
@@ -605,7 +843,7 @@
         const firstDate = parseDate(firstDateStr);
         const currentMonth = firstDate.getMonth();
 
-        if (lastMonth !== currentMonth) {
+        if (lastMonth !== currentMonth && !(currentMonth === 11 && lastMonth === null)) {
           const monthNames = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
           svg += `<text x="${x}" y="12" class="month-label">${monthNames[currentMonth]}</text>`;
           lastMonth = currentMonth;
@@ -628,22 +866,60 @@
             cellColor = getIntensityColor(greyColor, intensity);
           }
 
+          const deliveryDates = getDeliveryDatesForDate(dateStr);
+
+          let tooltipText = `${formatDateToDDMMYYYY(dateStr)}: ${totalHours.toFixed(2)}h`;
+          let strokeColor = 'none';
+          let strokeWidth = '0';
+
+          if (deliveryDates.length > 0) {
+            const deliveryInfo = deliveryDates.map(d => {
+              const workingDays = getWorkingDaysTo(dateStr);
+              return `${d.name} • ${formatDateToDDMMYYYY(dateStr)} • ${workingDays}d remaining`;
+            }).join('\n');
+            tooltipText += '\n' + deliveryInfo;
+            strokeColor = deliveryDates[0].color;
+            strokeWidth = '1.5';
+          }
+
+          const cellId = `cell-combined-${wi}-${deliveryDates.length > 0 ? 'd' : 'h'}`;
+
           svg += `
-            <rect x="${x}" y="${y}" width="${CELL_SIZE}" height="${CELL_SIZE}"
-                  fill="${cellColor}" rx="2" ry="2" class="heatmap-cell">
-              <title>${dateStr}: ${totalHours.toFixed(2)}h</title>
-            </rect>
-          `;
+            <g>
+              <rect id="${cellId}" x="${x}" y="${y}" width="${CELL_SIZE}" height="${CELL_SIZE}"
+                    fill="${cellColor}" rx="2" ry="2" class="heatmap-cell delivery-cell"
+                    stroke="${strokeColor}" stroke-width="${strokeWidth}"
+                    data-task-name="${deliveryDates.length > 0 ? deliveryDates[0].name : ''}"
+                    data-delivery-date="${dateStr}"
+                    data-working-days="${deliveryDates.length > 0 ? getWorkingDaysTo(dateStr) : '0'}"
+                    style="cursor: ${deliveryDates.length > 0 ? 'pointer' : 'default'};"></rect>`;
+
+          // Add delivery date dots positioned over the square top-right
+          deliveryDates.forEach((delivery, dotIndex) => {
+            const dotX = x + CELL_SIZE - 1;
+            const dotY = y - 1;
+            const dotId = `delivery-dot-${Math.random().toString(36).substr(2, 9)}`;
+            const workingDays = getWorkingDaysTo(dateStr);
+            svg += `<circle id="${dotId}" cx="${dotX}" cy="${dotY}" r="4" fill="${delivery.color}" class="delivery-dot"
+              data-task="${delivery.name}" data-date="${dateStr}" data-days="${workingDays}"
+              style="filter: drop-shadow(0 1px 2px rgba(0,0,0,0.3)); cursor: pointer;">
+            </circle>`;
+          });
+
+          svg += `</g>`;
         });
       });
 
       svg += `</svg>`;
-      const container = document.getElementById('combinedGraph').parentElement;
+      const container = document.getElementById('combinedGraphContainer');
       container.innerHTML = getDayLabelsHTML() + svg;
+
+      // Setup popover events after rendering
+      setTimeout(() => setupDeliveryDatePopovers(), 0);
     }
 
     function renderIndividualGraphs() {
-      const weeks = getWeeksInPastYear();
+      const weeks = getWeeksInCalendarYear();
       const graphWidth = weeks.length * (CELL_SIZE + CELL_MARGIN) + 20;
       const graphHeight = MONTH_LABELS_HEIGHT + 7 * (CELL_SIZE + CELL_MARGIN) + 20;
 
@@ -661,7 +937,7 @@
           const firstDate = parseDate(firstDateStr);
           const currentMonth = firstDate.getMonth();
 
-          if (lastMonth !== currentMonth) {
+          if (lastMonth !== currentMonth && !(currentMonth === 11 && lastMonth === null)) {
             const monthNames = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
             svg += `<text x="${x}" y="12" class="month-label">${monthNames[currentMonth]}</text>`;
             lastMonth = currentMonth;
@@ -674,14 +950,44 @@
 
             const hours = getHours(dateStr, taskIndex);
             const intensity = Math.min(hours / maxCap, 1);
-            const cellColor = getIntensityColor(task.color, intensity);
+            const cellColor = getIntensityColor(COLOR_HEX[task.color], intensity);
+
+            let strokeColor = 'none';
+            let strokeWidth = '0';
+            let cellId = `cell-task-${taskIndex}-${wi}-h`;
+            let hasDelivery = false;
+
+            if (task.deliveryDate === dateStr) {
+              const workingDays = getWorkingDaysTo(dateStr);
+              strokeColor = COLOR_HEX[task.color];
+              strokeWidth = '1.5';
+              cellId = `cell-task-${taskIndex}-${wi}-d`;
+              hasDelivery = true;
+            }
 
             svg += `
-              <rect x="${x}" y="${y}" width="${CELL_SIZE}" height="${CELL_SIZE}"
-                    fill="${cellColor}" rx="2" ry="2" class="heatmap-cell">
-                <title>${dateStr}: ${hours.toFixed(2)}h</title>
-              </rect>
-            `;
+              <g>
+                <rect id="${cellId}" x="${x}" y="${y}" width="${CELL_SIZE}" height="${CELL_SIZE}"
+                      fill="${cellColor}" rx="2" ry="2" class="heatmap-cell delivery-cell"
+                      stroke="${strokeColor}" stroke-width="${strokeWidth}"
+                      data-task-name="${hasDelivery ? task.name : ''}"
+                      data-delivery-date="${dateStr}"
+                      data-working-days="${hasDelivery ? getWorkingDaysTo(dateStr) : '0'}"
+                      style="cursor: ${hasDelivery ? 'pointer' : 'default'};"></rect>`;
+
+            // Add delivery date indicator for this task hovering over
+            if (task.deliveryDate === dateStr) {
+              const dotX = x + CELL_SIZE - 1;
+              const dotY = y - 1;
+              const dotId = `delivery-dot-${Math.random().toString(36).substr(2, 9)}`;
+              const workingDays = getWorkingDaysTo(dateStr);
+              svg += `<circle id="${dotId}" cx="${dotX}" cy="${dotY}" r="4" fill="${COLOR_HEX[task.color]}" class="delivery-dot"
+                data-task="${task.name}" data-date="${dateStr}" data-days="${workingDays}"
+                style="filter: drop-shadow(0 1px 2px rgba(0,0,0,0.3)); cursor: pointer;">
+              </circle>`;
+            }
+
+            svg += `</g>`;
           });
         });
 
@@ -690,7 +996,7 @@
         html += `
           <div class="bg-white dark:bg-card-dark rounded-2xl p-6 shadow-sm border border-gray-100 dark:border-white/5">
             <div class="flex items-center gap-3 mb-4">
-              <div class="w-4 h-4 rounded" style="background: ${task.color}"></div>
+              <div class="w-4 h-4 rounded" style="background: ${COLOR_HEX[task.color]}"></div>
               <h2 class="text-lg font-semibold text-gray-900 dark:text-white">${task.name}</h2>
             </div>
             <div class="graph-container" style="flex-direction: row; gap: 8px;">
@@ -702,6 +1008,618 @@
       });
 
       document.getElementById('taskGraphsContainer').innerHTML = html;
+
+      // Setup popover events after rendering
+      setTimeout(() => setupDeliveryDatePopovers(), 0);
+    }
+
+    function renderTaskBurnChart(taskIndex) {
+      const canvas = document.getElementById('bytaskBurnChart');
+      if (!canvas) return;
+
+      const task = tasks[taskIndex];
+      const estimate = task.estimate || 0;
+      let deliveryDate = task.deliveryDate || '';
+
+      // Convert DD/MM/YYYY to YYYY-MM-DD if needed
+      if (deliveryDate && deliveryDate.includes('/')) {
+        const [day, month, year] = deliveryDate.split('/');
+        deliveryDate = `${year}-${month}-${day}`;
+      }
+
+      // Get all dates with data for this task
+      const allDates = getAllDates().filter(d => getHours(d, taskIndex) > 0);
+
+      if (allDates.length === 0) {
+        // Show empty state
+        const ctx = canvas.getContext('2d');
+        ctx.fillStyle = '#999';
+        ctx.textAlign = 'center';
+        ctx.fillText('No data logged for this task', canvas.width / 2, canvas.height / 2);
+        if (taskBurnChartInstance) {
+          taskBurnChartInstance.destroy();
+          taskBurnChartInstance = null;
+        }
+        return;
+      }
+
+      // Determine date range: from first logged date to delivery date (if available) or last logged date
+      const startDate = allDates[0];
+      const lastLoggedDate = allDates[allDates.length - 1];
+      const endDate = deliveryDate || lastLoggedDate;
+
+      // Generate all dates in range
+      const [startYear, startMonth, startDay] = startDate.split('-').map(Number);
+      const [endYear, endMonth, endDay] = endDate.split('-').map(Number);
+      const start = new Date(startYear, startMonth - 1, startDay);
+      const end = new Date(endYear, endMonth - 1, endDay);
+
+      const labels = [];
+      const actualData = [];
+      const idealData = [];
+      let cumulativeLogged = 0;
+      const totalEstimatedHours = estimate * maxCap;
+      const daysInRange = Math.ceil((end - start) / (1000 * 60 * 60 * 24)) + 1;
+      const dailyIdeal = totalEstimatedHours / daysInRange;
+
+      let current = new Date(start);
+      let dateIndex = 0;
+      const totalDays = daysInRange;
+      while (current <= end) {
+        const dateStr = current.toISOString().split('T')[0];
+        const hours = getHours(dateStr, taskIndex);
+
+        // Only accumulate if there are hours
+        if (dateStr <= lastLoggedDate) {
+          cumulativeLogged += hours;
+        }
+
+        // Actual data shows remaining hours (estimate - logged), only until last logged date
+        const remaining = totalEstimatedHours - cumulativeLogged;
+        actualData.push(dateStr <= lastLoggedDate ? remaining : null);
+
+        // Ideal data: only show at first day and last day (delivery date)
+        if (dateIndex === 0) {
+          idealData.push(totalEstimatedHours);
+        } else if (dateIndex === totalDays - 1) {
+          idealData.push(0);
+        } else {
+          idealData.push(null);
+        }
+
+        const monthNames = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+        const label = `${current.getDate()} ${monthNames[current.getMonth()]}`;
+        labels.push(label);
+
+        current.setDate(current.getDate() + 1);
+        dateIndex++;
+      }
+
+      if (taskBurnChartInstance) {
+        taskBurnChartInstance.destroy();
+      }
+
+      const ctx = canvas.getContext('2d');
+      taskBurnChartInstance = new Chart(ctx, {
+        type: 'line',
+        data: {
+          labels: labels,
+          datasets: [
+            {
+              label: 'Done',
+              data: actualData,
+              borderColor: COLOR_HEX[task.color],
+              backgroundColor: COLOR_HEX[task.color] + '20',
+              borderWidth: 2,
+              fill: true,
+              tension: 0.1,
+              spanGaps: true,
+            },
+            ...(estimate && deliveryDate ? [{
+              label: 'Ideal',
+              data: idealData,
+              borderColor: darkMode ? '#666' : '#ccc',
+              borderDash: [3, 3],
+              borderWidth: 1,
+              fill: false,
+              tension: 0.1,
+              pointRadius: 4,
+              pointBackgroundColor: darkMode ? '#666' : '#ccc',
+              pointBorderColor: darkMode ? '#666' : '#ccc',
+              pointHoverRadius: 6,
+              spanGaps: true,
+            }] : [])
+          ]
+        },
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          plugins: {
+            legend: {
+              display: true,
+              labels: {
+                color: darkMode ? '#fff' : '#000',
+                usePointStyle: true,
+              }
+            }
+          },
+          scales: {
+            y: {
+              beginAtZero: true,
+              ticks: { color: darkMode ? '#fff' : '#000' },
+              grid: { color: darkMode ? '#333' : '#eee' }
+            },
+            x: {
+              ticks: { color: darkMode ? '#fff' : '#000' },
+              grid: { color: darkMode ? '#333' : '#eee' }
+            }
+          }
+        }
+      });
+    }
+
+    function formatDateForChart(dateStr) {
+      const [year, month, day] = dateStr.split('-');
+      const monthNames = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+      return `${monthNames[parseInt(month) - 1]} ${parseInt(day)}`;
+    }
+
+    function renderTaskWeekChart(taskIndex) {
+      const canvas = document.getElementById('bytaskWeekChart');
+      if (!canvas) return;
+
+      const task = tasks[taskIndex];
+      const allDates = getAllDates().sort();
+      const yearStr = linearViewYear.toString();
+      const monthStr = String(linearViewMonth + 1).padStart(2, '0');
+      const monthDates = allDates.filter(d => d.startsWith(`${yearStr}-${monthStr}`));
+
+      if (monthDates.length === 0) {
+        const ctx = canvas.getContext('2d');
+        ctx.fillStyle = '#999';
+        ctx.textAlign = 'center';
+        ctx.fillText('No data for this month', canvas.width / 2, canvas.height / 2);
+        if (taskWeekChartInstance) {
+          taskWeekChartInstance.destroy();
+          taskWeekChartInstance = null;
+        }
+        return;
+      }
+
+      // Week mode
+      const weekMap = {};
+      monthDates.forEach(d => {
+        const weekNum = getWeekNumber(d);
+        if (!weekMap[weekNum]) {
+          weekMap[weekNum] = [];
+        }
+        weekMap[weekNum].push(d);
+      });
+
+      const weeks = Object.keys(weekMap).sort((a, b) => Number(a) - Number(b));
+      const labels = weeks.map(weekNum => `W${weekNum}`);
+
+      const data = weeks.map(weekNum => {
+        return weekMap[weekNum].reduce((sum, d) => sum + getHours(d, taskIndex), 0);
+      });
+
+      const tooltipData = data.map(hours => {
+        const days = (hours / maxCap).toFixed(1);
+        return `${hours.toFixed(1)}h\n${days}d`;
+      });
+
+      const avgHours = weeks.length > 0 ? data.reduce((a, b) => a + b, 0) / weeks.length : 0;
+
+      if (taskWeekChartInstance) {
+        taskWeekChartInstance.destroy();
+      }
+
+      const ctx = canvas.getContext('2d');
+      taskWeekChartInstance = new Chart(ctx, {
+        type: 'bar',
+        data: {
+          labels: labels,
+          datasets: [{
+            label: task.name,
+            data: data,
+            backgroundColor: COLOR_HEX[task.color],
+            borderColor: COLOR_HEX[task.color],
+            borderWidth: 0
+          }]
+        },
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          plugins: {
+            legend: {
+              display: false
+            },
+            tooltip: {
+              callbacks: {
+                afterLabel: function(context) {
+                  return tooltipData[context.dataIndex];
+                }
+              }
+            },
+            taskAverageLine: {
+              avg: avgHours,
+              color: darkMode ? '#888' : '#ccc'
+            }
+          },
+          scales: {
+            y: {
+              beginAtZero: true,
+              ticks: { color: darkMode ? '#fff' : '#000' },
+              grid: { color: darkMode ? '#333' : '#eee' }
+            },
+            x: {
+              ticks: { color: darkMode ? '#fff' : '#000' },
+              grid: { color: darkMode ? '#333' : '#eee' }
+            }
+          }
+        },
+        plugins: [{
+          id: 'taskAverageLine',
+          afterDatasetsDraw(chart) {
+            if (avgHours === 0) return;
+            const { ctx, chartArea } = chart;
+            const yScale = chart.scales.y;
+            const xScale = chart.scales.x;
+            const y = yScale.getPixelForValue(avgHours);
+
+            ctx.save();
+            ctx.strokeStyle = darkMode ? 'rgba(255, 255, 255, 0.3)' : 'rgba(0, 0, 0, 0.2)';
+            ctx.lineWidth = 2;
+            ctx.setLineDash([5, 5]);
+            ctx.beginPath();
+            ctx.moveTo(xScale.left, y);
+            ctx.lineTo(xScale.right, y);
+            ctx.stroke();
+
+            ctx.fillStyle = darkMode ? 'rgba(255, 255, 255, 0.5)' : 'rgba(0, 0, 0, 0.4)';
+            ctx.font = '11px Inter';
+            ctx.textAlign = 'right';
+            ctx.fillText(`avg: ${avgHours.toFixed(2)}h`, xScale.right - 8, y - 8);
+            ctx.restore();
+          }
+        }]
+      });
+    }
+
+    function getWeekNumber(dateStr) {
+      const [year, month, day] = dateStr.split('-').map(Number);
+      const date = new Date(year, month - 1, day);
+      const firstDayOfYear = new Date(year, 0, 1);
+      const dayDiff = Math.floor((date - firstDayOfYear) / (1000 * 60 * 60 * 24));
+      return Math.ceil((dayDiff + firstDayOfYear.getDay() + 1) / 7);
+    }
+
+    function renderTaskDayChart(taskIndex) {
+      const canvas = document.getElementById('bytaskDayChart');
+      if (!canvas) return;
+
+      const task = tasks[taskIndex];
+      const allDates = getAllDates().sort();
+      const yearStr = linearViewYear.toString();
+      const monthStr = String(linearViewMonth + 1).padStart(2, '0');
+      const monthDates = allDates.filter(d => d.startsWith(`${yearStr}-${monthStr}`));
+
+      if (monthDates.length === 0) {
+        const ctx = canvas.getContext('2d');
+        ctx.fillStyle = '#999';
+        ctx.textAlign = 'center';
+        ctx.fillText('No data for this month', canvas.width / 2, canvas.height / 2);
+        if (taskDayChartInstance) {
+          taskDayChartInstance.destroy();
+          taskDayChartInstance = null;
+        }
+        return;
+      }
+
+      const labels = monthDates.map(d => formatDateForChart(d));
+      const data = monthDates.map(d => getHours(d, taskIndex));
+
+      const tooltipData = data.map(hours => {
+        const days = (hours / maxCap).toFixed(1);
+        return `${hours.toFixed(1)}h\n${days}d`;
+      });
+
+      const avgHours = monthDates.length > 0 ? data.reduce((a, b) => a + b, 0) / monthDates.length : 0;
+
+      if (taskDayChartInstance) {
+        taskDayChartInstance.destroy();
+      }
+
+      const ctx = canvas.getContext('2d');
+      taskDayChartInstance = new Chart(ctx, {
+        type: 'bar',
+        data: {
+          labels: labels,
+          datasets: [{
+            label: task.name,
+            data: data,
+            backgroundColor: COLOR_HEX[task.color],
+            borderColor: COLOR_HEX[task.color],
+            borderWidth: 0
+          }]
+        },
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          plugins: {
+            legend: {
+              display: false
+            },
+            tooltip: {
+              callbacks: {
+                afterLabel: function(context) {
+                  return tooltipData[context.dataIndex];
+                }
+              }
+            },
+            taskAverageLine: {
+              avg: avgHours,
+              color: darkMode ? '#888' : '#ccc'
+            }
+          },
+          scales: {
+            y: {
+              beginAtZero: true,
+              ticks: { color: darkMode ? '#fff' : '#000' },
+              grid: { color: darkMode ? '#333' : '#eee' }
+            },
+            x: {
+              ticks: { color: darkMode ? '#fff' : '#000' },
+              grid: { color: darkMode ? '#333' : '#eee' }
+            }
+          }
+        },
+        plugins: [{
+          id: 'taskAverageLine',
+          afterDatasetsDraw(chart) {
+            if (avgHours === 0) return;
+            const { ctx, chartArea } = chart;
+            const yScale = chart.scales.y;
+            const xScale = chart.scales.x;
+            const y = yScale.getPixelForValue(avgHours);
+
+            ctx.save();
+            ctx.strokeStyle = darkMode ? 'rgba(255, 255, 255, 0.3)' : 'rgba(0, 0, 0, 0.2)';
+            ctx.lineWidth = 2;
+            ctx.setLineDash([5, 5]);
+            ctx.beginPath();
+            ctx.moveTo(xScale.left, y);
+            ctx.lineTo(xScale.right, y);
+            ctx.stroke();
+
+            ctx.fillStyle = darkMode ? 'rgba(255, 255, 255, 0.5)' : 'rgba(0, 0, 0, 0.4)';
+            ctx.font = '11px Inter';
+            ctx.textAlign = 'right';
+            ctx.fillText(`avg: ${avgHours.toFixed(2)}h`, xScale.right - 8, y - 8);
+            ctx.restore();
+          }
+        }]
+      });
+    }
+
+    function renderTaskAchievements(taskIndex) {
+      const task = tasks[taskIndex];
+
+      // This Month
+      const yearStr = linearViewYear.toString();
+      const monthStr = String(linearViewMonth + 1).padStart(2, '0');
+      const daysInMonth = new Date(linearViewYear, linearViewMonth + 1, 0).getDate();
+
+      let thisMonthDaysWorked = 0;
+      let thisMonthTotal = 0;
+      let thisMonthBestDay = 0;
+      let thisMonthBestDayDate = null;
+
+      for (let d = 1; d <= daysInMonth; d++) {
+        const dateStr = `${yearStr}-${monthStr}-${String(d).padStart(2, '0')}`;
+        if (dateStr > todayStr()) break;
+        const hours = getHours(dateStr, taskIndex);
+        if (hours > 0) thisMonthDaysWorked++;
+        thisMonthTotal += hours;
+        if (hours > thisMonthBestDay) {
+          thisMonthBestDay = hours;
+          thisMonthBestDayDate = dateStr;
+        }
+      }
+
+      const thisMonthAvg = thisMonthDaysWorked > 0 ? thisMonthTotal / thisMonthDaysWorked : 0;
+      const thisMonthDaysCalc = hoursToDay(thisMonthTotal);
+      const thisMonthAvgDaysCalc = thisMonthDaysWorked > 0 ? hoursToDay(thisMonthAvg) : '—';
+
+      const monthNames = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+      const dayNames = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
+      const ordinals = ['st', 'nd', 'rd', 'th'];
+
+      const formatDayName = (dateStr) => {
+        if (!dateStr) return '—';
+        const [y, m, d] = dateStr.split('-').map(Number);
+        const date = new Date(y, m - 1, d);
+        const month = monthNames[date.getMonth()];
+        const day = date.getDate();
+        const ordinal = ordinals[Math.min(3, (day % 10 === 1 && day !== 11 ? 0 : day % 10 === 2 && day !== 12 ? 1 : day % 10 === 3 && day !== 13 ? 2 : 3))];
+        return `${month} ${day}${ordinal}`;
+      };
+
+      // Before This Month
+      const allDates = getAllDates().sort();
+      let beforeMonthTotal = 0;
+      let beforeMonthDaysWorked = 0;
+      let beforeMonthBestDay = 0;
+      let beforeMonthBestDayDate = null;
+
+      allDates.forEach(d => {
+        if (!d.startsWith(`${yearStr}-${monthStr}`)) {
+          const hours = getHours(d, taskIndex);
+          if (hours > 0) {
+            beforeMonthDaysWorked++;
+          }
+          beforeMonthTotal += hours;
+          if (hours > beforeMonthBestDay) {
+            beforeMonthBestDay = hours;
+            beforeMonthBestDayDate = d;
+          }
+        }
+      });
+
+      const beforeMonthAvg = beforeMonthDaysWorked > 0 ? beforeMonthTotal / beforeMonthDaysWorked : 0;
+      const beforeMonthDaysCalc = hoursToDay(beforeMonthTotal);
+      const beforeMonthAvgDaysCalc = beforeMonthDaysWorked > 0 ? hoursToDay(beforeMonthAvg) : '—';
+
+      const thisMonthEl = document.getElementById('bytaskThisMonth');
+      if (thisMonthEl) {
+        const div = thisMonthEl.querySelector('div');
+        div.innerHTML = thisMonthDaysWorked > 0
+          ? `
+            <div class="overflow-x-auto">
+              <table class="w-full text-sm table-fixed">
+                <thead>
+                  <tr class="border-b border-gray-200 dark:border-white/10">
+                    <th class="py-2 px-3 text-left text-gray-700 dark:text-white/80 text-xs font-semibold w-2/5"></th>
+                    <th class="py-2 px-3 text-right text-gray-700 dark:text-white/80 text-xs font-semibold w-1.5/5">Days</th>
+                    <th class="py-2 px-3 text-right text-gray-700 dark:text-white/80 text-xs font-semibold w-1.5/5">Hours</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr class="border-b border-gray-100 dark:border-white/5 hover:bg-black/5 dark:hover:bg-white/5">
+                    <td class="py-2 px-3 text-left text-gray-700 dark:text-white/80 text-xs w-2/5">Total logged</td>
+                    <td class="py-2 px-3 text-right text-gray-900 dark:text-white font-semibold text-xs w-1.5/5">${thisMonthDaysCalc}</td>
+                    <td class="py-2 px-3 text-right text-gray-900 dark:text-white font-semibold text-xs w-1.5/5">${fmtH(thisMonthTotal)}</td>
+                  </tr>
+                  <tr class="border-b border-gray-100 dark:border-white/5 hover:bg-black/5 dark:hover:bg-white/5">
+                    <td class="py-2 px-3 text-left text-gray-700 dark:text-white/80 text-xs w-2/5">Best day</td>
+                    <td class="py-2 px-3 text-right text-gray-900 dark:text-white font-semibold text-xs w-1.5/5">${formatDayName(thisMonthBestDayDate)}</td>
+                    <td class="py-2 px-3 text-right text-gray-900 dark:text-white font-semibold text-xs w-1.5/5">${fmtH(thisMonthBestDay)}</td>
+                  </tr>
+                  <tr>
+                    <td class="py-2 px-3 text-left text-gray-700 dark:text-white/80 text-xs w-2/5">Avg per worked day</td>
+                    <td class="py-2 px-3 text-right text-gray-900 dark:text-white font-semibold text-xs w-1.5/5">${thisMonthAvgDaysCalc}</td>
+                    <td class="py-2 px-3 text-right text-gray-900 dark:text-white font-semibold text-xs w-1.5/5">${fmtH(thisMonthAvg)}</td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+          `
+          : `<p class="text-gray-500 dark:text-gray-400">No hours logged this month</p>`;
+      }
+
+      const beforeEl = document.getElementById('bytaskBefore');
+      if (beforeEl) {
+        const div = beforeEl.querySelector('div');
+        div.innerHTML = beforeMonthDaysWorked > 0
+          ? `
+            <div class="overflow-x-auto">
+              <table class="w-full text-sm table-fixed">
+                <thead>
+                  <tr class="border-b border-gray-200 dark:border-white/10">
+                    <th class="py-2 px-3 text-left text-gray-700 dark:text-white/80 text-xs font-semibold w-2/5"></th>
+                    <th class="py-2 px-3 text-right text-gray-700 dark:text-white/80 text-xs font-semibold w-1.5/5">Days</th>
+                    <th class="py-2 px-3 text-right text-gray-700 dark:text-white/80 text-xs font-semibold w-1.5/5">Hours</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr class="border-b border-gray-100 dark:border-white/5 hover:bg-black/5 dark:hover:bg-white/5">
+                    <td class="py-2 px-3 text-left text-gray-700 dark:text-white/80 text-xs w-2/5">Total logged</td>
+                    <td class="py-2 px-3 text-right text-gray-900 dark:text-white font-semibold text-xs w-1.5/5">${beforeMonthDaysCalc}</td>
+                    <td class="py-2 px-3 text-right text-gray-900 dark:text-white font-semibold text-xs w-1.5/5">${fmtH(beforeMonthTotal)}</td>
+                  </tr>
+                  <tr class="border-b border-gray-100 dark:border-white/5 hover:bg-black/5 dark:hover:bg-white/5">
+                    <td class="py-2 px-3 text-left text-gray-700 dark:text-white/80 text-xs w-2/5">Best day</td>
+                    <td class="py-2 px-3 text-right text-gray-900 dark:text-white font-semibold text-xs w-1.5/5">${formatDayName(beforeMonthBestDayDate)}</td>
+                    <td class="py-2 px-3 text-right text-gray-900 dark:text-white font-semibold text-xs w-1.5/5">${fmtH(beforeMonthBestDay)}</td>
+                  </tr>
+                  <tr>
+                    <td class="py-2 px-3 text-left text-gray-700 dark:text-white/80 text-xs w-2/5">Avg per worked day</td>
+                    <td class="py-2 px-3 text-right text-gray-900 dark:text-white font-semibold text-xs w-1.5/5">${beforeMonthAvgDaysCalc}</td>
+                    <td class="py-2 px-3 text-right text-gray-900 dark:text-white font-semibold text-xs w-1.5/5">${fmtH(beforeMonthAvg)}</td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+          `
+          : `<p class="text-gray-500 dark:text-gray-400">No hours logged before this month</p>`;
+      }
+    }
+
+    function renderTaskHeatmap(taskIndex) {
+      const el = document.getElementById('bytaskHeatmapContainer');
+      if (!el) return;
+
+      const task = tasks[taskIndex];
+      const weeks = getWeeksInCalendarYear();
+      const graphWidth = weeks.length * (CELL_SIZE + CELL_MARGIN) + 20;
+      const graphHeight = MONTH_LABELS_HEIGHT + 7 * (CELL_SIZE + CELL_MARGIN) + 20;
+
+      let svg = `<svg width="${graphWidth}" height="${graphHeight}" viewBox="0 0 ${graphWidth} ${graphHeight}" class="text-gray-900 dark:text-white/70">`;
+
+      // Month labels and cells
+      let lastMonth = null;
+      weeks.forEach((week, wi) => {
+        const x = wi * (CELL_SIZE + CELL_MARGIN) + 10;
+
+        const firstDateStr = week[0];
+        const firstDate = parseDate(firstDateStr);
+        const currentMonth = firstDate.getMonth();
+
+        if (lastMonth !== currentMonth && !(currentMonth === 11 && lastMonth === null)) {
+          const monthNames = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+          svg += `<text x="${x}" y="12" class="month-label">${monthNames[currentMonth]}</text>`;
+          lastMonth = currentMonth;
+        }
+
+        week.forEach(dateStr => {
+          const date = parseDate(dateStr);
+          const dayOfWeek = (date.getDay() + 6) % 7;
+          const y = MONTH_LABELS_HEIGHT + dayOfWeek * (CELL_SIZE + CELL_MARGIN) + 2;
+
+          const hours = getHours(dateStr, taskIndex);
+          const intensity = Math.min(hours / maxCap, 1);
+          const cellColor = getIntensityColor(COLOR_HEX[task.color], intensity);
+
+          let strokeColor = 'none';
+          let strokeWidth = '0';
+          let hasDelivery = false;
+
+          if (task.deliveryDate === dateStr) {
+            strokeColor = COLOR_HEX[task.color];
+            strokeWidth = '1.5';
+            hasDelivery = true;
+          }
+
+          svg += `
+            <g>
+              <rect x="${x}" y="${y}" width="${CELL_SIZE}" height="${CELL_SIZE}"
+                    fill="${cellColor}" rx="2" ry="2" class="heatmap-cell delivery-cell"
+                    stroke="${strokeColor}" stroke-width="${strokeWidth}"
+                    data-task-name="${hasDelivery ? task.name : ''}"
+                    data-delivery-date="${dateStr}"
+                    data-working-days="${hasDelivery ? getWorkingDaysTo(dateStr) : '0'}"
+                    style="cursor: ${hasDelivery ? 'pointer' : 'default'};"></rect>`;
+
+          if (hasDelivery) {
+            const dotX = x + CELL_SIZE - 1;
+            const dotY = y - 1;
+            const dotId = `delivery-dot-${Math.random().toString(36).substr(2, 9)}`;
+            const workingDays = getWorkingDaysTo(dateStr);
+            svg += `<circle id="${dotId}" cx="${dotX}" cy="${dotY}" r="4" fill="${COLOR_HEX[task.color]}" class="delivery-dot"
+              data-task="${task.name}" data-date="${dateStr}" data-days="${workingDays}"
+              style="filter: drop-shadow(0 1px 2px rgba(0,0,0,0.3)); cursor: pointer;">
+            </circle>`;
+          }
+
+          svg += `</g>`;
+        });
+      });
+
+      svg += `</svg>`;
+
+      el.innerHTML = `${getDayLabelsHTML()}${svg}`;
+
+      setTimeout(() => setupDeliveryDatePopovers(), 0);
     }
 
     function renderLegend() {
@@ -719,15 +1637,298 @@
       document.getElementById('combinedLegend').innerHTML = html;
     }
 
-    function renderActivityView() {
-      renderLegend();
+    function render() {
+      console.log('render() called - full re-render');
       renderCombinedGraph();
-      renderIndividualGraphs();
+      renderLegend();
+      renderLinearChart();
+      renderRepartitionChart();
+      renderWeeklyTable();
+      renderTaskLegend();
+      renderBurnoutBadge();
+      if (!document.getElementById('bytaskView').classList.contains('hidden')) {
+        renderByTaskView(activeTaskIndex);
+      }
+      renderedViews = {};
     }
 
-    function render() {
-      renderActivityView();
-      renderLinearChart();
+    function renderTaskLegend() {
+      const getCompletions = (dateStr) => {
+        const comp = completions[dateStr];
+        return Array.isArray(comp) ? comp : [];
+      };
+
+      const options = {
+        tasks,
+        getCompletions,
+        viewYear: linearViewYear,
+        viewMonth: linearViewMonth,
+        todayStr,
+        COLOR_HEX,
+        fmtH,
+      };
+
+      LegendRenderer.render('overviewTaskLegend', options);
+
+      // Custom inline render for bytaskLegend - shows all tasks with active/inactive styling
+      const bytaskLegendEl = document.getElementById('bytaskLegend');
+      if (bytaskLegendEl) {
+        bytaskLegendEl.innerHTML = tasks
+          .map((task, i) => {
+            const isActive = i === activeTaskIndex;
+            const classes = isActive
+              ? ''
+              : 'line-through opacity-50';
+            return `
+              <div data-taskindex="${i}" class="flex items-center gap-1.5 cursor-pointer select-none transition-opacity hover:opacity-100 ${classes}">
+                <div class="w-2.5 h-2.5 md:w-3 md:h-3 rounded-full" style="background:${COLOR_HEX[task.color]}"></div>
+                <span class="text-gray-500 dark:text-white/70">${task.name}</span>
+              </div>
+            `;
+          })
+          .join('');
+
+        _setupBytaskLegendSelectors();
+      }
+    }
+
+    function _setupBytaskLegendSelectors() {
+      const items = document.querySelectorAll('#bytaskLegend [data-taskindex]');
+      items.forEach(item => {
+        item.addEventListener('click', () => {
+          const idx = parseInt(item.dataset.taskindex, 10);
+          renderByTaskView(idx);
+        });
+      });
+    }
+
+    function renderByTaskView(taskIndex) {
+      if (taskIndex >= tasks.length) taskIndex = 0;
+      activeTaskIndex = taskIndex;
+
+      renderTaskLegend();
+      renderBurnoutBadgeForTask(taskIndex);
+      renderTaskRequirementsCard(taskIndex);
+      renderTaskProgressCard(taskIndex);
+      renderTaskBurnChart(taskIndex);
+      renderTaskWeekChart(taskIndex);
+      renderTaskDayChart(taskIndex);
+      renderTaskAchievements(taskIndex);
+      renderTaskHeatmap(taskIndex);
+    }
+
+    function renderBurnoutBadgeForTask(taskIndex) {
+      const el = document.getElementById('bytaskBurnoutBadge');
+      if (!el) return;
+
+      const task = tasks[taskIndex];
+      const estimate = task.estimate || 0;
+      const deliveryDate = task.deliveryDate || '';
+
+      if (!estimate || !deliveryDate) {
+        el.classList.add('hidden');
+        return;
+      }
+
+      const totalEstimatedHours = estimate * maxCap;
+      let loggedTotal = 0;
+      const allDates = getAllDates();
+      allDates.forEach(dateStr => {
+        loggedTotal += getHours(dateStr, taskIndex);
+      });
+
+      const isBurnedOut = loggedTotal > totalEstimatedHours;
+      if (isBurnedOut) {
+        el.classList.remove('hidden');
+        const extraHours = (loggedTotal - totalEstimatedHours).toFixed(1);
+        el.querySelector('span').textContent = `Burned out by ${extraHours}h`;
+      } else {
+        el.classList.add('hidden');
+      }
+    }
+
+    function renderTaskRequirementsCard(taskIndex) {
+      const el = document.getElementById('bytaskRequirements');
+      if (!el) return;
+
+      const task = tasks[taskIndex];
+      const container = el.querySelector('div:not(:has(h3))') || el.querySelector('dl');
+
+      const colorCircle = `<div class="w-2.5 h-2.5 rounded-full flex-shrink-0" style="background: ${COLOR_HEX[task.color]}"></div>`;
+
+      const estimateDisplay = task.estimate
+        ? `<span title="${(task.estimate * maxCap).toFixed(1)}h">${task.estimate}d</span>`
+        : '—';
+
+      const deliveryDate = task.deliveryDate
+        ? formatDateToLongFormat(task.deliveryDate)
+        : '—';
+
+      const jiraLink = task.jiraLink
+        ? `<a href="${task.jiraLink}" target="_blank" rel="noopener noreferrer" class="text-blue-600 dark:text-blue-400 hover:underline">see ticket in Jira</a>`
+        : '—';
+
+      const daysRemaining = task.deliveryDate ? getWorkingDaysTo(task.deliveryDate) : null;
+      const remainingText = daysRemaining !== null
+        ? (daysRemaining < 0 ? `${Math.abs(daysRemaining)} day${Math.abs(daysRemaining) !== 1 ? 's' : ''} ago` : `${daysRemaining} day${daysRemaining !== 1 ? 's' : ''}`)
+        : '—';
+
+      container.innerHTML = `
+        <div class="overflow-x-auto">
+          <table class="w-full text-sm table-fixed">
+            <tbody>
+              <tr class="border-b border-gray-100 dark:border-white/5 hover:bg-black/5 dark:hover:bg-white/5">
+                <td class="py-2 px-3 text-left text-gray-700 dark:text-white/80 text-xs w-2/5">Estimate</td>
+                <td class="py-2 px-3 text-right text-gray-900 dark:text-white font-semibold text-xs w-3/5">${estimateDisplay}</td>
+              </tr>
+              <tr class="border-b border-gray-100 dark:border-white/5 hover:bg-black/5 dark:hover:bg-white/5">
+                <td class="py-2 px-3 text-left text-gray-700 dark:text-white/80 text-xs w-2/5">Delivery</td>
+                <td class="py-2 px-3 text-right text-gray-900 dark:text-white font-semibold text-xs w-3/5">${deliveryDate}</td>
+              </tr>
+              <tr class="border-b border-gray-100 dark:border-white/5 hover:bg-black/5 dark:hover:bg-white/5">
+                <td class="py-2 px-3 text-left text-gray-700 dark:text-white/80 text-xs w-2/5">Week days remaining</td>
+                <td class="py-2 px-3 text-right text-gray-900 dark:text-white font-semibold text-xs w-3/5">${remainingText}</td>
+              </tr>
+              <tr class="border-b border-gray-100 dark:border-white/5 hover:bg-black/5 dark:hover:bg-white/5">
+                <td class="py-2 px-3 text-left text-gray-700 dark:text-white/80 text-xs w-2/5">Jira</td>
+                <td class="py-2 px-3 text-right text-gray-900 dark:text-white font-semibold text-xs w-3/5">${jiraLink}</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      `;
+    }
+
+    function renderTaskProgressCard(taskIndex) {
+      const el = document.getElementById('bytaskProgress');
+      if (!el) return;
+
+      const task = tasks[taskIndex];
+      const container = el.querySelector('.space-y-4');
+
+      const estimate = task.estimate || 0;
+      const deliveryDate = task.deliveryDate || '';
+
+      const totalEstimatedHours = estimate > 0 ? estimate * maxCap : 0;
+      let loggedTotal = 0;
+      const allDates = getAllDates();
+      allDates.forEach(dateStr => {
+        loggedTotal += getHours(dateStr, taskIndex);
+      });
+
+      const percentComplete = totalEstimatedHours > 0
+        ? (loggedTotal / totalEstimatedHours) * 100
+        : 0;
+
+      let statusBadge = 'Not started';
+      let statusColor = 'bg-gray-500/20 text-gray-600 dark:text-gray-300';
+
+      if (loggedTotal > 0) {
+        if (loggedTotal > totalEstimatedHours) {
+          // Overlogged - show Alert
+          statusBadge = 'Alert';
+          statusColor = 'bg-orange-500/20 text-orange-600 dark:text-orange-400';
+        } else if (percentComplete >= 100) {
+          statusBadge = 'Completed';
+          statusColor = 'bg-green-500/20 text-green-600 dark:text-green-400';
+        } else if (deliveryDate) {
+          const daysRemaining = getWorkingDaysTo(deliveryDate);
+          const daysWorked = allDates.filter(d => getHours(d, taskIndex) > 0).length;
+
+          if (percentComplete >= 80) {
+            statusBadge = 'On track';
+            statusColor = 'bg-blue-500/20 text-blue-600 dark:text-blue-400';
+          } else if (daysRemaining < 0) {
+            statusBadge = 'Late';
+            statusColor = 'bg-red-500/20 text-red-600 dark:text-red-400';
+          } else {
+            statusBadge = 'In progress';
+            statusColor = 'bg-yellow-500/20 text-yellow-600 dark:text-yellow-400';
+          }
+        } else {
+          statusBadge = 'In progress';
+          statusColor = 'bg-yellow-500/20 text-yellow-600 dark:text-yellow-400';
+        }
+      }
+
+      // Calculate if overdone (logged > estimate)
+      const extraHours = Math.max(0, loggedTotal - totalEstimatedHours);
+      const extraDays = extraHours > 0 ? hoursToDay(extraHours) : null;
+
+      let remainingLabel = 'Remaining';
+      let daysRemainingText = '—';
+      let hoursRemainingText = '—';
+      let isOverdone = false;
+
+      if (extraHours > 0) {
+        // Overdone - show extra hours/days beyond estimate
+        remainingLabel = 'Overdone';
+        daysRemainingText = `${extraDays} days`;
+        hoursRemainingText = fmtH(extraHours);
+        isOverdone = true;
+      } else if (totalEstimatedHours > 0) {
+        // Not overdone - show remaining hours/days to complete estimate
+        const remainingHours = totalEstimatedHours - loggedTotal;
+        const remainingDays = hoursToDay(remainingHours);
+        daysRemainingText = `${remainingDays} days`;
+        hoursRemainingText = fmtH(remainingHours);
+      }
+
+      // Calculate estimate with "+X days" if overlogged
+      const estimateText = estimate
+        ? `${estimate} days${extraDays ? ` +${extraDays}` : ''}`
+        : '—';
+
+      // Set the status badge in the header
+      const badgeEl = document.getElementById('bytaskProgressBadge');
+      if (badgeEl) {
+        badgeEl.innerHTML = `<span class="inline-flex items-center gap-1.5 text-xs px-2.5 py-1 rounded-full font-medium ${statusColor}">${statusBadge}</span>`;
+      }
+
+      // Set the progress content
+      if (container) {
+        // Progress bar with task color (or orange if overdone), allow percentage over 100%
+        const displayPercent = percentComplete;
+        const progressBarWidth = Math.min(displayPercent, 100);
+        const progressBarColor = isOverdone ? '#f97316' : COLOR_HEX[task.color];
+
+        container.innerHTML = `
+          <div class="mb-4">
+            <div class="text-xs text-gray-600 dark:text-gray-400 mb-2">${percentComplete.toFixed(0)}%</div>
+            <div class="w-full bg-gray-200 dark:bg-gray-700 rounded-full h-2">
+              <div class="h-2 rounded-full" style="background:${progressBarColor}; width: ${progressBarWidth}%"></div>
+            </div>
+          </div>
+          <div class="overflow-x-auto">
+            <table class="w-full text-sm table-fixed">
+              <thead>
+                <tr class="border-b border-gray-200 dark:border-white/10">
+                  <th class="py-2 px-3 text-left text-gray-700 dark:text-white/80 text-xs font-semibold w-2/5"></th>
+                  <th class="py-2 px-3 text-right text-gray-700 dark:text-white/80 text-xs font-semibold w-1.5/5">Days</th>
+                  <th class="py-2 px-3 text-right text-gray-700 dark:text-white/80 text-xs font-semibold w-1.5/5">Hours</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr class="border-b border-gray-100 dark:border-white/5 hover:bg-black/5 dark:hover:bg-white/5">
+                  <td class="py-2 px-3 text-left text-gray-700 dark:text-white/80 text-xs w-2/5">Estimate</td>
+                  <td class="py-2 px-3 text-right text-gray-900 dark:text-white font-semibold text-xs w-1.5/5">${estimate}</td>
+                  <td class="py-2 px-3 text-right text-gray-900 dark:text-white font-semibold text-xs w-1.5/5">—</td>
+                </tr>
+                <tr class="border-b border-gray-100 dark:border-white/5 hover:bg-black/5 dark:hover:bg-white/5">
+                  <td class="py-2 px-3 text-left text-gray-700 dark:text-white/80 text-xs w-2/5">Total logged</td>
+                  <td class="py-2 px-3 text-right text-gray-900 dark:text-white font-semibold text-xs w-1.5/5">${hoursToDay(loggedTotal)}</td>
+                  <td class="py-2 px-3 text-right text-gray-900 dark:text-white font-semibold text-xs w-1.5/5">${fmtH(loggedTotal)}</td>
+                </tr>
+                <tr class="border-b border-gray-100 dark:border-white/5 hover:bg-black/5 dark:hover:bg-white/5">
+                  <td class="py-2 px-3 text-left${isOverdone ? ' text-orange-600 dark:text-orange-400' : ' text-gray-700 dark:text-white/80'} text-xs w-2/5">${remainingLabel}</td>
+                  <td class="py-2 px-3 text-right${isOverdone ? ' text-orange-600 dark:text-orange-400' : ' text-gray-900 dark:text-white'} font-semibold text-xs w-1.5/5">${daysRemainingText}</td>
+                  <td class="py-2 px-3 text-right${isOverdone ? ' text-orange-600 dark:text-orange-400' : ' text-gray-900 dark:text-white'} font-semibold text-xs w-1.5/5">${hoursRemainingText}</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        `;
+      }
     }
 
     let linearChartInstance = null;
@@ -761,8 +1962,8 @@
         return {
           label: task.name,
           data: data,
-          backgroundColor: task.color,
-          borderColor: task.color,
+          backgroundColor: COLOR_HEX[task.color],
+          borderColor: COLOR_HEX[task.color],
           borderWidth: 0
         };
       });
@@ -849,7 +2050,7 @@
           },
           plugins: {
             legend: {
-              display: true,
+              display: false,
               position: 'top',
               labels: {
                 color: darkMode ? 'rgba(255, 255, 255, 0.7)' : 'rgb(55, 65, 81)',
@@ -871,6 +2072,13 @@
     }
 
     function renderRepartitionChart() {
+      console.log('renderRepartitionChart called', {
+        linearViewYear,
+        linearViewMonth,
+        completionsKeys: Object.keys(completions).length,
+        repartitionChartElement: document.getElementById('repartitionChart')
+      });
+
       // Get dates for the selected month
       const yearStr = linearViewYear.toString();
       const monthStr = String(linearViewMonth + 1).padStart(2, '0');
@@ -878,7 +2086,10 @@
         .filter(d => d.startsWith(`${yearStr}-${monthStr}`))
         .sort();
 
+      console.log('monthDates found:', monthDates.length);
+
       if (monthDates.length === 0) {
+        console.log('No month dates, destroying chart instance');
         if (repartitionChartInstance) {
           repartitionChartInstance.destroy();
         }
@@ -904,7 +2115,7 @@
           labels: tasks.map(t => t.name),
           datasets: [{
             data: taskHours,
-            backgroundColor: tasks.map(t => t.color),
+            backgroundColor: tasks.map(t => COLOR_HEX[t.color]),
             borderColor: darkMode ? '#16213e' : '#ffffff',
             borderWidth: 2
           }]
@@ -914,7 +2125,7 @@
           maintainAspectRatio: false,
           plugins: {
             legend: {
-              display: true,
+              display: false,
               position: 'bottom',
               labels: {
                 color: darkMode ? 'rgba(255, 255, 255, 0.7)' : 'rgb(55, 65, 81)',
@@ -947,43 +2158,237 @@
           }
         }
       });
-
-      updateMonthLabelRep();
     }
 
-    let renderedViews = {};
+    function renderBurnoutBadge() {
+      const daysInMonth = new Date(linearViewYear, linearViewMonth + 1, 0).getDate();
+      let burnoutCount = 0, exceededTotal = 0;
+      const yearStr = linearViewYear.toString();
+      const monthStr = String(linearViewMonth + 1).padStart(2, '0');
+      const todayS = todayStr();
+
+      for (let d = 1; d <= daysInMonth; d++) {
+        const ds = `${yearStr}-${monthStr}-${String(d).padStart(2,'0')}`;
+        if (ds > todayS) break;
+        const tot = getTotalHours(ds);
+        if (tot > maxCap) { burnoutCount++; exceededTotal += tot - maxCap; }
+      }
+
+      const overviewBadge = document.getElementById('overviewBurnoutBadge');
+      const bytaskBadge = document.getElementById('bytaskBurnoutBadge');
+
+      if (burnoutCount > 0) {
+        const text = `🔥 ${burnoutCount} burnout day${burnoutCount > 1 ? 's' : ''} +${exceededTotal.toFixed(2)}h over cap`;
+        if (overviewBadge) {
+          overviewBadge.classList.remove('hidden');
+          overviewBadge.querySelector('span').textContent = text;
+        }
+        if (bytaskBadge) {
+          bytaskBadge.classList.remove('hidden');
+          bytaskBadge.querySelector('span').textContent = text;
+        }
+      } else {
+        if (overviewBadge) overviewBadge.classList.add('hidden');
+        if (bytaskBadge) bytaskBadge.classList.add('hidden');
+      }
+    }
+
+    function renderWeeklyTable() {
+      console.log('renderWeeklyTable called', {
+        linearViewYear,
+        linearViewMonth,
+        weeklyTableElement: document.getElementById('weeklyTableContainer'),
+        tasksCount: tasks.length,
+        completionsKeys: Object.keys(completions).length,
+        summaryCachingMode
+      });
+
+      const el = document.getElementById('weeklyTableContainer');
+      if (!el) {
+        console.log('weeklyTableContainer not found');
+        return;
+      }
+
+      const daysInMonth = new Date(linearViewYear, linearViewMonth + 1, 0).getDate();
+      const firstDay = new Date(linearViewYear, linearViewMonth, 1);
+      let startDow = firstDay.getDay() - 1;
+      if (startDow < 0) startDow = 6;
+
+      // Group days by week
+      const weekGroups = {};
+      const todayS = todayStr();
+      const weekNumbers = [];
+
+      for (let d = 1; d <= daysInMonth; d++) {
+        const ds = `${linearViewYear}-${String(linearViewMonth+1).padStart(2,'0')}-${String(d).padStart(2,'0')}`;
+        if (ds > todayS) break;
+        const date = new Date(linearViewYear, linearViewMonth, d);
+        const weekNum = getWeekOfYear(date);
+        const row = Math.floor((d - 1 + startDow) / 7);
+
+        if (!weekGroups[row]) {
+          weekGroups[row] = [];
+          weekNumbers[row] = weekNum;
+        }
+        weekGroups[row].push(ds);
+      }
+
+      const rows = Object.keys(weekGroups).sort((a,b) => a-b).map(r => weekGroups[r]);
+      const weeksInMonth = rows.length;
+
+      console.log('Weekly table data:', {
+        weeksInMonth,
+        rowsLength: rows.length,
+        weekGroups: Object.keys(weekGroups).length
+      });
+
+      if (rows.length === 0) {
+        console.log('No rows in week groups');
+        el.innerHTML = `<p class="text-sm text-gray-400 dark:text-white/40 text-center py-6">No data for this month yet.</p>`;
+        return;
+      }
+
+      const isHours = summaryCachingMode === 'hours';
+      const isDays = summaryCachingMode === 'days';
+      const isPct = summaryCachingMode === 'pct';
+
+      // Calculate total hours for percentage calculations
+      let grandTotal = 0;
+      tasks.forEach((_, taskIndex) => {
+        rows.forEach(weekDates => {
+          grandTotal += weekDates.reduce((sum, ds) => sum + getHours(ds, taskIndex), 0);
+        });
+      });
+
+      let helperText = '';
+      if (isHours) helperText = '0.25 = 15min · 0.5 = 30min · 0.75 = 45min';
+      else if (isDays) helperText = `1 day = ${maxCap}h (daily cap)`;
+      else if (isPct) helperText = 'share of total hours';
+
+      // Update controls and helper in the card header
+      const controlsEl = document.getElementById('weeklyBreakdownControls');
+      if (controlsEl) {
+        controlsEl.innerHTML = `
+          <div class="inline-flex rounded-lg bg-black/5 dark:bg-white/5 p-0.5">
+            <button onclick="setSummaryMode('hours')" class="px-3 py-1 text-xs font-medium rounded-md transition-colors ${isHours ? 'bg-white dark:bg-white/15 text-gray-900 dark:text-white shadow-sm' : 'text-gray-400 dark:text-white/40 hover:text-gray-600 dark:hover:text-white/60'}">Hours</button>
+            <button onclick="setSummaryMode('days')" class="px-3 py-1 text-xs font-medium rounded-md transition-colors ${isDays ? 'bg-white dark:bg-white/15 text-gray-900 dark:text-white shadow-sm' : 'text-gray-400 dark:text-white/40 hover:text-gray-600 dark:hover:text-white/60'}">Days</button>
+            <button onclick="setSummaryMode('pct')" class="px-3 py-1 text-xs font-medium rounded-md transition-colors ${isPct ? 'bg-white dark:bg-white/15 text-gray-900 dark:text-white shadow-sm' : 'text-gray-400 dark:text-white/40 hover:text-gray-600 dark:hover:text-white/60'}">%</button>
+          </div>
+        `;
+      }
+
+      const helperEl = document.getElementById('weeklyBreakdownHelper');
+      if (helperEl) {
+        helperEl.innerHTML = `<p class="text-[10px] text-gray-400 dark:text-white/30 text-right flex-shrink-0">${helperText}</p>`;
+      }
+
+      // Build table
+      let html = `<div class="overflow-x-auto">
+          <table class="w-full text-sm table-fixed">
+            <thead>
+              <tr class="border-b border-gray-200 dark:border-white/10">
+                <th class="text-left py-2 px-3 font-semibold text-gray-900 dark:text-white w-4/5">Task</th>
+      `;
+
+      rows.forEach((_, i) => {
+        const weekNum = weekNumbers[i];
+        const colWidth = (3 / (4 * (rows.length + 1))) * 100;
+        html += `<th class="text-right py-2 px-3 font-semibold text-gray-900 dark:text-white text-xs whitespace-nowrap" style="width: ${colWidth}%">W${weekNum}</th>`;
+      });
+
+      html += `
+                <th class="text-right py-2 px-3 font-semibold text-gray-900 dark:text-white text-xs" style="width: ${(3 / (4 * (rows.length + 1))) * 100}%">Total</th>
+              </tr>
+            </thead>
+            <tbody>
+      `;
+
+      tasks.forEach((task, taskIndex) => {
+        let monthTotal = 0;
+        const weekTotals = rows.map(weekDates => {
+          const weekTotal = weekDates.reduce((sum, ds) => sum + getHours(ds, taskIndex), 0);
+          monthTotal += weekTotal;
+          return weekTotal;
+        });
+
+        const taskLink = task.jiraLink ? `<a href="${task.jiraLink}" target="_blank" class="text-blue-600 dark:text-white hover:underline">${task.name}</a>` : task.name;
+        const colorCircle = `<div class="w-2.5 h-2.5 rounded-full flex-shrink-0" style="background: ${COLOR_HEX[task.color]}"></div>`;
+
+        html += `<tr class="border-b border-gray-100 dark:border-white/5 hover:bg-black/5 dark:hover:bg-white/5">
+          <td class="py-2 px-3 text-gray-900 dark:text-white flex items-center gap-2.5 w-4/5 overflow-hidden">${colorCircle}${taskLink}</td>
+        `;
+
+        weekTotals.forEach((hours, idx) => {
+          let display = '—';
+          if (hours > 0) {
+            if (isHours) display = fmtH(hours);
+            else if (isDays) display = fmtD(hours);
+            else if (isPct) display = fmtPct(hours, grandTotal);
+          }
+          const colWidth = (3 / (4 * (rows.length + 1))) * 100;
+          html += `<td class="text-right py-2 px-3 text-gray-700 dark:text-white/80 text-xs" style="width: ${colWidth}%">${display}</td>`;
+        });
+
+        let totalDisplay = '—';
+        if (monthTotal > 0) {
+          if (isHours) totalDisplay = fmtH(monthTotal);
+          else if (isDays) totalDisplay = fmtD(monthTotal);
+          else if (isPct) totalDisplay = fmtPct(monthTotal, grandTotal);
+        }
+
+        const totalColWidth = (3 / (4 * (rows.length + 1))) * 100;
+        html += `<td class="text-right py-2 px-3 font-semibold text-gray-900 dark:text-white text-xs" style="width: ${totalColWidth}%">${totalDisplay}</td>
+        </tr>`;
+      });
+
+      html += `
+            </tbody>
+          </table>
+        </div>
+      `;
+
+      el.innerHTML = html;
+    }
 
     function switchView(view) {
+      console.log('switchView called:', view, {
+        renderedViews,
+        currentOverviewStatus: document.getElementById('overviewView')?.classList.contains('hidden'),
+        currentBytaskStatus: document.getElementById('bytaskView')?.classList.contains('hidden')
+      });
+
       document.querySelectorAll('.view-toggle-btn').forEach(btn => {
         btn.classList.remove('active');
       });
       document.querySelector(`[data-view="${view}"]`).classList.add('active');
 
-      const activityView = document.getElementById('activityView');
-      const linearView = document.getElementById('linearView');
-      const repartitionView = document.getElementById('repartitionView');
+      const overviewView = document.getElementById('overviewView');
+      const bytaskView = document.getElementById('bytaskView');
 
-      activityView.classList.add('hidden');
-      linearView.classList.add('hidden');
-      repartitionView.classList.add('hidden');
+      overviewView.classList.add('hidden');
+      bytaskView.classList.add('hidden');
 
-      if (view === 'activity') {
-        activityView.classList.remove('hidden');
-        if (!renderedViews.activity) {
-          renderActivityView();
-          renderedViews.activity = true;
-        }
-      } else if (view === 'linear') {
-        linearView.classList.remove('hidden');
-        if (!renderedViews.linear) {
+      if (view === 'overview') {
+        overviewView.classList.remove('hidden');
+        if (!renderedViews.overview) {
+          console.log('First time rendering overview view - calling all render functions');
+          renderCombinedGraph();
+          renderLegend();
           renderLinearChart();
-          renderedViews.linear = true;
-        }
-      } else if (view === 'repartition') {
-        repartitionView.classList.remove('hidden');
-        if (!renderedViews.repartition) {
           renderRepartitionChart();
-          renderedViews.repartition = true;
+          renderWeeklyTable();
+          renderTaskLegend();
+          renderBurnoutBadge();
+          renderedViews.overview = true;
+          console.log('Overview view rendered');
+        } else {
+          console.log('Overview view already rendered, skipping');
+        }
+      } else if (view === 'bytask') {
+        bytaskView.classList.remove('hidden');
+        if (!renderedViews.bytask) {
+          renderByTaskView(activeTaskIndex);
+          renderedViews.bytask = true;
         }
       }
     }
@@ -994,11 +2399,6 @@
       document.getElementById('monthLabel').textContent = `${monthNames[linearViewMonth]} ${linearViewYear}`;
     }
 
-    function updateMonthLabelRep() {
-      const monthNames = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'];
-      document.getElementById('monthLabelRep').textContent = `${monthNames[linearViewMonth]} ${linearViewYear}`;
-    }
-
     function prevMonth() {
       linearViewMonth--;
       if (linearViewMonth < 0) {
@@ -1007,6 +2407,12 @@
       }
       renderLinearChart();
       renderRepartitionChart();
+      renderWeeklyTable();
+      renderTaskLegend();
+      renderBurnoutBadge();
+      if (!document.getElementById('bytaskView').classList.contains('hidden')) {
+        renderByTaskView(activeTaskIndex);
+      }
     }
 
     function nextMonth() {
@@ -1021,6 +2427,12 @@
       }
       renderLinearChart();
       renderRepartitionChart();
+      renderWeeklyTable();
+      renderTaskLegend();
+      renderBurnoutBadge();
+      if (!document.getElementById('bytaskView').classList.contains('hidden')) {
+        renderByTaskView(activeTaskIndex);
+      }
     }
 
     function getAllDates() {
@@ -1044,15 +2456,30 @@
     }
 
     // ── Init ──────────────────────────────────────────────
-    // Only render the default active view (linear/intensity) on page load
+    // Only render the default active view (overview) on page load
+    console.log('=== PAGE INIT START ===');
+    console.log('Initial state:', {
+      tasksCount: tasks.length,
+      completionsCount: Object.keys(completions).length,
+      linearViewYear,
+      linearViewMonth
+    });
+
+    renderCombinedGraph();
+    renderLegend();
     renderLinearChart();
-    renderedViews.linear = true;
+    renderRepartitionChart();
+    renderWeeklyTable();
+    renderTaskLegend();
+    renderBurnoutBadge();
+    updateMonthLabel();
+    renderedViews.overview = true;
+
+    console.log('=== PAGE INIT END ===');
 
     // Month navigation event listeners
     document.getElementById('prevMonthBtn').addEventListener('click', prevMonth);
     document.getElementById('nextMonthBtn').addEventListener('click', nextMonth);
-    document.getElementById('prevMonthBtnRep').addEventListener('click', prevMonth);
-    document.getElementById('nextMonthBtnRep').addEventListener('click', nextMonth);
 
     // Helper function to get week of year
     function getWeekOfYear(date) {
@@ -1078,6 +2505,10 @@
       return days + 'd';
     }
 
+    function hoursToDay(h) {
+      return (h / maxCap).toFixed(1);
+    }
+
     function fmtPct(h, total) {
       if (total === 0) return '0%';
       return ((h / total) * 100).toFixed(0) + '%';
@@ -1091,7 +2522,8 @@
     }
 
     // Render summary content with current mode
-    function renderSummaryContent() {
+    function renderSummaryContent(options = {}) {
+      const { showBurnout = true } = options;
       const daysInMonth = new Date(linearViewYear, linearViewMonth + 1, 0).getDate();
       const firstDay = new Date(linearViewYear, linearViewMonth, 1);
       let startDow = firstDay.getDay() - 1;
@@ -1174,21 +2606,23 @@
       });
 
       // Burnout info
-      let burnoutCount = 0, exceededTotal = 0;
-      const yearStr = linearViewYear.toString();
-      const monthStr = String(linearViewMonth + 1).padStart(2, '0');
-      for (let d = 1; d <= daysInMonth; d++) {
-        const ds = `${yearStr}-${monthStr}-${String(d).padStart(2,'0')}`;
-        if (ds > todayStr()) break;
-        const tot = getTotalHours(ds);
-        if (tot > maxCap) { burnoutCount++; exceededTotal += tot - maxCap; }
-      }
-      if (burnoutCount > 0) {
-        html += `<div class="mt-4 flex justify-center">
-          <span class="inline-flex items-center gap-1.5 text-xs bg-red-500/20 text-red-600 dark:text-red-400 px-3 py-1 rounded-full font-medium">
-            🔥 ${burnoutCount} burnout day${burnoutCount > 1 ? 's' : ''} +${exceededTotal.toFixed(2)}h over cap
-          </span>
-        </div>`;
+      if (showBurnout) {
+        let burnoutCount = 0, exceededTotal = 0;
+        const yearStr = linearViewYear.toString();
+        const monthStr = String(linearViewMonth + 1).padStart(2, '0');
+        for (let d = 1; d <= daysInMonth; d++) {
+          const ds = `${yearStr}-${monthStr}-${String(d).padStart(2,'0')}`;
+          if (ds > todayStr()) break;
+          const tot = getTotalHours(ds);
+          if (tot > maxCap) { burnoutCount++; exceededTotal += tot - maxCap; }
+        }
+        if (burnoutCount > 0) {
+          html += `<div class="mt-4 flex justify-center">
+            <span class="inline-flex items-center gap-1.5 text-xs bg-red-500/20 text-red-600 dark:text-red-400 px-3 py-1 rounded-full font-medium">
+              🔥 ${burnoutCount} burnout day${burnoutCount > 1 ? 's' : ''} +${exceededTotal.toFixed(2)}h over cap
+            </span>
+          </div>`;
+        }
       }
 
       return html;
@@ -1199,6 +2633,7 @@
       const monthNames = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'];
       const title = `${monthNames[linearViewMonth]} ${linearViewYear}`;
       MonthModal.setContent(title, renderSummaryContent());
+      renderWeeklyTable();
     }
 
     // Month label click - open modal with detailed breakdown
@@ -1210,7 +2645,6 @@
     }
 
     document.getElementById('monthLabel').addEventListener('click', openMonthSummaryModal);
-    document.getElementById('monthLabelRep').addEventListener('click', openMonthSummaryModal);
 
     // Re-render when data changes in another tab
     window.addEventListener('storage', () => {

@@ -4,8 +4,8 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <meta name="color-scheme" content="light dark">
-  <title>Hour Tracker </title>
-  <!-- alpha-1.0.7 -->
+  <title>Hour Tracker</title>
+  <!-- Beta-1.0.1 -->
   <style>
     html { background-color: #f5f5f5; }
     html.dark { background-color: #1a1a2e; }
@@ -47,7 +47,7 @@
     .day-cell:hover { opacity: 0.85; }
 
     .settings-overlay {
-      transition: opacity 0.2s ease, visibility 0.2s ease;
+      transition: opacity 0.2s cubic-bezier(0.4, 0, 0.2, 1), visibility 0.2s cubic-bezier(0.4, 0, 0.2, 1);
     }
     .settings-overlay.hidden {
       opacity: 0;
@@ -55,7 +55,7 @@
     }
 
     .color-swatch {
-      transition: transform 0.15s ease, box-shadow 0.15s ease;
+      transition: transform 0.15s cubic-bezier(0.4, 0, 0.2, 1), box-shadow 0.15s cubic-bezier(0.4, 0, 0.2, 1);
     }
     .color-swatch:hover { transform: scale(1.2); }
     .color-swatch.active {
@@ -68,14 +68,21 @@
       from { opacity: 0; }
       to { opacity: 1; }
     }
-    .month-fade { animation: monthFadeIn 1s ease; }
+    .month-fade { animation: monthFadeIn 1s cubic-bezier(0.4, 0, 0.2, 1); }
 
     /* Bottom sheet task list fade — applied when day changes */
     @keyframes sheetFadeIn {
       from { opacity: 0; }
       to { opacity: 1; }
     }
-    .sheet-fade { animation: sheetFadeIn 0.8s ease; }
+    .sheet-fade { animation: sheetFadeIn 0.8s cubic-bezier(0.4, 0, 0.2, 1); }
+
+    /* Page reload fade in */
+    @keyframes pageReloadFadeIn {
+      from { opacity: 0; }
+      to { opacity: 1; }
+    }
+    body.page-reload-fade { animation: pageReloadFadeIn 0.6s cubic-bezier(0.4, 0, 0.2, 1); }
 
     /* Selected dot spin */
     @keyframes dotSpin {
@@ -84,6 +91,14 @@
     }
     .dot-spin { animation: dotSpin 6s linear infinite; transform-origin: center; }
 
+    /* SVG icon styling for light/dark mode */
+    img[src*="icons/"] {
+      filter: brightness(0.4);
+    }
+    html.dark img[src*="icons/"] {
+      filter: brightness(0) invert(1);
+    }
+
     /* Fire icon flicker */
     @keyframes fireFlicker {
       0%,100% { transform: scaleY(1)    scaleX(1)    rotate(-1deg); opacity: 1;    }
@@ -91,15 +106,65 @@
       50%      { transform: scaleY(0.95) scaleX(1.05) rotate(-2deg); opacity: 1;   }
       75%      { transform: scaleY(1.05) scaleX(0.97) rotate(1.5deg);opacity: 0.85;}
     }
-    .fire-icon { animation: fireFlicker 1.2s ease-in-out infinite; transform-origin: bottom center; display: inline-block; }
+    .fire-icon { animation: fireFlicker 1.2s cubic-bezier(0.4, 0, 0.2, 1) infinite; transform-origin: bottom center; display: inline-block; }
 
     /* Nav arrow */
     .nav-arrow {
-      transition: background 0.15s ease, opacity 0.15s ease;
+      transition: background 0.15s cubic-bezier(0.4, 0, 0.2, 1), opacity 0.15s cubic-bezier(0.4, 0, 0.2, 1);
     }
     .nav-arrow:disabled {
       opacity: 0.2;
       cursor: default;
+    }
+
+    /* Modal animations */
+    @keyframes overlayFadeIn {
+      from { opacity: 0; }
+      to { opacity: 1; }
+    }
+
+    @keyframes overlayFadeOut {
+      from { opacity: 1; }
+      to { opacity: 0; }
+    }
+
+    @keyframes modalSlideInUp {
+      from { transform: translateY(100%); }
+      to { transform: translateY(0); }
+    }
+
+    @keyframes modalSlideUpOut {
+      from { transform: translateY(0); }
+      to { transform: translateY(-100%); }
+    }
+
+    @keyframes modalFadeOut {
+      from { opacity: 1; }
+      to { opacity: 0; }
+    }
+
+    .settings-overlay:not(.hidden) {
+      animation: overlayFadeIn 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    }
+
+    .settings-overlay:not(.hidden) > div {
+      animation: modalSlideInUp 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    }
+
+    .settings-overlay.slide-up {
+      animation: overlayFadeOut 0.3s cubic-bezier(0.4, 0, 0.2, 1) forwards !important;
+    }
+
+    .settings-overlay.slide-up > div {
+      animation: modalSlideUpOut 0.3s cubic-bezier(0.4, 0, 0.2, 1) forwards !important;
+    }
+
+    .settings-overlay.fade-out {
+      animation: overlayFadeOut 0.3s cubic-bezier(0.4, 0, 0.2, 1) forwards !important;
+    }
+
+    .settings-overlay.fade-out > div {
+      animation: modalFadeOut 0.3s cubic-bezier(0.4, 0, 0.2, 1) forwards !important;
     }
   </style>
 </head>
@@ -113,48 +178,63 @@
 
   <!-- Header -->
   <header class="flex items-center justify-between px-4 md:px-8 py-3 md:py-4 bg-card/80 dark:bg-card-dark/80 backdrop-blur-sm border-b border-gray-200 dark:border-white/5 z-30 shrink-0 transition-colors duration-300">
-    <h1 class="text-lg md:text-xl font-bold tracking-tight">Hour Tracker</h1>
-    <div class="flex items-center gap-3">
-      <span id="streakBadge" class="text-xs md:text-sm bg-red-500/20 text-red-600 dark:text-red-400 px-2 py-0.5 rounded-full font-medium hidden">0 burnout days</span>
-      <a href="./analytics.html" aria-label="Analytics" class="w-8 h-8 md:w-9 md:h-9 flex items-center justify-center rounded-lg hover:bg-black/5 dark:hover:bg-white/10 transition-colors text-gray-600 dark:text-gray-400">
-        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="w-5 h-5">
-          <path d="M13 17V9"/>
-          <path d="M18 17V5"/>
-          <path d="M3 3v16a2 2 0 0 0 2 2h16"/>
-          <path d="M8 17v-3"/>
-        </svg>
-      </a>
-      <button id="settingsBtn" aria-label="Settings" class="w-8 h-8 md:w-9 md:h-9 flex items-center justify-center rounded-lg hover:bg-black/5 dark:hover:bg-white/10 transition-colors text-gray-600 dark:text-gray-400">
-        <svg aria-hidden="true" class="w-5 h-5" xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-          <path d="M9.671 4.136a2.34 2.34 0 0 1 4.659 0 2.34 2.34 0 0 0 3.319 1.915 2.34 2.34 0 0 1 2.33 4.033 2.34 2.34 0 0 0 0 3.831 2.34 2.34 0 0 1-2.33 4.033 2.34 2.34 0 0 0-3.319 1.915 2.34 2.34 0 0 1-4.659 0 2.34 2.34 0 0 0-3.32-1.915 2.34 2.34 0 0 1-2.33-4.033 2.34 2.34 0 0 0 0-3.831A2.34 2.34 0 0 1 6.35 6.051a2.34 2.34 0 0 0 3.319-1.915"/>
-          <circle cx="12" cy="12" r="3"/>
-        </svg>
+    <div class="relative">
+      <button id="appMenuBtn" aria-label="App menu" class="flex items-center gap-2 hover:opacity-80 transition-opacity">
+        <h1 class="text-lg md:text-xl font-bold tracking-tight">Hour Tracker</h1>
+        <img src="./icons/dropdown-chevron.svg" alt="" class="w-4 h-4 text-gray-600 dark:text-gray-400 forced-color-adjust-none md:forced-color-adjust-auto" aria-hidden="true">
       </button>
+      <div id="appMenu" class="hidden absolute left-0 top-full mt-2 bg-card dark:bg-card-dark rounded-lg shadow-lg border border-gray-200 dark:border-white/10 w-56 z-50">
+        <a href="./analytics.html" class="flex items-center gap-3 px-4 py-2 text-sm text-gray-700 dark:text-white hover:bg-gray-100 dark:hover:bg-white/10 rounded-t-lg transition-colors">
+          <img src="./icons/chart-icon.svg" alt="" class="w-5 h-5 text-gray-700 dark:text-white forced-color-adjust-none md:forced-color-adjust-auto" aria-hidden="true">
+          Analytics
+        </a>
+        <button id="appSettingsBtn" class="flex items-center gap-3 w-full text-left px-4 py-2 text-sm text-gray-700 dark:text-white hover:bg-gray-100 dark:hover:bg-white/10 transition-colors border-t border-gray-200 dark:border-white/5">
+          <img src="./icons/settings-icon.svg" alt="" class="w-5 h-5 text-gray-700 dark:text-white forced-color-adjust-none md:forced-color-adjust-auto" aria-hidden="true">
+          Settings
+        </button>
+        <div class="flex items-center justify-between px-4 py-2 border-t border-gray-200 dark:border-white/5">
+          <label class="flex items-center gap-3 text-sm text-gray-700 dark:text-white cursor-pointer flex-1">
+            <img src="./icons/moon-icon.svg" alt="" class="w-5 h-5 text-gray-700 dark:text-white forced-color-adjust-none md:forced-color-adjust-auto" aria-hidden="true">
+            Dark mode
+          </label>
+          <button id="dropdownDarkMode" role="switch" aria-label="Dark mode"
+            class="relative w-10 h-6 rounded-full bg-gray-300 dark:bg-emerald-500 transition-colors duration-200 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-emerald-500">
+            <span id="dropdownDarkModeKnob" class="absolute top-0.5 left-0.5 w-5 h-5 rounded-full bg-white shadow transition-transform duration-200 translate-x-4"></span>
+          </button>
+        </div>
+        <button id="addTaskBtn" class="flex items-center gap-3 w-full text-left px-4 py-2 text-sm text-gray-700 dark:text-white hover:bg-gray-100 dark:hover:bg-white/10 rounded-b-lg transition-colors border-t border-gray-200 dark:border-white/5">
+          <img src="./icons/plus-icon.svg" alt="" class="w-5 h-5 text-gray-700 dark:text-white forced-color-adjust-none md:forced-color-adjust-auto" aria-hidden="true">
+          Add task
+        </button>
+      </div>
     </div>
+    <span id="streakBadge" class="text-xs md:text-sm bg-red-500/20 text-red-600 dark:text-red-400 px-2 py-0.5 rounded-full font-medium hidden">0 burnout days</span>
   </header>
 
   <!-- Calendar -->
   <main id="calendarArea" class="flex-1 flex flex-col px-4 md:px-8 pb-4 overflow-y-auto overflow-x-hidden min-h-0">
     <!-- Sticky zone: legend + month nav -->
     <div class="sticky top-0 z-10 bg-surface dark:bg-surface-dark pt-4 pb-2">
-      <!-- Legend -->
-      <div class="flex items-center justify-between mb-3">
+      <!-- Month Navigation -->
+      
+      <div class="flex items-center justify-between">
+        <button id="prevMonth" aria-label="Previous month" class="nav-arrow w-9 h-9 md:w-10 md:h-10 flex items-center justify-center rounded-lg hover:bg-black/5 dark:hover:bg-white/10">
+          <img src="./icons/chevron-left.svg" alt="" class="w-5 h-5 md:w-6 md:h-6 text-gray-900 dark:text-white forced-color-adjust-none md:forced-color-adjust-auto" aria-hidden="true">
+        </button>
+        <button id="monthLabel" class="text-sm md:text-lg font-semibold transition-colors px-3 py-1 rounded-lg hover:bg-black/5 dark:hover:bg-white/5" style="color: rgb(0, 0, 0);" onmouseover="updateMonthLabelHover(true)" onmouseout="updateMonthLabelHover(false)">
+          <!-- filled by JS -->
+        </button>
+        <button id="nextMonth" aria-label="Next month" class="nav-arrow w-9 h-9 md:w-10 md:h-10 flex items-center justify-center rounded-lg hover:bg-black/5 dark:hover:bg-white/10">
+          <img src="./icons/chevron-right.svg" alt="" class="w-5 h-5 md:w-6 md:h-6 text-gray-900 dark:text-white forced-color-adjust-none md:forced-color-adjust-auto" aria-hidden="true">
+        </button>
+      </div>
+
+     <!-- Legend -->
+      <div class="flex items-center justify-between mb-3 mt-2">
         <div id="legend" class="flex flex-wrap gap-3 md:gap-4 text-xs md:text-sm"></div>
         <button id="todayBtn" aria-label="Go to today" class="hidden text-xs font-medium text-black bg-white hover:bg-white/80 px-3 py-1 rounded-full transition-colors shrink-0">Go to today</button>
       </div>
 
-      <!-- Month Navigation -->
-      <div class="flex items-center justify-between">
-        <button id="prevMonth" aria-label="Previous month" class="nav-arrow w-9 h-9 md:w-10 md:h-10 flex items-center justify-center rounded-lg hover:bg-black/5 dark:hover:bg-white/10">
-          <svg aria-hidden="true" class="w-5 h-5 md:w-6 md:h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"/></svg>
-        </button>
-        <button id="monthLabel" class="text-sm md:text-lg font-semibold text-gray-500 dark:text-white/70 hover:text-gray-700 dark:hover:text-white/90 transition-colors px-3 py-1 rounded-lg hover:bg-black/5 dark:hover:bg-white/5">
-          <!-- filled by JS -->
-        </button>
-        <button id="nextMonth" aria-label="Next month" class="nav-arrow w-9 h-9 md:w-10 md:h-10 flex items-center justify-center rounded-lg hover:bg-black/5 dark:hover:bg-white/10">
-          <svg aria-hidden="true" class="w-5 h-5 md:w-6 md:h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/></svg>
-        </button>
-      </div>
     </div>
 
     <!-- Calendar Grid (single month) -->
@@ -175,10 +255,8 @@
       </div>
       <div class="flex items-center gap-3">
         <span id="timeToFillSheet" class="text-[10px] md:text-xs text-gray-400 dark:text-white/40 tabular-nums"></span>
-        <button id="closeSheet" aria-label="Close task list" class="w-7 h-7 flex items-center justify-center rounded-lg hover:bg-black/5 dark:hover:bg-white/10 transition-colors">
-        <svg aria-hidden="true" class="w-4 h-4 text-gray-400 dark:text-white/50" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
-        </svg>
+        <button id="closeSheet" aria-label="Close task list" class="w-8 h-8 flex items-center justify-center rounded-lg hover:bg-black/5 dark:hover:bg-white/10 transition-colors">
+        <img src="./icons/close-icon.svg" alt="" class="w-5 h-5 text-gray-400 dark:text-white/50 forced-color-adjust-none md:forced-color-adjust-auto" aria-hidden="true">
       </button>
       </div>
     </div>
@@ -186,78 +264,46 @@
     <div id="taskList" class="px-5 pb-5 space-y-3 overflow-y-auto"></div>
   </div>
 
-  <!-- Month Summary Overlay -->
-<!-- Settings Overlay -->
-  <div id="settingsOverlay" role="dialog" aria-modal="true" aria-label="Settings" class="settings-overlay hidden fixed inset-0 bg-black/60 backdrop-blur-sm z-40 flex items-end sm:items-center justify-center">
-    <div class="bg-card dark:bg-card-dark w-full max-w-md rounded-t-2xl sm:rounded-2xl p-6 max-h-[85vh] overflow-y-auto transition-colors duration-300">
-      <div class="flex items-center justify-between mb-6">
-        <h2 class="text-lg font-bold">Settings</h2>
-        <button id="closeSettings" aria-label="Close settings" class="w-8 h-8 flex items-center justify-center rounded-lg hover:bg-black/5 dark:hover:bg-white/10">
-          <svg aria-hidden="true" class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
-          </svg>
-        </button>
-      </div>
-      <!-- Dark mode toggle -->
-      <div class="flex items-center justify-between mb-5 pb-5 border-b border-gray-200 dark:border-white/10">
-        <div>
-          <span class="text-sm font-medium">Dark mode</span>
-          <p class="text-xs text-gray-400 dark:text-white/40 mt-0.5">Switch between light and dark theme</p>
-        </div>
-        <button id="darkModeToggle" role="switch" aria-checked="true" aria-label="Dark mode"
-          class="relative w-11 h-6 rounded-full bg-gray-300 dark:bg-emerald-500 transition-colors duration-200 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-emerald-500">
-          <span id="darkModeKnob" class="absolute top-0.5 left-0.5 w-5 h-5 rounded-full bg-white shadow transition-transform duration-200 translate-x-5"></span>
-        </button>
-      </div>
-      <div id="settingsTasks" class="space-y-5"></div>
-      <div class="mt-6 pt-4 border-t border-gray-200 dark:border-white/10">
-        <button id="resetBtn" class="w-full py-2.5 rounded-lg bg-red-500 hover:bg-red-600 text-white text-sm font-medium transition-colors">Delete all data</button>
-      </div>
-    </div>
-  </div>
-
-  <!-- Delete confirm modal -->
-  <div id="deleteModal" class="settings-overlay hidden fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center px-6">
-    <div class="bg-card dark:bg-card-dark w-full max-w-sm rounded-2xl p-6 shadow-xl transition-colors duration-300">
-      <h2 class="text-base font-bold mb-1">Delete — Are you sure?</h2>
-      <p class="text-sm text-gray-400 dark:text-white/40 mb-6">All data will be permanently removed. This cannot be undone.</p>
-      <div class="flex gap-3 justify-end">
-        <button id="deleteCancelBtn" class="px-4 py-2 rounded-lg text-sm font-medium bg-black/5 dark:bg-white/10 hover:bg-black/10 dark:hover:bg-white/20 transition-colors">Cancel</button>
-        <button id="deleteConfirmBtn" class="px-4 py-2 rounded-lg text-sm font-medium bg-red-500 hover:bg-red-600 text-white transition-colors">Delete</button>
-      </div>
-    </div>
-  </div>
 
   <script src="./month-modal.js"></script>
+  <script src="./app-menu.js"></script>
+  <script src="./settings-modal.js"></script>
+  <script src="./legend-renderer.js"></script>
   <script>
     // ── Constants ──────────────────────────────────────────
     const FIRE_ICON = `<span class="fire-icon" aria-hidden="true"><svg class="w-3.5 h-3.5 inline" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M15.362 5.214A8.252 8.252 0 0 1 12 21 8.25 8.25 0 0 1 6.038 7.048 8.287 8.287 0 0 1 9 9.6a8.983 8.983 0 0 1 3.361-6.867 8.21 8.21 0 0 0 3 2.481Z"/><path stroke-linecap="round" stroke-linejoin="round" d="M12 18a3.75 3.75 0 0 0 .495-7.468 5.99 5.99 0 0 0-1.925 3.546 5.974 5.974 0 0 1-2.133-1.001A3.75 3.75 0 0 0 12 18Z"/></svg></span>`;
 
-    const PALETTE = [
-      '#ef4444','#f97316','#f59e0b','#eab308',
-      '#84cc16','#22c55e','#14b8a6','#06b6d4',
-      '#3b82f6','#6366f1','#8b5cf6','#a855f7',
-      '#d946ef','#ec4899','#f43f5e','#78716c',
-    ];
-
-    const COLOR_NAMES = {
-      '#ef4444': 'Red', '#f97316': 'Orange', '#f59e0b': 'Amber', '#eab308': 'Yellow',
-      '#84cc16': 'Lime', '#22c55e': 'Green', '#14b8a6': 'Teal', '#06b6d4': 'Cyan',
-      '#3b82f6': 'Blue', '#6366f1': 'Indigo', '#8b5cf6': 'Violet', '#a855f7': 'Purple',
-      '#d946ef': 'Fuchsia', '#ec4899': 'Pink', '#f43f5e': 'Rose', '#78716c': 'Stone',
-    };
-
-    const DEFAULT_TASKS = [
-      { name: 'Exercise', color: '#22c55e' },
-      { name: 'Read', color: '#3b82f6' },
-      { name: 'Meditate', color: '#a855f7' },
-      { name: 'Journal', color: '#f59e0b' },
-    ];
-
     const MAX_MONTHS_BACK = 24;
+
+    // Month label color handler
+    function updateMonthLabelColor() {
+      const monthLabel = document.getElementById('monthLabel');
+      if (!monthLabel) return;
+      const isDark = document.documentElement.classList.contains('dark');
+      monthLabel.style.color = isDark ? 'rgb(255, 255, 255)' : 'rgb(0, 0, 0)';
+    }
+
+    function updateMonthLabelHover(isHovered) {
+      const monthLabel = document.getElementById('monthLabel');
+      if (!monthLabel) return;
+      const isDark = document.documentElement.classList.contains('dark');
+      if (isHovered) {
+        monthLabel.style.color = isDark ? 'rgb(229, 231, 235)' : 'rgb(17, 24, 39)';
+      } else {
+        monthLabel.style.color = isDark ? 'rgb(255, 255, 255)' : 'rgb(0, 0, 0)';
+      }
+    }
 
     // ── State ─────────────────────────────────────────────
     let tasks = loadJSON('dt_tasks', DEFAULT_TASKS);
+    // Migrate existing tasks to include new fields
+    tasks = tasks.map(t => ({
+      name: t.name,
+      color: t.color,
+      estimate: t.estimate ?? '',
+      deliveryDate: t.deliveryDate ?? '',
+      jiraLink: t.jiraLink ?? ''
+    }));
     let completions = loadJSON('dt_completions', {});
     let maxCap = parseFloat(localStorage.getItem('dt_maxCap')) || 7.5;
     let selectedDate = null; // null = no day selected, sheet closed
@@ -293,6 +339,7 @@
     }
     // Apply immediately before paint
     applyDarkMode();
+    updateMonthLabelColor();
 
     // Current displayed month (year, month index 0-11)
     const now = new Date();
@@ -454,9 +501,9 @@
       const NORMAL_MAX = NUM_SQ * SQUARE_H; // 8h
 
       // Dominant task color (for overflow layer)
-      let dominantColor = tasks[0]?.color || '#888';
+      let dominantColor = COLOR_HEX[tasks[0]?.color] || '#888';
       let maxH = 0;
-      tasks.forEach((t, i) => { const h = comp[i] || 0; if (h > maxH) { maxH = h; dominantColor = t.color; } });
+      tasks.forEach((t, i) => { const h = comp[i] || 0; if (h > maxH) { maxH = h; dominantColor = COLOR_HEX[t.color]; } });
 
       // Build colored segments per square from the sequential task timeline
       const squares = Array.from({length: NUM_SQ}, () => []);
@@ -473,7 +520,7 @@
           const oEnd    = Math.min(taskEnd,   sqEnd);
           if (oEnd > oStart) {
             squares[s].push({
-              color:     t.color,
+              color:     COLOR_HEX[t.color],
               fillStart: (oStart - sqStart) / SQUARE_H, // fraction [0,1] from bottom
               fillEnd:   (oEnd   - sqStart) / SQUARE_H,
             });
@@ -632,24 +679,15 @@
 
     // ── Render Legend ──────────────────────────────────────
     function renderLegend() {
-      const el = document.getElementById('legend');
-      const daysInMonth = new Date(viewYear, viewMonth + 1, 0).getDate();
-      const todayS = todayStr();
-      el.innerHTML = tasks.map((t, i) => {
-        let total = 0;
-        for (let d = 1; d <= daysInMonth; d++) {
-          const ds = `${viewYear}-${String(viewMonth+1).padStart(2,'0')}-${String(d).padStart(2,'0')}`;
-          if (ds > todayS) break;
-          total += getCompletions(ds)[i] || 0;
-        }
-        const label = total > 0 ? `${t.name} (${fmtH(total)})` : t.name;
-        return `
-          <div class="flex items-center gap-1.5 md:gap-2">
-            <div class="w-2.5 h-2.5 md:w-3 md:h-3 rounded-full" style="background:${t.color}"></div>
-            <span class="text-gray-500 dark:text-white/70">${label}</span>
-          </div>
-        `;
-      }).join('');
+      LegendRenderer.render('legend', {
+        tasks,
+        getCompletions,
+        viewYear,
+        viewMonth,
+        todayStr,
+        COLOR_HEX,
+        fmtH,
+      });
     }
 
     // ── Render Month Navigation ───────────────────────────
@@ -809,8 +847,8 @@
 
       el.innerHTML = tasks.map((t, i) => `
         <div class="flex items-center gap-3 p-3 md:p-4 rounded-xl bg-black/5 dark:bg-white/5">
-          <div class="w-3 h-3 rounded-full shrink-0" style="background:${t.color}"></div>
-          <span class="flex-1 text-sm md:text-base font-medium text-gray-900 dark:text-white/90">${t.name}</span>
+          <div class="w-3 h-3 rounded-full shrink-0" style="background:${COLOR_HEX[t.color]}"></div>
+          ${t.jiraLink ? `<a href="${t.jiraLink}" target="_blank" rel="noopener noreferrer" class="flex-1 text-sm md:text-base font-medium text-gray-900 dark:text-white/90 hover:underline">${t.name}</a>` : `<span class="flex-1 text-sm md:text-base font-medium text-gray-900 dark:text-white/90">${t.name}</span>`}
           <input type="number" min="0" step="0.25" value="${comp[i] || 0}"
             class="w-20 bg-black/5 dark:bg-white/10 border border-gray-200 dark:border-white/10 rounded-lg px-2 py-1.5 text-sm text-right text-gray-900 dark:text-white focus:outline-none focus:border-gray-400 dark:focus:border-white/30 transition-colors"
             onchange="updateHours(${i}, this.value)" onblur="updateHours(${i}, this.value)">
@@ -954,7 +992,7 @@
         tasks.forEach((t, ti) => {
           const h = taskHours[ti];
           html += `<div class="flex flex-col items-center gap-1 py-2 px-1 rounded-xl bg-black/[0.03] dark:bg-white/[0.03]">
-            <div class="w-2 h-2 rounded-full" style="background:${h > 0 ? t.color : emptyColor}"></div>
+            <div class="w-2 h-2 rounded-full" style="background:${h > 0 ? COLOR_HEX[t.color] : emptyColor}"></div>
             <span class="text-xs font-medium ${h > 0 ? 'text-gray-700 dark:text-white/80' : 'text-gray-300 dark:text-white/20'}">${fmtVal(h, weekTotal)}</span>
           </div>`;
         });
@@ -971,7 +1009,7 @@
       tasks.forEach((t, ti) => {
         const h = monthTaskTotals[ti];
         html += `<div class="flex flex-col items-center gap-1.5 py-2.5 px-1 rounded-xl bg-black/5 dark:bg-white/5">
-          <div class="w-2.5 h-2.5 rounded-full" style="background:${h > 0 ? t.color : emptyColor}"></div>
+          <div class="w-2.5 h-2.5 rounded-full" style="background:${h > 0 ? COLOR_HEX[t.color] : emptyColor}"></div>
           <span class="text-xs font-semibold ${h > 0 ? 'text-gray-700 dark:text-white/80' : 'text-gray-300 dark:text-white/20'}">${fmtVal(h, monthGrandTotal)}</span>
           <span class="text-[10px] text-gray-400 dark:text-white/30 truncate w-full text-center">${t.name}</span>
         </div>`;
@@ -1171,132 +1209,59 @@
     }
 
     // ── Settings ──────────────────────────────────────────
-    function renderSettings() {
-      const el = document.getElementById('settingsTasks');
-      el.innerHTML = `
-        <div class="mb-5 pb-5 border-b border-gray-200 dark:border-white/10">
-          <label class="text-sm font-medium block mb-1">Daily cap <span class="text-gray-400 dark:text-white/40 text-xs font-normal">(hours)</span></label>
-          <p class="text-xs text-gray-400 dark:text-white/40 mb-2">Number of hours worked in a day before burnout warning</p>
-          <input type="number" min="1" max="24" step="0.5" value="${maxCap}"
-            class="w-28 bg-black/5 dark:bg-white/5 border border-gray-200 dark:border-white/10 rounded-lg px-3 py-2 text-sm text-gray-900 dark:text-white focus:outline-none focus:border-gray-400 dark:focus:border-white/30 transition-colors"
-            oninput="updateMaxCap(this.value)">
-        </div>
-      ` + tasks.map((t, i) => `
-        <div class="space-y-2">
-          <div class="flex items-center justify-between">
-            <label for="taskName${i}" class="text-xs text-gray-400 dark:text-white/60 font-medium">Task ${i + 1}</label>
-            ${tasks.length > 1 ? `<button onclick="removeTask(${i})" class="text-xs text-red-400 hover:text-red-300 transition-colors" aria-label="Remove task ${i + 1}">Remove</button>` : ''}
-          </div>
-          <input id="taskName${i}" type="text" value="${t.name}" maxlength="20"
-            class="w-full bg-black/5 dark:bg-white/5 border border-gray-200 dark:border-white/10 rounded-lg px-3 py-2 text-sm text-gray-900 dark:text-white placeholder-gray-300 dark:placeholder-white/20 focus:outline-none focus:border-gray-400 dark:focus:border-white/30 transition-colors"
-            oninput="updateTaskName(${i}, this.value)">
-          <div class="flex flex-wrap gap-2 pt-1">
-            ${PALETTE.map(c => `
-              <button class="color-swatch w-7 h-7 rounded-full ${c === t.color ? 'active' : ''}"
-                style="background:${c};color:${c}"
-                aria-label="${COLOR_NAMES[c] || c}${c === t.color ? ' (selected)' : ''}"
-                onclick="updateTaskColor(${i}, '${c}')"></button>
-            `).join('')}
-          </div>
-        </div>
-      `).join('') + `
-        <button onclick="addTask()" class="w-full mt-2 py-2 rounded-lg border border-dashed border-gray-300 dark:border-white/20 text-sm text-gray-400 dark:text-white/40 hover:border-gray-400 dark:hover:border-white/40 hover:text-gray-500 dark:hover:text-white/60 transition-colors">
-          + Add task
-        </button>
-      `;
-    }
 
-    function updateTaskName(index, name) {
-      tasks[index].name = name || `Task ${index + 1}`;
-      save();
-      renderLegend();
-      if (sheetOpen) renderTaskList();
-    }
-
-    function updateTaskColor(index, color) {
-      tasks[index].color = color;
-      save();
-      renderSettings();
-      renderLegend();
-      renderCalendar();
-      if (sheetOpen) renderTaskList();
-    }
-
-    function addTask() {
-      const usedColors = tasks.map(t => t.color);
-      const nextColor = PALETTE.find(c => !usedColors.includes(c)) || PALETTE[tasks.length % PALETTE.length];
-      tasks.push({ name: `Task ${tasks.length + 1}`, color: nextColor });
-      save();
-      renderSettings();
-      renderLegend();
-      renderCalendar();
-      if (sheetOpen) renderTaskList();
-    }
-
-    function removeTask(index) {
-      if (tasks.length <= 1) return;
-      tasks.splice(index, 1);
-      Object.keys(completions).forEach(date => {
-        if (Array.isArray(completions[date])) {
-          completions[date].splice(index, 1);
-        }
-      });
-      save();
-      renderSettings();
-      renderLegend();
-      renderCalendar();
-      if (sheetOpen) renderTaskList();
-    }
-
-    document.getElementById('settingsBtn').addEventListener('click', () => {
-      renderSettings();
-      applyDarkMode();
-      document.getElementById('settingsOverlay').classList.remove('hidden');
+    // Initialize settings modal with callbacks
+    SettingsModal.init({
+      getTasks: () => tasks,
+      setTasks: (t) => { tasks = t; },
+      getCompletions: () => completions,
+      setCompletions: (c) => { completions = c; },
+      getMaxCap: () => maxCap,
+      setMaxCap: (v) => { maxCap = v; },
+      getDarkMode: () => darkMode,
+      onSave: save,
+      onDarkModeSync: applyDarkMode,
+      onTasksChanged: () => {
+        renderLegend();
+        renderCalendar();
+        if (sheetOpen) renderTaskList();
+      },
+      onSheetOpen: () => {
+        if (sheetOpen) renderTaskList();
+      },
+      onReload: () => location.reload(),
+      showAddTask: true,
+      showDailyCap: true,
     });
 
-    document.getElementById('darkModeToggle').addEventListener('click', () => {
+    // Initialize app menu with callbacks
+    AppMenu.init({
+      settingsCallback: () => SettingsModal.open(),
+      addTaskCallback: () => SettingsModal.openAddTask(),
+      darkModeToggleCallback: () => toggleDarkMode(),
+    });
+
+    // Setup appMenuBtn toggle
+    const appMenuBtn = document.getElementById('appMenuBtn');
+    if (appMenuBtn) {
+      appMenuBtn.addEventListener('click', (e) => {
+        e.stopPropagation();
+        AppMenu.toggleMenu();
+      });
+    }
+
+    const toggleDarkMode = () => {
       darkMode = !darkMode;
       try { localStorage.setItem('dt_darkMode', darkMode); } catch(e) {}
       applyDarkMode();
+      updateMonthLabelColor();
       renderCalendar();
       renderLegend();
       if (sheetOpen) renderTaskList();
-    });
-
-    document.getElementById('closeSettings').addEventListener('click', () => {
-      document.getElementById('settingsOverlay').classList.add('hidden');
-    });
-
-    document.getElementById('settingsOverlay').addEventListener('click', (e) => {
-      if (e.target === e.currentTarget) {
-        document.getElementById('settingsOverlay').classList.add('hidden');
-      }
-    });
-
-// ── Reset ─────────────────────────────────────────────
-    document.getElementById('resetBtn').addEventListener('click', () => {
-      document.getElementById('deleteModal').classList.remove('hidden');
-    });
-
-    document.getElementById('deleteCancelBtn').addEventListener('click', () => {
-      document.getElementById('deleteModal').classList.add('hidden');
-    });
-
-    document.getElementById('deleteConfirmBtn').addEventListener('click', () => {
-      document.getElementById('deleteModal').classList.add('hidden');
-      localStorage.removeItem('dt_tasks');
-      localStorage.removeItem('dt_completions');
-      tasks = JSON.parse(JSON.stringify(DEFAULT_TASKS));
-      completions = {};
-      selectedDate = null;
-      save();
-      document.getElementById('settingsOverlay').classList.add('hidden');
-      closeSheet();
-      const today = new Date();
-      viewYear = today.getFullYear();
-      viewMonth = today.getMonth();
-      init();
-    });
+      // Update both toggle knobs
+      AppMenu.updateDarkModeKnob(darkMode);
+      SettingsModal.updateDarkModeKnob(darkMode);
+    };
 
     // ── Touch gesture for bottom sheet ────────────────────
     let touchStartY = 0;
@@ -1335,7 +1300,7 @@
       const inInput = e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA';
       const settingsOpen = !document.getElementById('settingsOverlay').classList.contains('hidden');
       if (e.key === 'Escape') {
-        if (settingsOpen) { document.getElementById('settingsOverlay').classList.add('hidden'); return; }
+        if (settingsOpen) { SettingsModal.close(); return; }
         if (MonthModal.isOpen) { MonthModal.close(); return; }
         if (sheetOpen) deselectDay();
         return;
@@ -1367,6 +1332,18 @@
 
     // ── Init ─────────────────────────────────────────────
     function init() {
+      document.body.classList.add('page-reload-fade');
+
+      // Initialize dark mode switch knobs
+      const knob = document.getElementById('darkModeKnob');
+      const dropdownKnob = document.getElementById('dropdownDarkModeKnob');
+      if (knob) {
+        knob.style.transform = darkMode ? 'translateX(20px)' : 'translateX(0)';
+      }
+      if (dropdownKnob) {
+        dropdownKnob.style.transform = darkMode ? 'translateX(16px)' : 'translateX(0)';
+      }
+
       checkDayRollover();
       renderLegend();
       renderCalendar();
