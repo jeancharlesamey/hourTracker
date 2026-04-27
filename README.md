@@ -1,261 +1,116 @@
-```
-  ╔═══════════════════════════════════════╗
-  ║                                       ║
-  ║   ◷  H O U R   T R A C K E R          ║
-  ║      one file. no server. no fuss.    ║
-  ║                                       ║
-  ╚═══════════════════════════════════════╝
-```
+◷ **HOUR TRACKER** — one file. no server. no fuss.
 
-**beta-1.1.0**
+**beta-1.2.0**
 
-A minimal, offline-first hour tracker that lives only in your computer.
-
-No login. No backend. No complicated install. Just open and start logging.
+A minimal, offline-first hour tracker that lives in your browser. No login, no server, no complications.
 
 ---
 
-## What it does
+## UseCase
 
-Log hours per task, per day. See everything in a calendar. Analyze trends with detailed charts.
+**You work on multiple projects and need to understand where your time actually goes.**
 
-```
-  March 2026
-  ┌────┬────┬────┬────┬────┬────┬────┐
-  │ Mo │ Tu │ We │ Th │ Fr │ Sa │ Su │
-  ├────┼────┼────┼────┼────┼────┼────┤
-  │    │ ▩▩ │ ▩▩ │    │ ▩▩ │    │    │
-  │  2 │  3 │ 4  │  5 │ 6  │  7 │  8 │
-  └────┴────┴────┴────┴────┴────┴────┘
-         ↑
-    4 squares = work logged that day
-```
+Every Friday, you review the week. You notice 3 days hit your daily cap (7.5h), 2 days stopped at 4h, and 2 days had no logged hours. The calendar shows it visually. The analytics show it numerically. You see that design work consumed 24.2h, and writing only 8.7h. Next week, you adjust. No guessing. No feeling. Numbers.
 
-Each day cell shows **4 squares**, each representing 2 hours (8h total):
-- Squares fill bottom-to-top as you log hours
-- Tasks stack sequentially — task 1 fills first, task 2 picks up where it left off
-- Beyond 8h? An overflow layer rises behind the squares
-- Over your daily cap? The cell turns red
+This is the premise: **"I can't improve what I can't measure."**
+
+Most trackers ask you to log in real-time. You forget. You estimate retroactively. The data becomes fiction. This one stays simple—open at the end of your half-day or day, type hours per task, move on. No syncing. No apps. No friction. Just your browser and the truth.
+
+The calendar shows **4 squares per day**, each representing 2 hours (8h total capacity). Each day in March 2026 displays as a grid where you can see how many hours were logged — 2, 3, 4, 5, etc. — with squares filled from bottom to top.
+
+How it fills:
+- Squares fill bottom-to-top as you log
+- Tasks stack sequentially (task 1 first, task 2 next, etc.)
+- Beyond 8h: overflow layer rises behind the squares
+- Over your cap: cell turns red, showing you exceeded it
 
 ---
 
-## Features
+## Quick Start
+
+1. **Open** `index.html` in your browser and bookmark it
+2. **First launch:** Set your daily cap immediately (Settings ⚙ → Daily cap). This is your baseline for everything else. Default is 7.5h. Change it to what you actually work.
+3. **Add tasks** via Settings ⚙ → Add task
+4. **Log hours** by clicking any day
+5. **Analyze** via Analytics for patterns
+
+---
+
+## Features by Page
 
 **Home Calendar**
-- Monthly view, scrollable grid
-- Legend + month nav stay sticky
-- Navigate with arrows or wheel
-- 4-square diagram per day
-- Over cap → red cell + white number
-- Burnout days badge in header
-- "Go to today" jumps + opens sheet
-- Click month label → monthly summary (week-by-week breakdown + task totals)
-- Mode toggle: Hours / Days / Percent
+- Monthly grid with daily hour breakdown
+- Visual 4-square stacking (2h per square)
+- Red highlight when you exceed your daily cap
+- Click any day to log hours
+- Click the month label for week-by-week summary
 
-**Analytics Page**
-Three views for insight:
-- **Activity:** GitHub-style contribution heatmap with all tasks combined + individual per-task heatmaps
-- **Intensity:** Stacked bar chart showing daily task hours with average line reference, day labels (e.g., "Tue 21"), responsive height
-- **Repartition:** Doughnut chart showing how hours are split across tasks
-- Month navigation on each view
-- Click month name → same summary modal
-- Dark mode support throughout
+**Analytics**
+- **Activity:** GitHub-style heatmap (all tasks + per-task)
+- **Intensity:** Daily/weekly bar charts with averages
+- **Repartition:** Task distribution at a glance
+- **Burn Chart:** Hours logged vs. ideal trajectory
+- **Weekly Hours:** Toggle between W14 and Apr 1 views
+- **Requirements:** Task deadlines and estimates
 
-**Tasks**
-- Add / remove tasks anytime
-- Pick a color per task
-- Log hours (decimals OK: 1.5, 0.25)
-- No hard cap — log what you worked
-- Sheet header: Xh remain / filled ✓ (remaining hours for selected day)
-- Last fill toast (today only): "45min since last fill at 10:00am" — auto-dismisses when cap is reached, only updates when logging today
-
-**Legend**
-- Shows each task's monthly total
-- Example: ● Writing (6.5h)
-
-**Monthly Summary Modal**
-- Week-by-week breakdown (W01, W02 …)
-- Per-week task totals in grid layout
-- Month total with all task contributions
-- Mode toggle: Hours / Days / Percent
-  - Hours: 0.25 = 15min · 0.5 = 30min
-  - Days: 1 day = daily cap
-  - Percent: share of total per week
-- Burnout pill with days over cap
-- Reusable across Home and Analytics
+**Task Tracking**
+- Decimal hours supported (1.5, 0.25, etc.)
+- Color-coded tasks
+- Optional Jira links
+- Delivery date tracking with overdue warnings
+- Month navigation built in
 
 **Other**
-- Light / dark mode toggle
-- Configurable daily cap (default 7.5h)
-- All data in localStorage — stays put
-- Works offline (service worker)
+- Light / dark mode
+- All data in localStorage (stays private)
+- Works fully offline
+- No dependencies
 
 ---
 
 ## Install
 
-**Download the package and unzip in a safe place.**
+No build step. No dependencies.
 
-No build step. No dependencies to install. It runs in any modern browser.
+**Option 1:** Clone the repo, navigate to the folder, open `index.html`
 
-Git clone if you want:
-```bash
-git clone https://github.com/you/hour-tracker.git
-cd hour-tracker
-open index.html        # macOS
-# or double-click index.html in Finder / Explorer
-```
+**Option 2:** Just open `index.html` directly in any modern browser
+
+**Browser support:** Chrome 80+, Firefox 83+, Safari 15+, Edge 80+
 
 ---
 
-## Usage
+## File Structure
 
-```
-  1. Open index.html with your browser (bookmark it)
-     └─ The current month loads automatically
-
-  2. Add your tasks
-     └─ Settings (⚙) → "+ Add task" → pick a name + color
-
-  3. Set your daily cap
-     └─ Settings (⚙) → Daily cap (default: 7.5h)
-
-  4. Click any day
-     └─ A bottom sheet slides up
-     └─ Type hours for each task (e.g. 3, 1.5, 0.25)
-
-  5. Watch the calendar fill up
-     └─ Squares fill task by task, bottom to top
-     └─ Red cell = you went over your daily cap
-
-  6. Click the month label for a summary
-     └─ See totals per task, per week, for the month
-     └─ Toggle between Hours / Days / Percent views
-     └─ Burnout pill shows days over cap + total excess
-
-  7. Open Analytics for deeper insights
-     └─ Click the chart icon in the header (📊)
-     └─ Choose: Activity (heatmap) / Intensity (line) / Repartition (pie)
-     └─ Navigate months, view summaries, identify patterns
-```
+**Core Files**
+- `index.html` — main app
+- `analytics.html` — charts & analytics
+- `month-modal.js` — reusable summary modal
+- `settings-modal.js` — settings UI
+- `app-menu.js` — header menu
+- `manifest.json` — PWA config
+- `sw.js` — offline support
+- `icons/` — app icons
 
 ---
 
-## The squares, explained
+## Data & Privacy
 
-```
-  Each day cell = 4 squares × 2h = 8h capacity
+Everything stays in your browser's localStorage. Nothing is sent anywhere.
 
-  ┌──┬──┐
-  │  │  │  sq3 (4–6h)  sq4 (6–8h)
-  ├──┼──┤
-  │▓▓│░░│  sq1 (0–2h)  sq2 (2–4h)
-  └──┴──┘
-     ↑
-  fills bottom to top, task by task
+Data stored locally: your task list, colors, hours per day, daily cap, and last entry timestamp.
 
-  task 1: 1h  → bottom half of sq1 (color A)
-  task 2: 2h  → top half of sq1 + bottom of sq2 (color B)
-  task 3: ...   keeps stacking into the next square
-
-  beyond 8h → overflow layer rises behind the grid
-  beyond cap → cell turns red
-```
+**Export:** DevTools → Application → Local Storage → copy values
+**Reset:** Settings → Delete all data
 
 ---
 
-## Data & privacy
+## Recent Updates (beta-1.2.0)
 
-Everything is stored in your browser's `localStorage`.
-Nothing is sent anywhere. Ever.
+- Burn Chart: Refined visualization with ideal trajectory line
+- Date Formatting: Consistent display + "Month Day Year" in requirements
+- Hours Done Views: Toggle between Week (W14) and Day (Apr 1) with tooltips
+- Heatmap: Full calendar year (Jan 1 → Dec 31)
+- Visual Refinements: Improved colors, spacing, dark mode enhancements
 
-```
-  your browser
-      │
-      └── localStorage
-              ├── dt_tasks        ← your task list + colors
-              ├── dt_completions  ← hours per day
-              ├── dt_maxCap       ← your daily cap setting
-              ├── dt_lastFill     ← timestamp of last fill (today only)
-              └── dt_lastFillDay  ← date of last fill (for day rollover)
-```
 
-To export: open DevTools → Application → Local Storage → copy the values.
-
-To reset all data: Settings → Delete all data.
-
----
-
-## File structure
-
-```
-  hour-tracker/
-  ├── index.html        ← main app (HTML + CSS + JS)
-  ├── analytics.html    ← charts & analytics page
-  ├── month-modal.js    ← reusable month summary modal
-  ├── manifest.json     ← PWA manifest
-  ├── sw.js             ← service worker (offline support)
-  └── icons/            ← app icons (16, 48, 128, 192, 512px)
-```
-
----
-
-## Browser support
-
-Works in any browser that supports:
-- CSS grid + custom properties
-- localStorage
-- Service Workers *(for offline/PWA only)*
-- Chart.js *(for Analytics page)*
-
-Chrome 80+, Firefox 83+, Safari 15+, Edge 80+.
-
----
-
-## Changelog
-
-**beta-1.1.0** — 2026-04-22
-- **Analytics page** (new):
-  - Activity view: GitHub-style heatmap (all tasks + individual)
-  - Intensity view: Stacked bar chart showing daily task hours with monthly average reference line, day labels (e.g., "Tue 21"), responsive height
-  - Repartition view: Doughnut chart showing task distribution
-  - Month navigation on each view
-  - Month summary modal with week-by-week breakdown
-  - Lazy-loaded views (only render active view on first switch)
-  - Fixed header for easier navigation
-- **Month Summary Modal** (refactored):
-  - Extracted to reusable `month-modal.js` component
-  - Accessible from both index.html and analytics.html
-  - Mode toggle: Hours / Days / Percent
-  - Per-week task grids + month total
-- **UI improvements**:
-  - Updated header icons for consistency (new settings cog icon)
-  - Dark mode refinements
-  - Responsive chart heights based on viewport
-  - Eliminated flash/refresh on view switching
-
-**alpha-1.0.6** — 2026-03-28
-- Bottom sheet responsive width:
-  ≤ 800px → full width (slide-up)
-  801–999px → 50vw, flips left/right by day column
-  ≥ 1000px → 33vw, flips left/right by day column
-- Live resize: sheet updates instantly when window is resized
-
-**alpha-1.0.5** — 2026-03-28
-- Bottom sheet: fixed 33vw width on desktop
-- Bottom sheet: flips left/right based on selected day's column
-- Sheet header: hidden when at cap, shows overages otherwise
-- Last fill toast: elapsed time display
-
-**alpha-1.0.4** — 2026-03-27
-- Last fill toast: persistent, today-only
-- Bottom sheet header improvements
-- Desktop layout refinements
-
-**alpha-1.0.3** — initial tagged release
-
----
-
-```
-  made with claude & curiosity by jeancharlesamey
-```
