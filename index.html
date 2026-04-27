@@ -215,24 +215,26 @@
   <main id="calendarArea" class="flex-1 flex flex-col px-4 md:px-8 pb-4 overflow-y-auto overflow-x-hidden min-h-0">
     <!-- Sticky zone: legend + month nav -->
     <div class="sticky top-0 z-10 bg-surface dark:bg-surface-dark pt-4 pb-2">
-      <!-- Legend -->
-      <div class="flex items-center justify-between mb-3">
-        <div id="legend" class="flex flex-wrap gap-3 md:gap-4 text-xs md:text-sm"></div>
-        <button id="todayBtn" aria-label="Go to today" class="hidden text-xs font-medium text-black bg-white hover:bg-white/80 px-3 py-1 rounded-full transition-colors shrink-0">Go to today</button>
-      </div>
-
       <!-- Month Navigation -->
+      
       <div class="flex items-center justify-between">
         <button id="prevMonth" aria-label="Previous month" class="nav-arrow w-9 h-9 md:w-10 md:h-10 flex items-center justify-center rounded-lg hover:bg-black/5 dark:hover:bg-white/10">
           <img src="./icons/chevron-left.svg" alt="" class="w-5 h-5 md:w-6 md:h-6 text-gray-900 dark:text-white forced-color-adjust-none md:forced-color-adjust-auto" aria-hidden="true">
         </button>
-        <button id="monthLabel" class="text-sm md:text-lg font-semibold text-gray-500 dark:text-white/70 hover:text-gray-700 dark:hover:text-white/90 transition-colors px-3 py-1 rounded-lg hover:bg-black/5 dark:hover:bg-white/5">
+        <button id="monthLabel" class="text-sm md:text-lg font-semibold transition-colors px-3 py-1 rounded-lg hover:bg-black/5 dark:hover:bg-white/5" style="color: rgb(0, 0, 0);" onmouseover="updateMonthLabelHover(true)" onmouseout="updateMonthLabelHover(false)">
           <!-- filled by JS -->
         </button>
         <button id="nextMonth" aria-label="Next month" class="nav-arrow w-9 h-9 md:w-10 md:h-10 flex items-center justify-center rounded-lg hover:bg-black/5 dark:hover:bg-white/10">
           <img src="./icons/chevron-right.svg" alt="" class="w-5 h-5 md:w-6 md:h-6 text-gray-900 dark:text-white forced-color-adjust-none md:forced-color-adjust-auto" aria-hidden="true">
         </button>
       </div>
+
+     <!-- Legend -->
+      <div class="flex items-center justify-between mb-3 mt-2">
+        <div id="legend" class="flex flex-wrap gap-3 md:gap-4 text-xs md:text-sm"></div>
+        <button id="todayBtn" aria-label="Go to today" class="hidden text-xs font-medium text-black bg-white hover:bg-white/80 px-3 py-1 rounded-full transition-colors shrink-0">Go to today</button>
+      </div>
+
     </div>
 
     <!-- Calendar Grid (single month) -->
@@ -272,6 +274,25 @@
     const FIRE_ICON = `<span class="fire-icon" aria-hidden="true"><svg class="w-3.5 h-3.5 inline" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M15.362 5.214A8.252 8.252 0 0 1 12 21 8.25 8.25 0 0 1 6.038 7.048 8.287 8.287 0 0 1 9 9.6a8.983 8.983 0 0 1 3.361-6.867 8.21 8.21 0 0 0 3 2.481Z"/><path stroke-linecap="round" stroke-linejoin="round" d="M12 18a3.75 3.75 0 0 0 .495-7.468 5.99 5.99 0 0 0-1.925 3.546 5.974 5.974 0 0 1-2.133-1.001A3.75 3.75 0 0 0 12 18Z"/></svg></span>`;
 
     const MAX_MONTHS_BACK = 24;
+
+    // Month label color handler
+    function updateMonthLabelColor() {
+      const monthLabel = document.getElementById('monthLabel');
+      if (!monthLabel) return;
+      const isDark = document.documentElement.classList.contains('dark');
+      monthLabel.style.color = isDark ? 'rgb(255, 255, 255)' : 'rgb(0, 0, 0)';
+    }
+
+    function updateMonthLabelHover(isHovered) {
+      const monthLabel = document.getElementById('monthLabel');
+      if (!monthLabel) return;
+      const isDark = document.documentElement.classList.contains('dark');
+      if (isHovered) {
+        monthLabel.style.color = isDark ? 'rgb(229, 231, 235)' : 'rgb(17, 24, 39)';
+      } else {
+        monthLabel.style.color = isDark ? 'rgb(255, 255, 255)' : 'rgb(0, 0, 0)';
+      }
+    }
 
     // ── State ─────────────────────────────────────────────
     let tasks = loadJSON('dt_tasks', DEFAULT_TASKS);
@@ -318,6 +339,7 @@
     }
     // Apply immediately before paint
     applyDarkMode();
+    updateMonthLabelColor();
 
     // Current displayed month (year, month index 0-11)
     const now = new Date();
@@ -1232,6 +1254,7 @@
       darkMode = !darkMode;
       try { localStorage.setItem('dt_darkMode', darkMode); } catch(e) {}
       applyDarkMode();
+      updateMonthLabelColor();
       renderCalendar();
       renderLegend();
       if (sheetOpen) renderTaskList();
