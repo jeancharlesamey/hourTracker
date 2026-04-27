@@ -519,17 +519,20 @@ window._settingsModalUpdateTaskColor = (i, c) => {
     tasks[i].color = c;
     SettingsModal.config.onSave?.();
 
-    // Update only the color swatch active state, don't re-render
-    const allSwatches = document.querySelectorAll('button.color-swatch');
-    allSwatches.forEach(swatch => {
-      swatch.classList.remove('active');
-    });
-    // Find and activate the clicked color swatch
-    allSwatches.forEach(swatch => {
-      if (swatch.getAttribute('aria-label')?.toLowerCase() === c.toLowerCase()) {
-        swatch.classList.add('active');
-      }
-    });
+    // Update only the color swatch active state for this specific task
+    const taskContainer = document.getElementById(`taskContainer-${i}`);
+    if (taskContainer) {
+      const swatches = taskContainer.querySelectorAll('button.color-swatch');
+      swatches.forEach(swatch => {
+        swatch.classList.remove('active');
+      });
+      // Activate only the clicked color swatch for this task
+      swatches.forEach(swatch => {
+        if (swatch.getAttribute('aria-label')?.toLowerCase() === c.toLowerCase()) {
+          swatch.classList.add('active');
+        }
+      });
+    }
 
     if (!SettingsModal.state.isAddTaskMode) {
       SettingsModal.config.onTasksChanged?.();
