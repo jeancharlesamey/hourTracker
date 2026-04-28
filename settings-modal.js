@@ -258,7 +258,9 @@ const SettingsModal = {
     }
 
     if (showTasks) {
-      html += tasks.map((t, i) => `
+      html += tasks.map((t, i) => {
+        if (t && t.status === 'archived') return '';
+        return `
         <div id="taskContainer-${i}" class="pb-4 border-b border-gray-200 dark:border-white/10 last:border-b-0 transition-all duration-700">
 
           <!-- Row 1: ID / Task name / Jira link -->
@@ -329,7 +331,8 @@ const SettingsModal = {
           </div>
 
         </div>
-      `).join('');
+      `;
+      }).join('');
       html += `
         <a href="archive.html" target="_blank" class="w-full mt-2 py-2 rounded-lg border border-gray-300 dark:border-white/10 text-sm text-gray-700 dark:text-white hover:bg-black/5 dark:hover:bg-white/5 transition-colors flex items-center justify-center no-underline">
           Archive

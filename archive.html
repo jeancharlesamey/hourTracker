@@ -80,12 +80,13 @@
       <table class="w-full border-collapse" style="table-layout: fixed;">
         <colgroup>
           <col style="width: 8%;">
-          <col style="width: 15%;">
-          <col style="width: 30%;">
-          <col style="width: 8%;">
-          <col style="width: 15%;">
-          <col style="width: 14%;">
-          <col style="width: 10%;">
+          <col style="width: 12%;">
+          <col style="width: 25%;">
+          <col style="width: 7%;">
+          <col style="width: 12%;">
+          <col style="width: 12%;">
+          <col style="width: 12%;">
+          <col style="width: 12%;">
         </colgroup>
         <thead>
           <tr class="border-b border-gray-200 dark:border-white/10">
@@ -95,6 +96,7 @@
             <th class="px-3 py-3 text-left text-xs font-semibold text-gray-600 dark:text-gray-300 uppercase tracking-wide">Est.</th>
             <th class="px-3 py-3 text-left text-xs font-semibold text-gray-600 dark:text-gray-300 uppercase tracking-wide">Delivery date</th>
             <th class="px-3 py-3 text-left text-xs font-semibold text-gray-600 dark:text-gray-300 uppercase tracking-wide">Status</th>
+            <th class="px-3 py-3 text-left text-xs font-semibold text-gray-600 dark:text-gray-300 uppercase tracking-wide">Last filled</th>
             <th class="px-3 py-3 text-left text-xs font-semibold text-gray-600 dark:text-gray-300 uppercase tracking-wide"></th>
           </tr>
         </thead>
@@ -112,34 +114,6 @@
     let tasks = [];
     let editing = null; // { displayIdx, displayField, originalValue }
 
-    // Load tasks from localStorage
-    function loadTasks() {
-      try {
-        const stored = JSON.parse(localStorage.getItem('dt_tasks'));
-        tasks = stored && Array.isArray(stored) ? stored : [];
-      } catch {
-        tasks = [];
-      }
-
-      // Attach original storage index before sorting
-      tasks = tasks.map((t, i) => ({ ...t, _storageIdx: i }));
-
-      // Sort by idOpus (empty idOpus goes last)
-      tasks.sort((a, b) => {
-        if (!a.idOpus && !b.idOpus) return a._storageIdx - b._storageIdx;
-        if (!a.idOpus) return 1;
-        if (!b.idOpus) return -1;
-        return a.idOpus.localeCompare(b.idOpus);
-      });
-    }
-
-    // Save tasks back to localStorage in original order
-    function saveTasks() {
-      const ordered = [...tasks].sort((a, b) => a._storageIdx - b._storageIdx);
-      const toStore = ordered.map(({ _storageIdx, ...t }) => t);
-      localStorage.setItem('dt_tasks', JSON.stringify(toStore));
-    }
-
     // Convert YYYY-MM-DD to DD/MM/YYYY
     function formatDateToDisplay(dateStr) {
       if (!dateStr) return '';
@@ -154,6 +128,69 @@
       return `${year}-${month}-${day}`;
     }
 
+    // Format status for display
+    function formatStatusDisplay(status) {
+      const statusMap = {
+        'soon': 'Soon',
+        'inProgress': 'In Progress',
+        'inPause': 'In Pause',
+        'done': 'Done',
+        'checking': 'Checking',
+        'archived': 'Archived'
+      };
+      return statusMap[status] || '—';
+    }
+
+    // Get last day a task was filled
+    function getLastDayFilled(storageIdx) {
+      try {
+        const completions = JSON.parse(localStorage.getItem('dt_completions') || '{}');
+        const dates = Object.keys(completions)
+          .filter(date => {
+            const comp = completions[date];
+            return Array.isArray(comp) && (comp[storageIdx] || 0) > 0;
+          })
+          .sort()
+          .reverse();
+        if (dates.length > 0) {
+          return formatDateToDisplay(dates[0]);
+        }
+      } catch {}
+      return '—';
+    }
+
+    // Load tasks from localStorage
+    function loadTasks() {
+      try {
+        const stored = JSON.parse(localStorage.getItem('dt_tasks'));
+        tasks = stored && Array.isArray(stored) ? stored : [];
+      } catch {
+        tasks = [];
+      }
+
+      // Attach original storage index before sorting
+      tasks = tasks.map((t, i) => ({
+        ...t,
+        _storageIdx: i,
+        _lastFilled: getLastDayFilled(i)
+      }));
+
+      // Sort by idOpus (empty idOpus goes last)
+      tasks.sort((a, b) => {
+        if (!a.idOpus && !b.idOpus) return a._storageIdx - b._storageIdx;
+        if (!a.idOpus) return 1;
+        if (!b.idOpus) return -1;
+        return a.idOpus.localeCompare(b.idOpus);
+      });
+    }
+
+    // Save tasks back to localStorage in original order
+    function saveTasks() {
+      const ordered = [...tasks].sort((a, b) => a._storageIdx - b._storageIdx);
+      const toStore = ordered.map(({ _storageIdx, _lastFilled, ...t }) => t);
+      localStorage.setItem('dt_tasks', JSON.stringify(toStore));
+    }
+
     // Render the entire table
     function renderTable() {
       const tbody = document.getElementById('archiveTableBody');
@@ -163,6 +200,9 @@
             const isEditing = editing && editing.displayIdx === displayIdx && editing.displayField === field;
             return renderCell(displayIdx, field, task, isEditing);
           }).join('')}
+          <td class="px-3 py-2 text-sm text-gray-900 dark:text-white border-b border-gray-100 dark:border-white/5">
+            ${task._lastFilled}
+          </td>
           <td class="px-3 py-2 border-b border-gray-100 dark:border-white/5 text-xs">
             ${renderActionButtons(displayIdx)}
           </td>
@@ -172,7 +212,12 @@
       // Re-attach event listeners for editing cells
       if (editing) {
         const input = document.querySelector(`#edit-${editing.displayIdx}-${editing.displayField}`);
-        if (input) input.focus();
+        if (input) {
+          input.focus();
+          if (editing.displayField === 'status') {
+            input.click();
+          }
+        }
       }
     }
 
@@ -185,7 +230,7 @@
       else if (field === 'jiraLink') { displayValue = task.jiraLink || ''; inputType = 'url'; }
       else if (field === 'estimate') displayValue = task.estimate || '';
       else if (field === 'deliveryDate') displayValue = formatDateToDisplay(task.deliveryDate) || '';
-      else if (field === 'status') displayValue = task.status || '—';
+      else if (field === 'status') displayValue = formatStatusDisplay(task.status);
 
       if (isEditing) {
         // Render as input or select
@@ -193,7 +238,7 @@
           return `<td class="px-2 py-1 border-b border-gray-100 dark:border-white/5">
             <select id="edit-${displayIdx}-${field}" autofocus
               class="w-full bg-black/5 dark:bg-white/5 border border-gray-300 dark:border-white/20 rounded-md px-2 py-1 text-sm text-gray-900 dark:text-white focus:outline-none focus:border-gray-400 dark:focus:border-white/30 transition-colors"
-              onchange="updateActiveField(this.value)">
+              onchange="updateActiveField(this.value); commitEdit();">
               <option value="" ${task.status === '' ? 'selected' : ''}>—</option>
               <option value="soon" ${task.status === 'soon' ? 'selected' : ''}>Soon</option>
               <option value="inProgress" ${task.status === 'inProgress' ? 'selected' : ''}>In Progress</option>

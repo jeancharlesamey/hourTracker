@@ -322,7 +322,9 @@
       color: t.color,
       estimate: t.estimate ?? '',
       deliveryDate: t.deliveryDate ?? '',
-      jiraLink: t.jiraLink ?? ''
+      jiraLink: t.jiraLink ?? '',
+      status: t.status ?? '',
+      idOpus: t.idOpus ?? ''
     }));
     let completions = loadJSON('dt_completions', {});
     let maxCap = parseFloat(localStorage.getItem('dt_maxCap')) || 7.5;
@@ -865,7 +867,9 @@
         }
       }
 
-      el.innerHTML = tasks.map((t, i) => `
+      el.innerHTML = tasks.map((t, i) => {
+        if (t && t.status === 'archived') return '';
+        return `
         <div class="flex items-center gap-3 p-3 md:p-4 rounded-xl bg-black/5 dark:bg-white/5">
           <div class="w-3 h-3 rounded-full shrink-0" style="background:${COLOR_HEX[t.color]}"></div>
           ${t.jiraLink ? `<a href="${t.jiraLink}" target="_blank" rel="noopener noreferrer" class="flex-1 text-sm md:text-base font-medium text-gray-900 dark:text-white/90 hover:underline">${t.name}</a>` : `<span class="flex-1 text-sm md:text-base font-medium text-gray-900 dark:text-white/90">${t.name}</span>`}
@@ -874,7 +878,8 @@
             onchange="updateHours(${i}, this.value)" onblur="updateHours(${i}, this.value)">
           <span class="text-xs text-gray-400 dark:text-white/40 w-3">h</span>
         </div>
-      `).join('');
+      `;
+      }).join('');
 
       updateStreak();
     }
