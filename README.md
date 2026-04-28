@@ -1,6 +1,6 @@
 ◷ **HOUR TRACKER** — one file. no server. no fuss.
 
-**v1.3.0-beta.2**
+**v1.3.0**
 
 A minimal, offline-first hour tracker that lives in your browser. No login, no server, no complications.
 
@@ -106,6 +106,15 @@ Data stored locally: your task list, colors, hours per day, daily cap, and last 
 ---
 
 ## Recent Updates
+
+**v1.3.0** — Settings sidebar, task filtering, analytics refinements
+- Settings Sidebar: Redesigned settings UI as dedicated sidebar modal with integrated task creation
+- Task Status Persistence: Fixed migration to preserve status and external IDs across sessions
+- Smart Task Filtering: Tasks now filter by month (showing only tasks with logged hours in selected month) across Weekly Breakdown, legends, and views
+- Analytics Layout: Year Heatmap legend repositioned to match overview layout; tighter title-to-legend spacing
+- Heatmap Tooltips: Interactive tooltips on by-task heatmap cells (hours + date) with 800ms delay; suppressed on future days with 0 hours
+- Status Colors: Progress card badges now display per-status semantic colors (soon=gray, inProgress=yellow, inPause=orange, done=green, checking=blue, archived=gray)
+- Navigation Fixes: Back buttons on Archive and Analytics pages now use explicit navigation for reliability
 
 **v1.2.1-beta.2** — Bug fixes
 - Color Picker: Fixed visual glitch where picker state switched across all tasks (Issue #8)
