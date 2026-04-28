@@ -23,8 +23,16 @@
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
   <meta name="apple-mobile-web-app-title" content="Hour Tracker">
   <link rel="apple-touch-icon" href="./icons/icon-192.png">
-  <script src="https://cdn.tailwindcss.com"></script>
+  <link href="https://unpkg.com/@csstools/normalize.css" rel="stylesheet" />
+  <script src="https://cdn.tailwindcss.com" onerror="console.warn('Tailwind CSS failed to load from CDN')"></script>
   <script>
+    // Suppress Tailwind console warnings in development
+    const originalWarn = console.warn;
+    console.warn = function(...args) {
+      if (args[0]?.includes?.('Tailwind') || args[0]?.includes?.('content')) return;
+      originalWarn.apply(console, args);
+    };
+
     tailwind.config = {
       darkMode: 'class',
       theme: {
@@ -123,7 +131,7 @@
       cursor: default;
     }
 
-    /* Modal animations */
+    /* Sidebar animations */
     @keyframes overlayFadeIn {
       from { opacity: 0; }
       to { opacity: 1; }
@@ -134,43 +142,49 @@
       to { opacity: 0; }
     }
 
-    @keyframes modalSlideInUp {
-      from { transform: translateY(100%); }
-      to { transform: translateY(0); }
+    @keyframes sidebarSlideIn {
+      from { transform: translateX(100%); }
+      to { transform: translateX(0); }
     }
 
-    @keyframes modalSlideUpOut {
-      from { transform: translateY(0); }
-      to { transform: translateY(-100%); }
+    @keyframes sidebarSlideOut {
+      from { transform: translateX(0); }
+      to { transform: translateX(100%); }
     }
 
-    @keyframes modalFadeOut {
-      from { opacity: 1; }
-      to { opacity: 0; }
-    }
-
-    .settings-overlay:not(.hidden) {
+    /* Entry animations */
+    .settings-overlay:not(.hidden):not(.closing) #settingsBackdrop {
       animation: overlayFadeIn 0.3s cubic-bezier(0.4, 0, 0.2, 1);
     }
 
-    .settings-overlay:not(.hidden) > div {
-      animation: modalSlideInUp 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    .settings-overlay:not(.hidden):not(.closing) .settings-panel {
+      animation: sidebarSlideIn 0.3s cubic-bezier(0.4, 0, 0.2, 1);
     }
 
-    .settings-overlay.slide-up {
-      animation: overlayFadeOut 0.3s cubic-bezier(0.4, 0, 0.2, 1) forwards !important;
+    /* Exit animations */
+    .settings-overlay.closing {
+      animation: overlayFadeOut 0.3s cubic-bezier(0.4, 0, 0.2, 1) forwards;
     }
 
-    .settings-overlay.slide-up > div {
-      animation: modalSlideUpOut 0.3s cubic-bezier(0.4, 0, 0.2, 1) forwards !important;
+    .settings-overlay.closing .settings-panel {
+      animation: sidebarSlideOut 0.3s cubic-bezier(0.4, 0, 0.2, 1) forwards;
     }
 
-    .settings-overlay.fade-out {
-      animation: overlayFadeOut 0.3s cubic-bezier(0.4, 0, 0.2, 1) forwards !important;
+    /* Responsive sidebar width */
+    .settings-panel {
+      width: 100%;
     }
 
-    .settings-overlay.fade-out > div {
-      animation: modalFadeOut 0.3s cubic-bezier(0.4, 0, 0.2, 1) forwards !important;
+    @media (min-width: 600px) {
+      .settings-panel {
+        width: 60vw;
+      }
+    }
+
+    @media (min-width: 1024px) {
+      .settings-panel {
+        width: 40vw;
+      }
     }
   </style>
 </head>

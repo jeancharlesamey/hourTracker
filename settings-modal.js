@@ -90,17 +90,20 @@ const SettingsModal = {
 
   _injectHTML() {
     const html = `
-      <div id="settingsOverlay" role="dialog" aria-modal="true" aria-label="Settings" class="settings-overlay hidden fixed inset-0 bg-black/60 backdrop-blur-sm z-40 flex items-end sm:items-center justify-center">
-        <div class="bg-card dark:bg-card-dark w-full max-w-md rounded-t-2xl sm:rounded-2xl p-6 max-h-[85vh] overflow-y-auto transition-colors duration-300">
-          <div class="flex items-center justify-between mb-6">
-            <h2 id="settingsTitle" class="text-lg font-bold">Settings</h2>
-            <button id="closeSettings" aria-label="Close settings" class="w-8 h-8 flex items-center justify-center rounded-lg hover:bg-black/5 dark:hover:bg-white/10">
-              <img src="./icons/close-icon.svg" alt="" class="w-5 h-5 text-gray-400 dark:text-white/50" aria-hidden="true">
-            </button>
-          </div>
-          <div id="settingsTasks" class="space-y-5"></div>
-          <div id="settingsDeleteSection" class="mt-6 pt-4 border-t border-gray-200 dark:border-white/10">
-            <button id="resetBtn" class="w-full py-2.5 rounded-lg bg-red-500 hover:bg-red-600 text-white text-sm font-medium transition-colors">Delete all data</button>
+      <div id="settingsOverlay" role="dialog" aria-modal="true" aria-label="Settings" class="settings-overlay hidden fixed inset-0 z-40">
+        <div id="settingsBackdrop" class="absolute inset-0 bg-black/60 backdrop-blur-sm"></div>
+        <div class="settings-panel absolute top-0 right-0 h-full bg-card dark:bg-card-dark shadow-2xl overflow-y-auto transition-colors duration-300">
+          <div class="p-6">
+            <div class="flex items-center justify-between mb-6">
+              <h2 id="settingsTitle" class="text-lg font-bold">Settings</h2>
+              <button id="closeSettings" aria-label="Close settings" class="w-8 h-8 flex items-center justify-center rounded-lg hover:bg-black/5 dark:hover:bg-white/10">
+                <img src="./icons/close-icon.svg" alt="" class="w-5 h-5 text-gray-400 dark:text-white/50" aria-hidden="true">
+              </button>
+            </div>
+            <div id="settingsTasks" class="space-y-5"></div>
+            <div id="settingsDeleteSection" class="mt-6 pt-4 border-t border-gray-200 dark:border-white/10">
+              <button id="resetBtn" class="w-full py-2.5 rounded-lg bg-red-500 hover:bg-red-600 text-white text-sm font-medium transition-colors">Delete all data</button>
+            </div>
           </div>
         </div>
       </div>
@@ -143,6 +146,7 @@ const SettingsModal = {
 
   _wireEventListeners() {
     const closeSettings = document.getElementById('closeSettings');
+    const settingsBackdrop = document.getElementById('settingsBackdrop');
     const resetBtn = document.getElementById('resetBtn');
     const deleteCancelBtn = document.getElementById('deleteCancelBtn');
     const deleteConfirmBtn = document.getElementById('deleteConfirmBtn');
@@ -152,6 +156,7 @@ const SettingsModal = {
     const cancelAddTaskConfirmBtn = document.getElementById('cancelAddTaskConfirmBtn');
 
     closeSettings?.addEventListener('click', () => this.close());
+    settingsBackdrop?.addEventListener('click', () => this.close());
     resetBtn?.addEventListener('click', () => this._showDeleteModal());
     deleteCancelBtn?.addEventListener('click', () => this._hideDeleteModal());
     deleteConfirmBtn?.addEventListener('click', () => this._confirmDeleteAllData());
@@ -421,15 +426,18 @@ const SettingsModal = {
       setTasks(JSON.parse(JSON.stringify(DEFAULT_TASKS)));
     }
     this.config.onSave?.();
-    document.getElementById('settingsOverlay')?.classList.add('hidden');
 
-    if (this.state.pageNeedsReload) {
-      this.state.pageNeedsReload = false;
-      setTimeout(() => {
+    const overlay = document.getElementById('settingsOverlay');
+    overlay?.classList.add('closing');
+    setTimeout(() => {
+      overlay?.classList.remove('closing');
+      overlay?.classList.add('hidden');
+      if (this.state.pageNeedsReload) {
+        this.state.pageNeedsReload = false;
         document.body.classList.add('page-reload-fade');
         this.config.onReload?.();
-      }, 100);
-    }
+      }
+    }, 300);
   },
 
   openAddTask() {
