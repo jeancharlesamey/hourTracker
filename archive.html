@@ -1,0 +1,323 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="color-scheme" content="light dark">
+  <title>Archive - Hour Tracker</title>
+  <script>
+    if (localStorage.getItem('dt_darkMode') !== 'false') {
+      document.documentElement.classList.add('dark');
+      document.documentElement.style.colorScheme = 'dark';
+    }
+  </script>
+  <style>
+    html { background-color: #f5f5f5; }
+    html.dark { background-color: #1a1a2e; }
+  </style>
+
+  <link rel="manifest" href="./manifest.json">
+  <meta name="theme-color" content="#1a1a2e">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="apple-mobile-web-app-title" content="Hour Tracker">
+  <link rel="apple-touch-icon" href="./icons/icon-192.png">
+  <link href="https://unpkg.com/@csstools/normalize.css" rel="stylesheet" />
+  <script src="https://cdn.tailwindcss.com"></script>
+
+  <script>
+    tailwind.config = {
+      darkMode: 'class',
+      theme: {
+        extend: {
+          colors: {
+            surface: { DEFAULT: '#f5f5f5', dark: '#1a1a2e' },
+            card:    { DEFAULT: '#ffffff', dark: '#16213e' },
+            accent:  { DEFAULT: '#e0e7ff', dark: '#0f3460' },
+            muted:   { DEFAULT: '#d1d5db', dark: '#333a56' },
+          }
+        }
+      }
+    }
+  </script>
+
+  <style>
+    body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif; }
+    img[src*="icons/"] { filter: brightness(0.4); }
+    html.dark img[src*="icons/"] { filter: brightness(0) invert(1); }
+  </style>
+</head>
+
+<body class="bg-surface dark:bg-surface-dark text-gray-900 dark:text-white transition-colors duration-300">
+  <!-- Header -->
+  <header class="fixed top-0 left-0 right-0 flex items-center justify-between px-4 md:px-8 py-3 md:py-4 bg-card/80 dark:bg-card-dark/80 backdrop-blur-sm border-b border-gray-200 dark:border-white/5 z-30 transition-colors duration-300">
+    <button onclick="window.history.back()" aria-label="Back to home" class="flex items-center gap-2 hover:opacity-80 transition-opacity cursor-pointer bg-transparent border-none p-0">
+      <img src="./icons/back-arrow.svg" alt="" class="w-6 h-6 text-gray-900 dark:text-white forced-color-adjust-none md:forced-color-adjust-auto" aria-hidden="true">
+      <h1 class="text-lg md:text-xl font-bold tracking-tight text-gray-900 dark:text-white">Archive</h1>
+    </button>
+    <div class="relative">
+      <button id="appMenuBtn" aria-label="App menu" class="flex items-center gap-2 hover:opacity-80 transition-opacity">
+        <img src="./icons/menu-dots.svg" alt="" class="w-4 h-4 text-gray-600 dark:text-gray-400 forced-color-adjust-none md:forced-color-adjust-auto" aria-hidden="true">
+      </button>
+      <div id="appMenu" class="hidden absolute right-0 top-full mt-2 bg-card dark:bg-card-dark rounded-lg shadow-lg border border-gray-200 dark:border-white/10 w-56 z-50">
+        <div class="flex items-center justify-between px-4 py-2 border-b border-gray-200 dark:border-white/5">
+          <label class="flex items-center gap-3 text-sm text-gray-700 dark:text-white cursor-pointer flex-1">
+            <img src="./icons/moon-icon.svg" alt="" class="w-5 h-5 text-gray-700 dark:text-white forced-color-adjust-none md:forced-color-adjust-auto" aria-hidden="true">
+            Dark mode
+          </label>
+          <button id="dropdownDarkMode" role="switch" aria-label="Dark mode"
+            class="relative w-10 h-6 rounded-full bg-gray-300 dark:bg-emerald-500 transition-colors duration-200 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-emerald-500">
+            <span id="dropdownDarkModeKnob" class="absolute top-0.5 left-0.5 w-5 h-5 rounded-full bg-white shadow transition-transform duration-200 translate-x-4"></span>
+          </button>
+        </div>
+      </div>
+    </div>
+  </header>
+
+  <!-- Main Content -->
+  <main class="pt-24 px-4 md:px-8 pb-8">
+    <div class="overflow-x-auto">
+      <table class="w-full border-collapse" style="table-layout: fixed;">
+        <colgroup>
+          <col style="width: 8%;">
+          <col style="width: 15%;">
+          <col style="width: 30%;">
+          <col style="width: 8%;">
+          <col style="width: 15%;">
+          <col style="width: 14%;">
+          <col style="width: 10%;">
+        </colgroup>
+        <thead>
+          <tr class="border-b border-gray-200 dark:border-white/10">
+            <th class="px-3 py-3 text-left text-xs font-semibold text-gray-600 dark:text-gray-300 uppercase tracking-wide">ID</th>
+            <th class="px-3 py-3 text-left text-xs font-semibold text-gray-600 dark:text-gray-300 uppercase tracking-wide">Task</th>
+            <th class="px-3 py-3 text-left text-xs font-semibold text-gray-600 dark:text-gray-300 uppercase tracking-wide">Jira Link</th>
+            <th class="px-3 py-3 text-left text-xs font-semibold text-gray-600 dark:text-gray-300 uppercase tracking-wide">Est.</th>
+            <th class="px-3 py-3 text-left text-xs font-semibold text-gray-600 dark:text-gray-300 uppercase tracking-wide">Delivery date</th>
+            <th class="px-3 py-3 text-left text-xs font-semibold text-gray-600 dark:text-gray-300 uppercase tracking-wide">Status</th>
+            <th class="px-3 py-3 text-left text-xs font-semibold text-gray-600 dark:text-gray-300 uppercase tracking-wide"></th>
+          </tr>
+        </thead>
+        <tbody id="archiveTableBody">
+          <!-- Rows generated by JS -->
+        </tbody>
+      </table>
+    </div>
+  </main>
+
+  <!-- Scripts -->
+  <script src="./settings-modal.js"></script>
+
+  <script>
+    let tasks = [];
+    let editing = null; // { displayIdx, displayField, originalValue }
+
+    // Load tasks from localStorage
+    function loadTasks() {
+      try {
+        const stored = JSON.parse(localStorage.getItem('dt_tasks'));
+        tasks = stored && Array.isArray(stored) ? stored : [];
+      } catch {
+        tasks = [];
+      }
+
+      // Attach original storage index before sorting
+      tasks = tasks.map((t, i) => ({ ...t, _storageIdx: i }));
+
+      // Sort by idOpus (empty idOpus goes last)
+      tasks.sort((a, b) => {
+        if (!a.idOpus && !b.idOpus) return a._storageIdx - b._storageIdx;
+        if (!a.idOpus) return 1;
+        if (!b.idOpus) return -1;
+        return a.idOpus.localeCompare(b.idOpus);
+      });
+    }
+
+    // Save tasks back to localStorage in original order
+    function saveTasks() {
+      const ordered = [...tasks].sort((a, b) => a._storageIdx - b._storageIdx);
+      const toStore = ordered.map(({ _storageIdx, ...t }) => t);
+      localStorage.setItem('dt_tasks', JSON.stringify(toStore));
+    }
+
+    // Convert YYYY-MM-DD to DD/MM/YYYY
+    function formatDateToDisplay(dateStr) {
+      if (!dateStr) return '';
+      const [year, month, day] = dateStr.split('-');
+      return `${day}/${month}/${year}`;
+    }
+
+    // Convert DD/MM/YYYY back to YYYY-MM-DD
+    function formatDateToStorage(dateStr) {
+      if (!dateStr) return '';
+      const [day, month, year] = dateStr.split('/');
+      return `${year}-${month}-${day}`;
+    }
+
+    // Render the entire table
+    function renderTable() {
+      const tbody = document.getElementById('archiveTableBody');
+      tbody.innerHTML = tasks.map((task, displayIdx) => `
+        <tr id="row-${displayIdx}" class="border-b border-gray-100 dark:border-white/5 hover:bg-black/2 dark:hover:bg-white/2 transition-colors">
+          ${['idOpus', 'name', 'jiraLink', 'estimate', 'deliveryDate', 'status'].map(field => {
+            const isEditing = editing && editing.displayIdx === displayIdx && editing.displayField === field;
+            return renderCell(displayIdx, field, task, isEditing);
+          }).join('')}
+          <td class="px-3 py-2 border-b border-gray-100 dark:border-white/5 text-xs">
+            ${renderActionButtons(displayIdx)}
+          </td>
+        </tr>
+      `).join('');
+
+      // Re-attach event listeners for editing cells
+      if (editing) {
+        const input = document.querySelector(`#edit-${editing.displayIdx}-${editing.displayField}`);
+        if (input) input.focus();
+      }
+    }
+
+    function renderCell(displayIdx, field, task, isEditing) {
+      let displayValue = '';
+      let inputType = 'text';
+
+      if (field === 'idOpus') displayValue = task.idOpus || '';
+      else if (field === 'name') displayValue = task.name || '';
+      else if (field === 'jiraLink') { displayValue = task.jiraLink || ''; inputType = 'url'; }
+      else if (field === 'estimate') displayValue = task.estimate || '';
+      else if (field === 'deliveryDate') displayValue = formatDateToDisplay(task.deliveryDate) || '';
+      else if (field === 'status') displayValue = task.status || '—';
+
+      if (isEditing) {
+        // Render as input or select
+        if (field === 'status') {
+          return `<td class="px-2 py-1 border-b border-gray-100 dark:border-white/5">
+            <select id="edit-${displayIdx}-${field}" autofocus
+              class="w-full bg-black/5 dark:bg-white/5 border border-gray-300 dark:border-white/20 rounded-md px-2 py-1 text-sm text-gray-900 dark:text-white focus:outline-none focus:border-gray-400 dark:focus:border-white/30 transition-colors"
+              onchange="updateActiveField(this.value)">
+              <option value="" ${task.status === '' ? 'selected' : ''}>—</option>
+              <option value="soon" ${task.status === 'soon' ? 'selected' : ''}>Soon</option>
+              <option value="inProgress" ${task.status === 'inProgress' ? 'selected' : ''}>In Progress</option>
+              <option value="inPause" ${task.status === 'inPause' ? 'selected' : ''}>In Pause</option>
+              <option value="done" ${task.status === 'done' ? 'selected' : ''}>Done</option>
+              <option value="checking" ${task.status === 'checking' ? 'selected' : ''}>Checking</option>
+              <option value="archived" ${task.status === 'archived' ? 'selected' : ''}>Archived</option>
+            </select>
+          </td>`;
+        } else {
+          const inputValue = field === 'deliveryDate' ? formatDateToDisplay(task[field]) : (task[field] || '');
+          return `<td class="px-2 py-1 border-b border-gray-100 dark:border-white/5">
+            <input id="edit-${displayIdx}-${field}" type="${inputType}" value="${inputValue}" autofocus
+              class="w-full bg-black/5 dark:bg-white/5 border border-gray-300 dark:border-white/20 rounded-md px-2 py-1 text-sm text-gray-900 dark:text-white focus:outline-none focus:border-gray-400 dark:focus:border-white/30 transition-colors"
+              oninput="updateActiveField(this.value)" />
+          </td>`;
+        }
+      } else {
+        // Render as read-only cell
+        const truncateStyle = field === 'jiraLink' ? 'white-space: nowrap; overflow: hidden; text-overflow: ellipsis;' : '';
+        return `<td onclick="handleCellClick(${displayIdx}, '${field}')"
+          class="px-3 py-2 text-sm text-gray-900 dark:text-white border-b border-gray-100 dark:border-white/5 cursor-pointer hover:bg-black/3 dark:hover:bg-white/3 transition-colors"
+          style="${truncateStyle}">
+          ${displayValue}
+        </td>`;
+      }
+    }
+
+    function renderActionButtons(displayIdx) {
+      const isEditing = editing && editing.displayIdx === displayIdx;
+      if (isEditing) {
+        return `
+          <div class="flex items-center gap-2">
+            <button onclick="cancelEdit()" class="text-xs px-2 py-1 rounded bg-black/5 dark:bg-white/10 hover:bg-black/10 dark:hover:bg-white/20 transition-colors">Cancel</button>
+            <button onclick="commitEdit()" class="text-xs px-2 py-1 rounded bg-emerald-500 hover:bg-emerald-600 text-white transition-colors">Save</button>
+          </div>
+        `;
+      } else {
+        return `<button onclick="deleteTask(${displayIdx})" class="text-xs text-red-400 hover:text-red-300 transition-colors">Delete</button>`;
+      }
+    }
+
+    function handleCellClick(displayIdx, field) {
+      // Auto-save previous cell if different
+      if (editing && (editing.displayIdx !== displayIdx || editing.displayField !== field)) {
+        commitEdit();
+      }
+
+      if (editing && editing.displayIdx === displayIdx && editing.displayField === field) {
+        return; // Already editing this cell
+      }
+
+      editing = {
+        displayIdx,
+        displayField: field,
+        originalValue: field === 'deliveryDate'
+          ? formatDateToDisplay(tasks[displayIdx][field])
+          : tasks[displayIdx][field]
+      };
+
+      renderTable();
+    }
+
+    function updateActiveField(value) {
+      if (!editing) return;
+      const field = editing.displayField;
+
+      // Convert date back to YYYY-MM-DD if needed
+      if (field === 'deliveryDate') {
+        tasks[editing.displayIdx][field] = formatDateToStorage(value);
+      } else {
+        tasks[editing.displayIdx][field] = value;
+      }
+    }
+
+    function commitEdit() {
+      if (!editing) return;
+      saveTasks();
+      editing = null;
+      renderTable();
+    }
+
+    function cancelEdit() {
+      if (!editing) return;
+      // Revert the field
+      const field = editing.displayField;
+      tasks[editing.displayIdx][field] = editing.originalValue;
+      editing = null;
+      renderTable();
+    }
+
+    function deleteTask(displayIdx) {
+      if (confirm('Delete this task?')) {
+        tasks.splice(displayIdx, 1);
+        // Re-index storage indices
+        tasks = tasks.map((t, i) => {
+          const originalIdx = t._storageIdx;
+          return { ...t, _storageIdx: i < displayIdx ? (i < originalIdx ? i : originalIdx) : i };
+        });
+        saveTasks();
+        editing = null;
+        renderTable();
+      }
+    }
+
+    // Dark mode toggle
+    function toggleDarkMode() {
+      const isDark = document.documentElement.classList.toggle('dark');
+      localStorage.setItem('dt_darkMode', !isDark ? 'false' : 'true');
+      const knob = document.getElementById('dropdownDarkModeKnob');
+      if (knob) {
+        knob.classList.toggle('translate-x-4');
+      }
+    }
+
+    document.getElementById('appMenuBtn')?.addEventListener('click', () => {
+      document.getElementById('appMenu')?.classList.toggle('hidden');
+    });
+
+    document.getElementById('dropdownDarkMode')?.addEventListener('click', toggleDarkMode);
+
+    // Initial load
+    loadTasks();
+    renderTable();
+  </script>
+</body>
+</html>
