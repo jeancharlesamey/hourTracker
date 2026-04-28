@@ -1722,14 +1722,29 @@
       renderedViews = {};
     }
 
+    function hasHoursInMonth(taskIndex, year, month) {
+      const monthStr = String(month + 1).padStart(2, '0');
+      const yearStr = year.toString();
+      const daysInMonth = new Date(year, month + 1, 0).getDate();
+
+      for (let d = 1; d <= daysInMonth; d++) {
+        const dateStr = `${yearStr}-${monthStr}-${String(d).padStart(2, '0')}`;
+        if (dateStr > todayStr()) break;
+        if (getHours(dateStr, taskIndex) > 0) return true;
+      }
+      return false;
+    }
+
     function renderTaskLegend() {
       const getCompletions = (dateStr) => {
         const comp = completions[dateStr];
         return Array.isArray(comp) ? comp : [];
       };
 
+      const tasksWithHours = tasks.filter((task, i) => hasHoursInMonth(i, linearViewYear, linearViewMonth));
+
       const options = {
-        tasks,
+        tasks: tasksWithHours,
         getCompletions,
         viewYear: linearViewYear,
         viewMonth: linearViewMonth,
@@ -1740,17 +1755,18 @@
 
       LegendRenderer.render('overviewTaskLegend', options);
 
-      // Custom inline render for bytaskLegend - shows all tasks with active/inactive styling
+      // Custom inline render for bytaskLegend - shows only tasks with hours in selected month
       const bytaskLegendEl = document.getElementById('bytaskLegend');
       if (bytaskLegendEl) {
-        bytaskLegendEl.innerHTML = tasks
-          .map((task, i) => {
-            const isActive = i === activeTaskIndex;
+        bytaskLegendEl.innerHTML = tasksWithHours
+          .map((task, displayIdx) => {
+            const actualIdx = tasks.indexOf(task);
+            const isActive = actualIdx === activeTaskIndex;
             const classes = isActive
               ? ''
-              : 'line-through opacity-50';
+              : 'opacity-60';
             return `
-              <div data-taskindex="${i}" class="flex items-center gap-1.5 cursor-pointer select-none transition-opacity hover:opacity-100 ${classes}">
+              <div data-taskindex="${actualIdx}" class="flex items-center gap-1.5 cursor-pointer select-none transition-opacity hover:opacity-100 ${classes}">
                 <div class="w-2.5 h-2.5 md:w-3 md:h-3 rounded-full" style="background:${COLOR_HEX[task.color]}"></div>
                 <span class="text-gray-500 dark:text-white/70">${task.name}</span>
               </div>
@@ -1949,10 +1965,22 @@
         ? `${estimate} days${extraDays ? ` +${extraDays}` : ''}`
         : '—';
 
-      // Set the status badge in the header
+      // Status display mapping
+      const statusMap = {
+        'soon': 'Soon',
+        'inProgress': 'In Progress',
+        'inPause': 'In Pause',
+        'done': 'Done',
+        'checking': 'Checking',
+        'archived': 'Archived'
+      };
+      const taskStatusDisplay = statusMap[task.status] || statusBadge;
+      const taskStatusColor = task.status ? 'bg-blue-500/20 text-blue-600 dark:text-blue-400' : statusColor;
+
+      // Set the status badge in the header using task status if available
       const badgeEl = document.getElementById('bytaskProgressBadge');
       if (badgeEl) {
-        badgeEl.innerHTML = `<span class="inline-flex items-center gap-1.5 text-xs px-2.5 py-1 rounded-full font-medium ${statusColor}">${statusBadge}</span>`;
+        badgeEl.innerHTML = `<span class="inline-flex items-center gap-1.5 text-xs px-2.5 py-1 rounded-full font-medium ${taskStatusColor}">${taskStatusDisplay}</span>`;
       }
 
       // Set the progress content
@@ -2322,9 +2350,13 @@
       const isDays = summaryCachingMode === 'days';
       const isPct = summaryCachingMode === 'pct';
 
+      // Filter tasks to only show those with hours in this month
+      const tasksWithHours = tasks.filter((_, taskIndex) => hasHoursInMonth(taskIndex, linearViewYear, linearViewMonth));
+
       // Calculate total hours for percentage calculations
       let grandTotal = 0;
-      tasks.forEach((_, taskIndex) => {
+      tasksWithHours.forEach((_, displayIdx) => {
+        const taskIndex = tasks.indexOf(tasksWithHours[displayIdx]);
         rows.forEach(weekDates => {
           grandTotal += weekDates.reduce((sum, ds) => sum + getHours(ds, taskIndex), 0);
         });
@@ -2373,7 +2405,8 @@
             <tbody>
       `;
 
-      tasks.forEach((task, taskIndex) => {
+      tasksWithHours.forEach((task) => {
+        const taskIndex = tasks.indexOf(task);
         let monthTotal = 0;
         const weekTotals = rows.map(weekDates => {
           const weekTotal = weekDates.reduce((sum, ds) => sum + getHours(ds, taskIndex), 0);
