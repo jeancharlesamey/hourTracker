@@ -20,3 +20,16 @@ User handles all git operations exclusively.
 - Ask user for confirmation before making file modifications
 - Provide clear explanations of what's being changed and why
 
+## Task Data Structure
+
+Each task object contains:
+- `name` — task name
+- `color` — task color identifier
+- `estimate` — estimated workload (days)
+- `deliveryDate` — delivery date (YYYY-MM-DD format)
+- `jiraLink` — Jira link URL
+- `status` — task status (Soon/inProgress/inPause/done/checking/archived)
+- **`idOpus`** — **Opus ID** (external ID reference, displayed as "ID" in the UI)
+
+**IMPORTANT:** The "ID" field in the task editing form is `idOpus` — it stores the Claude Opus ID (or other external ID) associated with the task. This is NOT a database identifier for the task itself.
+
