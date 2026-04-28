@@ -144,7 +144,7 @@
       align-items: center;
       gap: 12px;
       font-size: 12px;
-      margin-bottom: 1.5rem;
+      margin-bottom: 0.75rem;
       flex-wrap: wrap;
     }
 
@@ -422,8 +422,8 @@
 
           <!-- Year Heatmap Card -->
           <div class="col-span-12 bg-white dark:bg-card-dark rounded-2xl p-6 shadow-sm border border-gray-100 dark:border-white/5">
-            <h3 class="text-lg font-semibold text-gray-900 dark:text-white mb-6">Year Heatmap</h3>
-            <div class="legend mb-4">
+            <h3 class="text-lg font-semibold text-gray-900 dark:text-white mb-2">Year Heatmap</h3>
+            <div class="legend mb-3">
               <span class="legend-label">Less</span>
               <div class="legend-cells" id="combinedLegend"></div>
               <span class="legend-label">More</span>
@@ -508,7 +508,8 @@
 
           <!-- Year Heatmap Card (full width) -->
           <div class="col-span-12 bg-white dark:bg-card-dark rounded-2xl p-6 shadow-sm border border-gray-100 dark:border-white/5">
-            <h3 class="font-semibold text-gray-900 dark:text-white mb-4">Year Heatmap</h3>
+            <h3 class="font-semibold text-gray-900 dark:text-white mb-2">Year Heatmap</h3>
+            <div id="bytaskHeatmapLegend" class="mb-3"></div>
             <div id="bytaskHeatmapContainer" class="graph-container"></div>
           </div>
         </div>
@@ -1617,7 +1618,8 @@
 
     function renderTaskHeatmap(taskIndex) {
       const el = document.getElementById('bytaskHeatmapContainer');
-      if (!el) return;
+      const legendEl = document.getElementById('bytaskHeatmapLegend');
+      if (!el || !legendEl) return;
 
       const task = tasks[taskIndex];
       const weeks = getWeeksInCalendarYear();
@@ -1668,6 +1670,8 @@
                     data-task-name="${hasDelivery ? task.name : ''}"
                     data-delivery-date="${dateStr}"
                     data-working-days="${hasDelivery ? getWorkingDaysTo(dateStr) : '0'}"
+                    data-hours="${hours}"
+                    data-date="${dateStr}"
                     style="cursor: ${hasDelivery ? 'pointer' : 'default'};"></rect>`;
 
           if (hasDelivery) {
@@ -1687,9 +1691,78 @@
 
       svg += `</svg>`;
 
+      // Build legend for task heatmap (render in separate container)
+      const steps = [0, 0.25, 0.5, 0.75, 1];
+      let legendHtml = `<div class="legend">
+        <span class="legend-label">No hours</span>
+        <div class="legend-cells">`;
+
+      steps.forEach(intensity => {
+        const cellColor = getIntensityColor(COLOR_HEX[task.color], intensity);
+        legendHtml += `<div class="legend-dot" style="background: ${cellColor};"></div>`;
+      });
+
+      legendHtml += `</div>
+        <span class="legend-label">${fmtH(maxCap)}/day</span>
+      </div>`;
+
+      legendEl.innerHTML = legendHtml;
       el.innerHTML = `${getDayLabelsHTML()}${svg}`;
 
-      setTimeout(() => setupDeliveryDatePopovers(), 0);
+      setTimeout(() => {
+        setupDeliveryDatePopovers();
+        setupHeatmapCellTooltips();
+      }, 0);
+    }
+
+    function setupHeatmapCellTooltips() {
+      const cells = document.querySelectorAll('#bytaskHeatmapContainer .heatmap-cell');
+      let tooltipEl = document.getElementById('heatmapTooltip');
+      let tooltipTimeout;
+
+      if (!tooltipEl) {
+        tooltipEl = document.createElement('div');
+        tooltipEl.id = 'heatmapTooltip';
+        tooltipEl.style.cssText = `
+          position: fixed;
+          background: rgba(0, 0, 0, 0.9);
+          color: white;
+          padding: 8px 12px;
+          border-radius: 4px;
+          font-size: 12px;
+          white-space: nowrap;
+          pointer-events: none;
+          z-index: 1000;
+          opacity: 0;
+          transition: opacity 0.1s ease;
+          line-height: 1.4;
+        `;
+        document.body.appendChild(tooltipEl);
+      }
+
+      cells.forEach(cell => {
+        cell.addEventListener('mouseenter', (e) => {
+          const hours = parseFloat(cell.getAttribute('data-hours')) || 0;
+          const dateStr = cell.getAttribute('data-date');
+          const today = todayStr();
+
+          if (hours === 0 && dateStr > today) return;
+
+          tooltipTimeout = setTimeout(() => {
+            const rect = cell.getBoundingClientRect();
+            tooltipEl.innerHTML = `${fmtH(hours)}<br>${formatDateToDDMMYYYY(dateStr)}`;
+            tooltipEl.style.left = (rect.left + rect.width / 2) + 'px';
+            tooltipEl.style.top = (rect.top - 8) + 'px';
+            tooltipEl.style.transform = 'translateX(-50%) translateY(-100%)';
+            tooltipEl.style.opacity = '1';
+          }, 800);
+        });
+
+        cell.addEventListener('mouseleave', () => {
+          clearTimeout(tooltipTimeout);
+          tooltipEl.style.opacity = '0';
+        });
+      });
     }
 
     function renderLegend() {
@@ -1974,8 +2047,16 @@
         'checking': 'Checking',
         'archived': 'Archived'
       };
+      const statusColorMap = {
+        'soon': 'bg-gray-500/20 text-gray-600 dark:text-gray-300',
+        'inProgress': 'bg-yellow-500/20 text-yellow-600 dark:text-yellow-400',
+        'inPause': 'bg-orange-500/20 text-orange-600 dark:text-orange-400',
+        'done': 'bg-green-500/20 text-green-600 dark:text-green-400',
+        'checking': 'bg-blue-500/20 text-blue-600 dark:text-blue-400',
+        'archived': 'bg-gray-500/20 text-gray-600 dark:text-gray-300'
+      };
       const taskStatusDisplay = statusMap[task.status] || statusBadge;
-      const taskStatusColor = task.status ? 'bg-blue-500/20 text-blue-600 dark:text-blue-400' : statusColor;
+      const taskStatusColor = task.status ? statusColorMap[task.status] : statusColor;
 
       // Set the status badge in the header using task status if available
       const badgeEl = document.getElementById('bytaskProgressBadge');
