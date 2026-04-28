@@ -21,9 +21,17 @@
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
   <meta name="apple-mobile-web-app-title" content="Hour Tracker">
   <link rel="apple-touch-icon" href="./icons/icon-192.png">
-  <script src="https://cdn.tailwindcss.com"></script>
+  <link href="https://unpkg.com/@csstools/normalize.css" rel="stylesheet" />
+  <script src="https://cdn.tailwindcss.com" onerror="console.warn('Tailwind CSS failed to load from CDN')"></script>
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
   <script>
+    // Suppress Tailwind console warnings in development
+    const originalWarn = console.warn;
+    console.warn = function(...args) {
+      if (args[0]?.includes?.('Tailwind') || args[0]?.includes?.('content')) return;
+      originalWarn.apply(console, args);
+    };
+
     tailwind.config = {
       darkMode: 'class',
       theme: {
@@ -136,7 +144,7 @@
       align-items: center;
       gap: 12px;
       font-size: 12px;
-      margin-bottom: 1.5rem;
+      margin-bottom: 0.75rem;
       flex-wrap: wrap;
     }
 
@@ -186,6 +194,62 @@
     .settings-overlay.hidden {
       opacity: 0;
       visibility: hidden;
+    }
+
+    /* Sidebar animations */
+    @keyframes overlayFadeIn {
+      from { opacity: 0; }
+      to { opacity: 1; }
+    }
+
+    @keyframes overlayFadeOut {
+      from { opacity: 1; }
+      to { opacity: 0; }
+    }
+
+    @keyframes sidebarSlideIn {
+      from { transform: translateX(100%); }
+      to { transform: translateX(0); }
+    }
+
+    @keyframes sidebarSlideOut {
+      from { transform: translateX(0); }
+      to { transform: translateX(100%); }
+    }
+
+    /* Entry animations */
+    .settings-overlay:not(.hidden):not(.closing) #settingsBackdrop {
+      animation: overlayFadeIn 0.3s ease;
+    }
+
+    .settings-overlay:not(.hidden):not(.closing) .settings-panel {
+      animation: sidebarSlideIn 0.3s ease;
+    }
+
+    /* Exit animations */
+    .settings-overlay.closing {
+      animation: overlayFadeOut 0.3s ease forwards;
+    }
+
+    .settings-overlay.closing .settings-panel {
+      animation: sidebarSlideOut 0.3s ease forwards;
+    }
+
+    /* Responsive sidebar width */
+    .settings-panel {
+      width: 100%;
+    }
+
+    @media (min-width: 600px) {
+      .settings-panel {
+        width: 60vw;
+      }
+    }
+
+    @media (min-width: 1024px) {
+      .settings-panel {
+        width: 40vw;
+      }
     }
 
     .color-swatch {
@@ -272,7 +336,7 @@
   <div class="min-h-screen flex flex-col">
     <!-- Header -->
     <header class="fixed top-0 left-0 right-0 flex items-center justify-between px-4 md:px-8 py-3 md:py-4 bg-card/80 dark:bg-card-dark/80 backdrop-blur-sm border-b border-gray-200 dark:border-white/5 z-30 transition-colors duration-300">
-      <button onclick="window.history.back()" aria-label="Back to home" class="flex items-center gap-2 hover:opacity-80 transition-opacity cursor-pointer bg-transparent border-none p-0">
+      <button onclick="window.location.href = './index.html'" aria-label="Back to home" class="flex items-center gap-2 hover:opacity-80 transition-opacity cursor-pointer bg-transparent border-none p-0">
         <img src="./icons/back-arrow.svg" alt="" class="w-6 h-6 text-gray-900 dark:text-white forced-color-adjust-none md:forced-color-adjust-auto" aria-hidden="true">
         <h1 class="text-lg md:text-xl font-bold tracking-tight text-gray-900 dark:text-white">Analytics</h1>
       </button>
@@ -358,8 +422,8 @@
 
           <!-- Year Heatmap Card -->
           <div class="col-span-12 bg-white dark:bg-card-dark rounded-2xl p-6 shadow-sm border border-gray-100 dark:border-white/5">
-            <h3 class="text-lg font-semibold text-gray-900 dark:text-white mb-6">Year Heatmap</h3>
-            <div class="legend mb-4">
+            <h3 class="text-lg font-semibold text-gray-900 dark:text-white mb-2">Year Heatmap</h3>
+            <div class="legend mb-3">
               <span class="legend-label">Less</span>
               <div class="legend-cells" id="combinedLegend"></div>
               <span class="legend-label">More</span>
@@ -444,7 +508,8 @@
 
           <!-- Year Heatmap Card (full width) -->
           <div class="col-span-12 bg-white dark:bg-card-dark rounded-2xl p-6 shadow-sm border border-gray-100 dark:border-white/5">
-            <h3 class="font-semibold text-gray-900 dark:text-white mb-4">Year Heatmap</h3>
+            <h3 class="font-semibold text-gray-900 dark:text-white mb-2">Year Heatmap</h3>
+            <div id="bytaskHeatmapLegend" class="mb-3"></div>
             <div id="bytaskHeatmapContainer" class="graph-container"></div>
           </div>
         </div>
@@ -1553,7 +1618,8 @@
 
     function renderTaskHeatmap(taskIndex) {
       const el = document.getElementById('bytaskHeatmapContainer');
-      if (!el) return;
+      const legendEl = document.getElementById('bytaskHeatmapLegend');
+      if (!el || !legendEl) return;
 
       const task = tasks[taskIndex];
       const weeks = getWeeksInCalendarYear();
@@ -1604,6 +1670,8 @@
                     data-task-name="${hasDelivery ? task.name : ''}"
                     data-delivery-date="${dateStr}"
                     data-working-days="${hasDelivery ? getWorkingDaysTo(dateStr) : '0'}"
+                    data-hours="${hours}"
+                    data-date="${dateStr}"
                     style="cursor: ${hasDelivery ? 'pointer' : 'default'};"></rect>`;
 
           if (hasDelivery) {
@@ -1623,9 +1691,78 @@
 
       svg += `</svg>`;
 
+      // Build legend for task heatmap (render in separate container)
+      const steps = [0, 0.25, 0.5, 0.75, 1];
+      let legendHtml = `<div class="legend">
+        <span class="legend-label">No hours</span>
+        <div class="legend-cells">`;
+
+      steps.forEach(intensity => {
+        const cellColor = getIntensityColor(COLOR_HEX[task.color], intensity);
+        legendHtml += `<div class="legend-dot" style="background: ${cellColor};"></div>`;
+      });
+
+      legendHtml += `</div>
+        <span class="legend-label">${fmtH(maxCap)}/day</span>
+      </div>`;
+
+      legendEl.innerHTML = legendHtml;
       el.innerHTML = `${getDayLabelsHTML()}${svg}`;
 
-      setTimeout(() => setupDeliveryDatePopovers(), 0);
+      setTimeout(() => {
+        setupDeliveryDatePopovers();
+        setupHeatmapCellTooltips();
+      }, 0);
+    }
+
+    function setupHeatmapCellTooltips() {
+      const cells = document.querySelectorAll('#bytaskHeatmapContainer .heatmap-cell');
+      let tooltipEl = document.getElementById('heatmapTooltip');
+      let tooltipTimeout;
+
+      if (!tooltipEl) {
+        tooltipEl = document.createElement('div');
+        tooltipEl.id = 'heatmapTooltip';
+        tooltipEl.style.cssText = `
+          position: fixed;
+          background: rgba(0, 0, 0, 0.9);
+          color: white;
+          padding: 8px 12px;
+          border-radius: 4px;
+          font-size: 12px;
+          white-space: nowrap;
+          pointer-events: none;
+          z-index: 1000;
+          opacity: 0;
+          transition: opacity 0.1s ease;
+          line-height: 1.4;
+        `;
+        document.body.appendChild(tooltipEl);
+      }
+
+      cells.forEach(cell => {
+        cell.addEventListener('mouseenter', (e) => {
+          const hours = parseFloat(cell.getAttribute('data-hours')) || 0;
+          const dateStr = cell.getAttribute('data-date');
+          const today = todayStr();
+
+          if (hours === 0 && dateStr > today) return;
+
+          tooltipTimeout = setTimeout(() => {
+            const rect = cell.getBoundingClientRect();
+            tooltipEl.innerHTML = `${fmtH(hours)}<br>${formatDateToDDMMYYYY(dateStr)}`;
+            tooltipEl.style.left = (rect.left + rect.width / 2) + 'px';
+            tooltipEl.style.top = (rect.top - 8) + 'px';
+            tooltipEl.style.transform = 'translateX(-50%) translateY(-100%)';
+            tooltipEl.style.opacity = '1';
+          }, 800);
+        });
+
+        cell.addEventListener('mouseleave', () => {
+          clearTimeout(tooltipTimeout);
+          tooltipEl.style.opacity = '0';
+        });
+      });
     }
 
     function renderLegend() {
@@ -1658,14 +1795,29 @@
       renderedViews = {};
     }
 
+    function hasHoursInMonth(taskIndex, year, month) {
+      const monthStr = String(month + 1).padStart(2, '0');
+      const yearStr = year.toString();
+      const daysInMonth = new Date(year, month + 1, 0).getDate();
+
+      for (let d = 1; d <= daysInMonth; d++) {
+        const dateStr = `${yearStr}-${monthStr}-${String(d).padStart(2, '0')}`;
+        if (dateStr > todayStr()) break;
+        if (getHours(dateStr, taskIndex) > 0) return true;
+      }
+      return false;
+    }
+
     function renderTaskLegend() {
       const getCompletions = (dateStr) => {
         const comp = completions[dateStr];
         return Array.isArray(comp) ? comp : [];
       };
 
+      const tasksWithHours = tasks.filter((task, i) => hasHoursInMonth(i, linearViewYear, linearViewMonth));
+
       const options = {
-        tasks,
+        tasks: tasksWithHours,
         getCompletions,
         viewYear: linearViewYear,
         viewMonth: linearViewMonth,
@@ -1676,17 +1828,18 @@
 
       LegendRenderer.render('overviewTaskLegend', options);
 
-      // Custom inline render for bytaskLegend - shows all tasks with active/inactive styling
+      // Custom inline render for bytaskLegend - shows only tasks with hours in selected month
       const bytaskLegendEl = document.getElementById('bytaskLegend');
       if (bytaskLegendEl) {
-        bytaskLegendEl.innerHTML = tasks
-          .map((task, i) => {
-            const isActive = i === activeTaskIndex;
+        bytaskLegendEl.innerHTML = tasksWithHours
+          .map((task, displayIdx) => {
+            const actualIdx = tasks.indexOf(task);
+            const isActive = actualIdx === activeTaskIndex;
             const classes = isActive
               ? ''
-              : 'line-through opacity-50';
+              : 'opacity-60';
             return `
-              <div data-taskindex="${i}" class="flex items-center gap-1.5 cursor-pointer select-none transition-opacity hover:opacity-100 ${classes}">
+              <div data-taskindex="${actualIdx}" class="flex items-center gap-1.5 cursor-pointer select-none transition-opacity hover:opacity-100 ${classes}">
                 <div class="w-2.5 h-2.5 md:w-3 md:h-3 rounded-full" style="background:${COLOR_HEX[task.color]}"></div>
                 <span class="text-gray-500 dark:text-white/70">${task.name}</span>
               </div>
@@ -1885,10 +2038,30 @@
         ? `${estimate} days${extraDays ? ` +${extraDays}` : ''}`
         : '—';
 
-      // Set the status badge in the header
+      // Status display mapping
+      const statusMap = {
+        'soon': 'Soon',
+        'inProgress': 'In Progress',
+        'inPause': 'In Pause',
+        'done': 'Done',
+        'checking': 'Checking',
+        'archived': 'Archived'
+      };
+      const statusColorMap = {
+        'soon': 'bg-gray-500/20 text-gray-600 dark:text-gray-300',
+        'inProgress': 'bg-yellow-500/20 text-yellow-600 dark:text-yellow-400',
+        'inPause': 'bg-orange-500/20 text-orange-600 dark:text-orange-400',
+        'done': 'bg-green-500/20 text-green-600 dark:text-green-400',
+        'checking': 'bg-blue-500/20 text-blue-600 dark:text-blue-400',
+        'archived': 'bg-gray-500/20 text-gray-600 dark:text-gray-300'
+      };
+      const taskStatusDisplay = statusMap[task.status] || statusBadge;
+      const taskStatusColor = task.status ? statusColorMap[task.status] : statusColor;
+
+      // Set the status badge in the header using task status if available
       const badgeEl = document.getElementById('bytaskProgressBadge');
       if (badgeEl) {
-        badgeEl.innerHTML = `<span class="inline-flex items-center gap-1.5 text-xs px-2.5 py-1 rounded-full font-medium ${statusColor}">${statusBadge}</span>`;
+        badgeEl.innerHTML = `<span class="inline-flex items-center gap-1.5 text-xs px-2.5 py-1 rounded-full font-medium ${taskStatusColor}">${taskStatusDisplay}</span>`;
       }
 
       // Set the progress content
@@ -2258,9 +2431,13 @@
       const isDays = summaryCachingMode === 'days';
       const isPct = summaryCachingMode === 'pct';
 
+      // Filter tasks to only show those with hours in this month
+      const tasksWithHours = tasks.filter((_, taskIndex) => hasHoursInMonth(taskIndex, linearViewYear, linearViewMonth));
+
       // Calculate total hours for percentage calculations
       let grandTotal = 0;
-      tasks.forEach((_, taskIndex) => {
+      tasksWithHours.forEach((_, displayIdx) => {
+        const taskIndex = tasks.indexOf(tasksWithHours[displayIdx]);
         rows.forEach(weekDates => {
           grandTotal += weekDates.reduce((sum, ds) => sum + getHours(ds, taskIndex), 0);
         });
@@ -2309,7 +2486,8 @@
             <tbody>
       `;
 
-      tasks.forEach((task, taskIndex) => {
+      tasksWithHours.forEach((task) => {
+        const taskIndex = tasks.indexOf(task);
         let monthTotal = 0;
         const weekTotals = rows.map(weekDates => {
           const weekTotal = weekDates.reduce((sum, ds) => sum + getHours(ds, taskIndex), 0);

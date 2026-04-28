@@ -20,10 +20,10 @@ const COLOR_NAMES = {
 };
 
 const DEFAULT_TASKS = [
-  { name: 'Exercise', color: 'green', estimate: '', deliveryDate: '', jiraLink: '' },
-  { name: 'Read', color: 'blue', estimate: '', deliveryDate: '', jiraLink: '' },
-  { name: 'Meditate', color: 'purple', estimate: '', deliveryDate: '', jiraLink: '' },
-  { name: 'Journal', color: 'amber', estimate: '', deliveryDate: '', jiraLink: '' },
+  { name: 'Exercise', color: 'green', estimate: '', deliveryDate: '', jiraLink: '', status: '', idOpus: '' },
+  { name: 'Read', color: 'blue', estimate: '', deliveryDate: '', jiraLink: '', status: '', idOpus: '' },
+  { name: 'Meditate', color: 'purple', estimate: '', deliveryDate: '', jiraLink: '', status: '', idOpus: '' },
+  { name: 'Journal', color: 'amber', estimate: '', deliveryDate: '', jiraLink: '', status: '', idOpus: '' },
 ];
 
 const SettingsModal = {
@@ -74,6 +74,20 @@ const SettingsModal = {
           box-shadow: 0 0 0 2px #fff, 0 0 0 4px currentColor;
           transform: scale(1.15);
         }
+
+        .hold-btn-fill {
+          transform: scaleX(0);
+          transform-origin: left;
+          transition: none;
+        }
+        .hold-btn.holding .hold-btn-fill {
+          transform: scaleX(1);
+          transition: transform 3s linear;
+        }
+        .hold-btn.filled .hold-btn-fill {
+          transform: scaleX(1);
+          transition: none;
+        }
       `;
       document.head.appendChild(style);
     }
@@ -90,24 +104,30 @@ const SettingsModal = {
 
   _injectHTML() {
     const html = `
-      <div id="settingsOverlay" role="dialog" aria-modal="true" aria-label="Settings" class="settings-overlay hidden fixed inset-0 bg-black/60 backdrop-blur-sm z-40 flex items-end sm:items-center justify-center">
-        <div class="bg-card dark:bg-card-dark w-full max-w-md rounded-t-2xl sm:rounded-2xl p-6 max-h-[85vh] overflow-y-auto transition-colors duration-300">
-          <div class="flex items-center justify-between mb-6">
-            <h2 id="settingsTitle" class="text-lg font-bold">Settings</h2>
-            <button id="closeSettings" aria-label="Close settings" class="w-8 h-8 flex items-center justify-center rounded-lg hover:bg-black/5 dark:hover:bg-white/10">
-              <img src="./icons/close-icon.svg" alt="" class="w-5 h-5 text-gray-400 dark:text-white/50" aria-hidden="true">
-            </button>
-          </div>
-          <div id="settingsTasks" class="space-y-5"></div>
-          <div id="settingsDeleteSection" class="mt-6 pt-4 border-t border-gray-200 dark:border-white/10">
-            <button id="resetBtn" class="w-full py-2.5 rounded-lg bg-red-500 hover:bg-red-600 text-white text-sm font-medium transition-colors">Delete all data</button>
+      <div id="settingsOverlay" role="dialog" aria-modal="true" aria-label="Settings" class="settings-overlay hidden fixed inset-0 z-40">
+        <div id="settingsBackdrop" class="absolute inset-0 bg-black/60 backdrop-blur-sm"></div>
+        <div class="settings-panel absolute top-0 right-0 h-full bg-card dark:bg-card-dark shadow-2xl overflow-y-auto transition-colors duration-300">
+          <div class="p-6">
+            <div class="flex items-center justify-between mb-6">
+              <h2 id="settingsTitle" class="text-lg font-bold">Settings</h2>
+              <button id="closeSettings" aria-label="Close settings" class="w-8 h-8 flex items-center justify-center rounded-lg hover:bg-black/5 dark:hover:bg-white/10">
+                <img src="./icons/close-icon.svg" alt="" class="w-5 h-5 text-gray-400 dark:text-white/50" aria-hidden="true">
+              </button>
+            </div>
+            <div id="settingsTasks" class="space-y-5"></div>
+            <div id="settingsDeleteSection" class="mt-3">
+              <button id="resetBtn" class="hold-btn w-full py-2.5 rounded-lg bg-red-500 text-white text-sm font-medium select-none relative overflow-hidden">
+                <span class="hold-btn-fill absolute inset-0 bg-red-700 origin-left"></span>
+                <span class="relative z-10">Delete all data</span>
+              </button>
+            </div>
           </div>
         </div>
       </div>
 
       <div id="deleteModal" class="settings-overlay hidden fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center px-6">
         <div class="bg-card dark:bg-card-dark w-full max-w-sm rounded-2xl p-6 shadow-xl transition-colors duration-300">
-          <h2 class="text-base font-bold mb-1">Delete — Are you sure?</h2>
+          <h2 class="text-base font-bold mb-1">Delete all data – Are you sure?</h2>
           <p class="text-sm text-gray-400 dark:text-white/40 mb-6">All data will be permanently removed. This cannot be undone.</p>
           <div class="flex gap-3 justify-end">
             <button id="deleteCancelBtn" class="px-4 py-2 rounded-lg text-sm font-medium bg-black/5 dark:bg-white/10 hover:bg-black/10 dark:hover:bg-white/20 transition-colors">Cancel</button>
@@ -137,12 +157,24 @@ const SettingsModal = {
           </div>
         </div>
       </div>
+
+      <div id="addTaskModal" class="settings-overlay hidden fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center px-6">
+        <div class="bg-card dark:bg-card-dark w-full max-w-lg rounded-2xl p-6 shadow-xl transition-colors duration-300">
+          <h2 class="text-base font-bold mb-4">Add a task</h2>
+          <div id="addTaskForm"></div>
+          <div class="flex gap-3 justify-end mt-6">
+            <button id="addTaskCancelBtn" class="px-4 py-2 rounded-lg text-sm font-medium bg-black/5 dark:bg-white/10 hover:bg-black/10 dark:hover:bg-white/20 transition-colors">Cancel</button>
+            <button id="addTaskSaveBtn" class="px-4 py-2 rounded-lg text-sm font-medium bg-emerald-500 hover:bg-emerald-600 text-white transition-colors">Save task</button>
+          </div>
+        </div>
+      </div>
     `;
     document.body.insertAdjacentHTML('beforeend', html);
   },
 
   _wireEventListeners() {
     const closeSettings = document.getElementById('closeSettings');
+    const settingsBackdrop = document.getElementById('settingsBackdrop');
     const resetBtn = document.getElementById('resetBtn');
     const deleteCancelBtn = document.getElementById('deleteCancelBtn');
     const deleteConfirmBtn = document.getElementById('deleteConfirmBtn');
@@ -152,7 +184,8 @@ const SettingsModal = {
     const cancelAddTaskConfirmBtn = document.getElementById('cancelAddTaskConfirmBtn');
 
     closeSettings?.addEventListener('click', () => this.close());
-    resetBtn?.addEventListener('click', () => this._showDeleteModal());
+    settingsBackdrop?.addEventListener('click', () => this.close());
+    this._wireHoldButton();
     deleteCancelBtn?.addEventListener('click', () => this._hideDeleteModal());
     deleteConfirmBtn?.addEventListener('click', () => this._confirmDeleteAllData());
     deleteTaskCancelBtn?.addEventListener('click', () => this._hideDeleteTaskModal());
@@ -160,11 +193,46 @@ const SettingsModal = {
     cancelAddTaskCancelBtn?.addEventListener('click', () => this._hideCancelAddTaskModal());
     cancelAddTaskConfirmBtn?.addEventListener('click', () => this._handleDiscardTask());
 
-    // Delegated event listeners for save/cancel task buttons
-    document.addEventListener('click', (e) => {
-      if (e.target.id === 'saveAddTaskBtn') this._handleSaveAddTask();
-      if (e.target.id === 'cancelAddTaskBtn') this._handleDiscardTask();
-    });
+    const addTaskCancelBtn = document.getElementById('addTaskCancelBtn');
+    const addTaskSaveBtn = document.getElementById('addTaskSaveBtn');
+    addTaskCancelBtn?.addEventListener('click', () => this._handleDiscardTask());
+    addTaskSaveBtn?.addEventListener('click', () => this._handleSaveAddTask());
+  },
+
+  _wireHoldButton() {
+    const resetBtn = document.getElementById('resetBtn');
+    if (!resetBtn) return;
+    let holdTimer = null;
+
+    const startHold = (e) => {
+      e.preventDefault();
+      if (resetBtn.classList.contains('filled')) return;
+      resetBtn.classList.add('holding');
+      holdTimer = setTimeout(() => {
+        holdTimer = null;
+        resetBtn.classList.remove('holding');
+        resetBtn.classList.add('filled');
+        this._showDeleteModal();
+      }, 3000);
+    };
+
+    const cancelHold = () => {
+      if (!holdTimer) return;
+      clearTimeout(holdTimer);
+      holdTimer = null;
+      resetBtn.classList.remove('holding');
+    };
+
+    resetBtn.addEventListener('pointerdown', startHold);
+    resetBtn.addEventListener('pointerup', cancelHold);
+    resetBtn.addEventListener('pointerleave', cancelHold);
+    resetBtn.addEventListener('contextmenu', (e) => e.preventDefault());
+  },
+
+  _resetHoldButton() {
+    const resetBtn = document.getElementById('resetBtn');
+    if (!resetBtn) return;
+    resetBtn.classList.remove('holding', 'filled');
   },
 
   renderSettings(options = {}) {
@@ -190,16 +258,26 @@ const SettingsModal = {
     }
 
     if (showTasks) {
-      html += tasks.map((t, i) => `
-        <div id="taskContainer-${i}" class="space-y-2 pb-4 border-b border-gray-200 dark:border-white/10 last:border-b-0 transition-all duration-700">
-          <div class="flex items-center justify-between gap-2">
-            <div class="flex-1">
-              <label for="taskName${i}" class="text-xs text-gray-400 dark:text-white/60 font-medium block mb-1">Task ${i + 1}</label>
+      html += tasks.map((t, i) => {
+        if (t && t.status === 'archived') return '';
+        return `
+        <div id="taskContainer-${i}" class="pb-4 border-b border-gray-200 dark:border-white/10 last:border-b-0 transition-all duration-700">
+
+          <!-- Row 1: ID / Task name / Jira link -->
+          <div class="grid grid-cols-5 gap-2 mb-2">
+            <div class="col-span-1">
+              <label for="taskIdOpus${i}" class="text-xs text-gray-400 dark:text-white/60 font-medium block mb-1">ID</label>
+              <input id="taskIdOpus${i}" type="text" value="${t.idOpus || ''}" placeholder="Opus ID"
+                class="w-full bg-black/5 dark:bg-white/5 border border-gray-200 dark:border-white/10 rounded-lg px-3 py-2 text-sm text-gray-900 dark:text-white placeholder-gray-300 dark:placeholder-white/20 focus:outline-none focus:border-gray-400 dark:focus:border-white/30 transition-colors"
+                oninput="window._settingsModalUpdateTaskIdOpus(${i}, this.value)">
+            </div>
+            <div class="col-span-2">
+              <label for="taskName${i}" class="text-xs text-gray-400 dark:text-white/60 font-medium block mb-1">Task</label>
               <input id="taskName${i}" type="text" value="${t.name}" maxlength="20" placeholder="Task name"
                 class="w-full bg-black/5 dark:bg-white/5 border border-gray-200 dark:border-white/10 rounded-lg px-3 py-2 text-sm text-gray-900 dark:text-white placeholder-gray-300 dark:placeholder-white/20 focus:outline-none focus:border-gray-400 dark:focus:border-white/30 transition-colors"
                 oninput="window._settingsModalUpdateTaskName(${i}, this.value)">
             </div>
-            <div class="flex-1">
+            <div class="col-span-2">
               <label for="taskJira${i}" class="text-xs text-gray-400 dark:text-white/60 font-medium block mb-1">Jira Link</label>
               <input id="taskJira${i}" type="url" value="${t.jiraLink || ''}" maxlength="256" placeholder="https://..."
                 class="w-full bg-black/5 dark:bg-white/5 border border-gray-200 dark:border-white/10 rounded-lg px-3 py-2 text-sm text-gray-900 dark:text-white placeholder-gray-300 dark:placeholder-white/20 focus:outline-none focus:border-gray-400 dark:focus:border-white/30 transition-colors"
@@ -207,14 +285,15 @@ const SettingsModal = {
             </div>
           </div>
 
-          <div class="grid grid-cols-2 gap-3">
-            <div>
-              <label for="taskEstimate${i}" class="text-xs text-gray-400 dark:text-white/60 font-medium block mb-1">Estimated workload</label>
+          <!-- Row 2: Estimated workload / Delivery date / Status -->
+          <div class="grid grid-cols-5 gap-2 mb-2">
+            <div class="col-span-1">
+              <label for="taskEstimate${i}" class="text-xs text-gray-400 dark:text-white/60 font-medium block mb-1">Est.</label>
               <input id="taskEstimate${i}" type="number" min="0" step="1" value="${t.estimate || ''}" placeholder="days"
                 class="w-full bg-black/5 dark:bg-white/5 border border-gray-200 dark:border-white/10 rounded-lg px-3 py-2 text-sm text-gray-900 dark:text-white placeholder-gray-300 dark:placeholder-white/20 focus:outline-none focus:border-gray-400 dark:focus:border-white/30 transition-colors"
                 oninput="window._settingsModalUpdateTaskEstimate(${i}, this.value)">
             </div>
-            <div>
+            <div class="col-span-2">
               <label for="taskDelivery${i}" class="text-xs text-gray-400 dark:text-white/60 font-medium block mb-1">Delivery date</label>
               <input id="taskDelivery${i}" type="text" placeholder="DD/MM/YYYY" value="${t.deliveryDate ? formatDateToDDMMYYYY(t.deliveryDate) : ''}" pattern="\\d{2}/\\d{2}/\\d{4}" maxlength="10"
                 class="w-full bg-black/5 dark:bg-white/5 border border-gray-200 dark:border-white/10 rounded-lg px-3 py-2 text-sm text-gray-900 dark:text-white focus:outline-none focus:border-gray-400 dark:focus:border-white/30 transition-colors"
@@ -222,8 +301,23 @@ const SettingsModal = {
                 onchange="window._settingsModalUpdateTaskDeliveryDate(${i}, this.value)"
                 onblur="window._settingsModalUpdateTaskDeliveryDate(${i}, this.value)">
             </div>
+            <div class="col-span-2">
+              <label for="taskStatus${i}" class="text-xs text-gray-400 dark:text-white/60 font-medium block mb-1">Status</label>
+              <select id="taskStatus${i}"
+                class="w-full bg-black/5 dark:bg-white/5 border border-gray-200 dark:border-white/10 rounded-lg px-3 py-2 text-sm text-gray-900 dark:text-white focus:outline-none focus:border-gray-400 dark:focus:border-white/30 transition-colors"
+                onchange="window._settingsModalUpdateTaskStatus(${i}, this.value)">
+                <option value="" ${!t.status ? 'selected' : ''}>—</option>
+                <option value="soon" ${t.status === 'soon' ? 'selected' : ''}>Soon</option>
+                <option value="inProgress" ${t.status === 'inProgress' ? 'selected' : ''}>In Progress</option>
+                <option value="inPause" ${t.status === 'inPause' ? 'selected' : ''}>In Pause</option>
+                <option value="done" ${t.status === 'done' ? 'selected' : ''}>Done</option>
+                <option value="checking" ${t.status === 'checking' ? 'selected' : ''}>Checking</option>
+                <option value="archived" ${t.status === 'archived' ? 'selected' : ''}>Archived</option>
+              </select>
+            </div>
           </div>
 
+          <!-- Row 3: Color picker + Delete button -->
           <div class="flex items-center justify-between gap-3 pt-1">
             <div style="display: grid; grid-template-columns: repeat(9, 1fr); gap: 8px;">
               ${PALETTE.map(c => `
@@ -235,12 +329,14 @@ const SettingsModal = {
             </div>
             ${tasks.length > 1 ? `<button onclick="window._settingsModalDeleteTask(${i})" class="text-xs text-red-400 hover:text-red-300 transition-colors whitespace-nowrap" aria-label="Delete task ${i + 1}">Delete task</button>` : ''}
           </div>
+
         </div>
-      `).join('');
+      `;
+      }).join('');
       html += `
-        <button onclick="window._settingsModalAddTask()" class="w-full mt-2 py-2 rounded-lg border border-dashed border-gray-300 dark:border-white/20 text-sm text-gray-400 dark:text-white/40 hover:border-gray-400 dark:hover:border-white/40 hover:text-gray-500 dark:hover:text-white/60 transition-colors">
-          + Add task
-        </button>
+        <a href="archive.html" target="_blank" class="w-full mt-2 py-2 rounded-lg border border-gray-300 dark:border-white/10 text-sm text-gray-700 dark:text-white hover:bg-black/5 dark:hover:bg-white/5 transition-colors flex items-center justify-center no-underline">
+          Archive
+        </a>
       `;
     }
 
@@ -257,6 +353,7 @@ const SettingsModal = {
 
   _hideDeleteModal() {
     document.getElementById('deleteModal')?.classList.add('hidden');
+    this._resetHoldButton();
   },
 
   _confirmDeleteAllData() {
@@ -382,7 +479,7 @@ const SettingsModal = {
     });
     this.config.onSave?.();
     this.state.isAddTaskMode = false;
-    document.getElementById('settingsOverlay')?.classList.add('hidden');
+    document.getElementById('addTaskModal')?.classList.add('hidden');
   },
 
   _handleSaveAddTask() {
@@ -396,8 +493,8 @@ const SettingsModal = {
     console.log('Task saved:', tasks[lastIndex]);
 
     this.state.isAddTaskMode = false;
-    document.getElementById('settingsOverlay')?.classList.add('hidden');
-    this.renderSettings({ title: 'Settings' });
+    document.getElementById('addTaskModal')?.classList.add('hidden');
+    this.renderSettings();
     this.config.onTasksChanged?.();
   },
 
@@ -409,11 +506,6 @@ const SettingsModal = {
   },
 
   close() {
-    if (this.state.isAddTaskMode) {
-      document.getElementById('cancelAddTaskModal')?.classList.remove('hidden');
-      return;
-    }
-
     const tasks = this.config.getTasks();
     const setTasks = this.config.setTasks;
     tasks.filter(t => t.name.trim() !== '');
@@ -421,15 +513,18 @@ const SettingsModal = {
       setTasks(JSON.parse(JSON.stringify(DEFAULT_TASKS)));
     }
     this.config.onSave?.();
-    document.getElementById('settingsOverlay')?.classList.add('hidden');
 
-    if (this.state.pageNeedsReload) {
-      this.state.pageNeedsReload = false;
-      setTimeout(() => {
+    const overlay = document.getElementById('settingsOverlay');
+    overlay?.classList.add('closing');
+    setTimeout(() => {
+      overlay?.classList.remove('closing');
+      overlay?.classList.add('hidden');
+      if (this.state.pageNeedsReload) {
+        this.state.pageNeedsReload = false;
         document.body.classList.add('page-reload-fade');
         this.config.onReload?.();
-      }, 100);
-    }
+      }
+    }, 300);
   },
 
   openAddTask() {
@@ -437,26 +532,31 @@ const SettingsModal = {
     const nextColor = PALETTE.find(c => !usedColors.includes(c)) || PALETTE[this.config.getTasks().length % PALETTE.length];
 
     const tasks = this.config.getTasks();
-    const newTask = { name: '', color: nextColor, estimate: '', deliveryDate: '', jiraLink: '' };
+    const newTask = { name: '', color: nextColor, estimate: '', deliveryDate: '', jiraLink: '', status: '', idOpus: '' };
     tasks.push(newTask);
     this.config.onSave?.();
     this.state.isAddTaskMode = true;
 
-    this.renderSettings({ tasks: false, dailyCap: false, deleteData: false, title: 'Add a task' });
-
-    const el = document.getElementById('settingsTasks');
     const i = tasks.length - 1;
     const t = tasks[i];
-    const taskHTML = `
-      <div class="space-y-2 pb-4">
-        <div class="flex items-center justify-between gap-2">
-          <div class="flex-1">
-            <label for="taskName${i}" class="text-xs text-gray-400 dark:text-white/60 font-medium block mb-1">New Task</label>
+    const el = document.getElementById('addTaskForm');
+    if (el) {
+      el.innerHTML = `
+        <!-- Row 1: ID / Task name / Jira link -->
+        <div class="grid grid-cols-5 gap-2 mb-2">
+          <div class="col-span-1">
+            <label for="taskIdOpus${i}" class="text-xs text-gray-400 dark:text-white/60 font-medium block mb-1">ID</label>
+            <input id="taskIdOpus${i}" type="text" value="" placeholder="Opus ID"
+              class="w-full bg-black/5 dark:bg-white/5 border border-gray-200 dark:border-white/10 rounded-lg px-3 py-2 text-sm text-gray-900 dark:text-white placeholder-gray-300 dark:placeholder-white/20 focus:outline-none focus:border-gray-400 dark:focus:border-white/30 transition-colors"
+              oninput="window._settingsModalUpdateTaskIdOpus(${i}, this.value)">
+          </div>
+          <div class="col-span-2">
+            <label for="taskName${i}" class="text-xs text-gray-400 dark:text-white/60 font-medium block mb-1">Task</label>
             <input id="taskName${i}" type="text" value="${t.name}" maxlength="20" placeholder="Task name"
               class="w-full bg-black/5 dark:bg-white/5 border border-gray-200 dark:border-white/10 rounded-lg px-3 py-2 text-sm text-gray-900 dark:text-white placeholder-gray-300 dark:placeholder-white/20 focus:outline-none focus:border-gray-400 dark:focus:border-white/30 transition-colors"
               oninput="window._settingsModalUpdateTaskName(${i}, this.value)">
           </div>
-          <div class="flex-1">
+          <div class="col-span-2">
             <label for="taskJira${i}" class="text-xs text-gray-400 dark:text-white/60 font-medium block mb-1">Jira Link</label>
             <input id="taskJira${i}" type="url" value="${t.jiraLink || ''}" maxlength="256" placeholder="https://..."
               class="w-full bg-black/5 dark:bg-white/5 border border-gray-200 dark:border-white/10 rounded-lg px-3 py-2 text-sm text-gray-900 dark:text-white placeholder-gray-300 dark:placeholder-white/20 focus:outline-none focus:border-gray-400 dark:focus:border-white/30 transition-colors"
@@ -464,24 +564,40 @@ const SettingsModal = {
           </div>
         </div>
 
-        <div class="grid grid-cols-2 gap-3">
-          <div>
-            <label for="taskEstimate${i}" class="text-xs text-gray-400 dark:text-white/60 font-medium block mb-1">Estimated workload</label>
-            <input id="taskEstimate${i}" type="number" min="0" step="1" value="${t.estimate || ''}" placeholder="days"
+        <!-- Row 2: Est. / Delivery date / Status -->
+        <div class="grid grid-cols-5 gap-2 mb-2">
+          <div class="col-span-1">
+            <label for="taskEstimate${i}" class="text-xs text-gray-400 dark:text-white/60 font-medium block mb-1">Est.</label>
+            <input id="taskEstimate${i}" type="number" min="0" step="1" value="" placeholder="days"
               class="w-full bg-black/5 dark:bg-white/5 border border-gray-200 dark:border-white/10 rounded-lg px-3 py-2 text-sm text-gray-900 dark:text-white placeholder-gray-300 dark:placeholder-white/20 focus:outline-none focus:border-gray-400 dark:focus:border-white/30 transition-colors"
               oninput="window._settingsModalUpdateTaskEstimate(${i}, this.value)">
           </div>
-          <div>
+          <div class="col-span-2">
             <label for="taskDelivery${i}" class="text-xs text-gray-400 dark:text-white/60 font-medium block mb-1">Delivery date</label>
-            <input id="taskDelivery${i}" type="text" placeholder="DD/MM/YYYY" value="${t.deliveryDate ? formatDateToDDMMYYYY(t.deliveryDate) : ''}" pattern="\\d{2}/\\d{2}/\\d{4}" maxlength="10"
+            <input id="taskDelivery${i}" type="text" placeholder="DD/MM/YYYY" value="" pattern="\\d{2}/\\d{2}/\\d{4}" maxlength="10"
               class="w-full bg-black/5 dark:bg-white/5 border border-gray-200 dark:border-white/10 rounded-lg px-3 py-2 text-sm text-gray-900 dark:text-white focus:outline-none focus:border-gray-400 dark:focus:border-white/30 transition-colors"
               oninput="window._settingsModalFormatDeliveryDate(${i}, this)"
               onchange="window._settingsModalUpdateTaskDeliveryDate(${i}, this.value)"
               onblur="window._settingsModalUpdateTaskDeliveryDate(${i}, this.value)">
           </div>
+          <div class="col-span-2">
+            <label for="taskStatus${i}" class="text-xs text-gray-400 dark:text-white/60 font-medium block mb-1">Status</label>
+            <select id="taskStatus${i}"
+              class="w-full bg-black/5 dark:bg-white/5 border border-gray-200 dark:border-white/10 rounded-lg px-3 py-2 text-sm text-gray-900 dark:text-white focus:outline-none focus:border-gray-400 dark:focus:border-white/30 transition-colors"
+              onchange="window._settingsModalUpdateTaskStatus(${i}, this.value)">
+              <option value="" selected>—</option>
+              <option value="soon">Soon</option>
+              <option value="inProgress">In Progress</option>
+              <option value="inPause">In Pause</option>
+              <option value="done">Done</option>
+              <option value="checking">Checking</option>
+              <option value="archived">Archived</option>
+            </select>
+          </div>
         </div>
 
-        <div class="grid grid-cols-9 gap-2 pt-2.5">
+        <!-- Row 3: Color picker -->
+        <div class="grid grid-cols-9 gap-2 pt-2">
           ${PALETTE.map(c => `
             <button class="color-swatch w-7 h-7 rounded-full ${c === t.color ? 'active' : ''}"
               style="background:${COLOR_HEX[c]};color:${COLOR_HEX[c]}"
@@ -489,17 +605,10 @@ const SettingsModal = {
               onclick="window._settingsModalUpdateTaskColor(${i}, '${c}')"></button>
           `).join('')}
         </div>
-      </div>
-      <div class="flex gap-3 justify-end mt-6">
-        <button id="cancelAddTaskBtn" class="px-4 py-2 rounded-lg text-sm font-medium bg-black/5 dark:bg-white/10 hover:bg-black/10 dark:hover:bg-white/20 transition-colors">Cancel</button>
-        <button id="saveAddTaskBtn" class="px-4 py-2 rounded-lg text-sm font-medium bg-emerald-500 hover:bg-emerald-600 text-white transition-colors">Save task</button>
-      </div>
-    `;
-    if (el) el.innerHTML = taskHTML;
-    document.getElementById('settingsOverlay')?.classList.remove('hidden');
-    setTimeout(() => {
-      document.getElementById(`taskName${i}`)?.focus();
-    }, 100);
+      `;
+    }
+    document.getElementById('addTaskModal')?.classList.remove('hidden');
+    setTimeout(() => document.getElementById(`taskName${i}`)?.focus(), 100);
   },
 
 };
@@ -586,7 +695,7 @@ window._settingsModalDeleteTask = (i) => {
 window._settingsModalAddTask = () => {
   const usedColors = SettingsModal.config.getTasks().map(t => t.color);
   const nextColor = PALETTE.find(c => !usedColors.includes(c)) || PALETTE[SettingsModal.config.getTasks().length % PALETTE.length];
-  const newTask = { name: `Task ${SettingsModal.config.getTasks().length + 1}`, color: nextColor, estimate: '', deliveryDate: '', jiraLink: '' };
+  const newTask = { name: `Task ${SettingsModal.config.getTasks().length + 1}`, color: nextColor, estimate: '', deliveryDate: '', jiraLink: '', status: '', idOpus: '' };
   const tasks = SettingsModal.config.getTasks();
   tasks.push(newTask);
   SettingsModal.config.onSave?.();
@@ -600,6 +709,22 @@ window._settingsModalUpdateMaxCap = (v) => {
     SettingsModal.config.setMaxCap(val);
     SettingsModal.config.onSave?.();
     SettingsModal.config.onTasksChanged?.();
+  }
+};
+
+window._settingsModalUpdateTaskStatus = (i, v) => {
+  const tasks = SettingsModal.config.getTasks();
+  if (tasks[i]) {
+    tasks[i].status = v;
+    SettingsModal.config.onSave?.();
+  }
+};
+
+window._settingsModalUpdateTaskIdOpus = (i, v) => {
+  const tasks = SettingsModal.config.getTasks();
+  if (tasks[i]) {
+    tasks[i].idOpus = v;
+    SettingsModal.config.onSave?.();
   }
 };
 

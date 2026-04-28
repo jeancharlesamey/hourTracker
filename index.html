@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <meta name="color-scheme" content="light dark">
   <title>Hour Tracker</title>
-  <!-- Beta-1.0.1 -->
+  <!-- v1.3.0-beta.2 -->
   <script>
     if (localStorage.getItem('dt_darkMode') !== 'false') {
       document.documentElement.classList.add('dark');
@@ -23,8 +23,16 @@
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
   <meta name="apple-mobile-web-app-title" content="Hour Tracker">
   <link rel="apple-touch-icon" href="./icons/icon-192.png">
-  <script src="https://cdn.tailwindcss.com"></script>
+  <link href="https://unpkg.com/@csstools/normalize.css" rel="stylesheet" />
+  <script src="https://cdn.tailwindcss.com" onerror="console.warn('Tailwind CSS failed to load from CDN')"></script>
   <script>
+    // Suppress Tailwind console warnings in development
+    const originalWarn = console.warn;
+    console.warn = function(...args) {
+      if (args[0]?.includes?.('Tailwind') || args[0]?.includes?.('content')) return;
+      originalWarn.apply(console, args);
+    };
+
     tailwind.config = {
       darkMode: 'class',
       theme: {
@@ -123,7 +131,7 @@
       cursor: default;
     }
 
-    /* Modal animations */
+    /* Sidebar animations */
     @keyframes overlayFadeIn {
       from { opacity: 0; }
       to { opacity: 1; }
@@ -134,43 +142,49 @@
       to { opacity: 0; }
     }
 
-    @keyframes modalSlideInUp {
-      from { transform: translateY(100%); }
-      to { transform: translateY(0); }
+    @keyframes sidebarSlideIn {
+      from { transform: translateX(100%); }
+      to { transform: translateX(0); }
     }
 
-    @keyframes modalSlideUpOut {
-      from { transform: translateY(0); }
-      to { transform: translateY(-100%); }
+    @keyframes sidebarSlideOut {
+      from { transform: translateX(0); }
+      to { transform: translateX(100%); }
     }
 
-    @keyframes modalFadeOut {
-      from { opacity: 1; }
-      to { opacity: 0; }
-    }
-
-    .settings-overlay:not(.hidden) {
+    /* Entry animations */
+    .settings-overlay:not(.hidden):not(.closing) #settingsBackdrop {
       animation: overlayFadeIn 0.3s cubic-bezier(0.4, 0, 0.2, 1);
     }
 
-    .settings-overlay:not(.hidden) > div {
-      animation: modalSlideInUp 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    .settings-overlay:not(.hidden):not(.closing) .settings-panel {
+      animation: sidebarSlideIn 0.3s cubic-bezier(0.4, 0, 0.2, 1);
     }
 
-    .settings-overlay.slide-up {
-      animation: overlayFadeOut 0.3s cubic-bezier(0.4, 0, 0.2, 1) forwards !important;
+    /* Exit animations */
+    .settings-overlay.closing {
+      animation: overlayFadeOut 0.3s cubic-bezier(0.4, 0, 0.2, 1) forwards;
     }
 
-    .settings-overlay.slide-up > div {
-      animation: modalSlideUpOut 0.3s cubic-bezier(0.4, 0, 0.2, 1) forwards !important;
+    .settings-overlay.closing .settings-panel {
+      animation: sidebarSlideOut 0.3s cubic-bezier(0.4, 0, 0.2, 1) forwards;
     }
 
-    .settings-overlay.fade-out {
-      animation: overlayFadeOut 0.3s cubic-bezier(0.4, 0, 0.2, 1) forwards !important;
+    /* Responsive sidebar width */
+    .settings-panel {
+      width: 100%;
     }
 
-    .settings-overlay.fade-out > div {
-      animation: modalFadeOut 0.3s cubic-bezier(0.4, 0, 0.2, 1) forwards !important;
+    @media (min-width: 600px) {
+      .settings-panel {
+        width: 60vw;
+      }
+    }
+
+    @media (min-width: 1024px) {
+      .settings-panel {
+        width: 40vw;
+      }
     }
   </style>
 </head>
@@ -308,7 +322,9 @@
       color: t.color,
       estimate: t.estimate ?? '',
       deliveryDate: t.deliveryDate ?? '',
-      jiraLink: t.jiraLink ?? ''
+      jiraLink: t.jiraLink ?? '',
+      status: t.status ?? '',
+      idOpus: t.idOpus ?? ''
     }));
     let completions = loadJSON('dt_completions', {});
     let maxCap = parseFloat(localStorage.getItem('dt_maxCap')) || 7.5;
@@ -851,7 +867,9 @@
         }
       }
 
-      el.innerHTML = tasks.map((t, i) => `
+      el.innerHTML = tasks.map((t, i) => {
+        if (t && t.status === 'archived') return '';
+        return `
         <div class="flex items-center gap-3 p-3 md:p-4 rounded-xl bg-black/5 dark:bg-white/5">
           <div class="w-3 h-3 rounded-full shrink-0" style="background:${COLOR_HEX[t.color]}"></div>
           ${t.jiraLink ? `<a href="${t.jiraLink}" target="_blank" rel="noopener noreferrer" class="flex-1 text-sm md:text-base font-medium text-gray-900 dark:text-white/90 hover:underline">${t.name}</a>` : `<span class="flex-1 text-sm md:text-base font-medium text-gray-900 dark:text-white/90">${t.name}</span>`}
@@ -860,7 +878,8 @@
             onchange="updateHours(${i}, this.value)" onblur="updateHours(${i}, this.value)">
           <span class="text-xs text-gray-400 dark:text-white/40 w-3">h</span>
         </div>
-      `).join('');
+      `;
+      }).join('');
 
       updateStreak();
     }
