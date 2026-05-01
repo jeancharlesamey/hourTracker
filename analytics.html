@@ -440,6 +440,9 @@
         <!-- Header with Legend and Burnout Badge -->
         <div class="flex items-center gap-4">
           <div id="bytaskLegend" class="flex-1 flex flex-wrap gap-3 md:gap-4 text-xs md:text-sm"></div>
+          <div id="bytaskRiskBadge" class="shrink-0 hidden">
+            <span class="inline-flex items-center gap-1.5 text-xs bg-orange-500/20 text-orange-600 dark:text-orange-400 px-3 py-1 rounded-full font-medium"></span>
+          </div>
           <div id="bytaskBurnoutBadge" class="shrink-0 hidden">
             <span class="inline-flex items-center gap-1.5 text-xs bg-red-500/20 text-red-600 dark:text-red-400 px-3 py-1 rounded-full font-medium"></span>
           </div>
@@ -896,6 +899,18 @@
       return count;
     }
 
+    function countWorkingDaysBetween(startStr, endStr) {
+      let count = 0;
+      let current = parseDate(startStr);
+      const end = parseDate(endStr);
+      while (current <= end) {
+        const dow = current.getDay();
+        if (dow !== 0 && dow !== 6) count++;
+        current.setDate(current.getDate() + 1);
+      }
+      return count;
+    }
+
     // ── Rendering ──────────────────────────────────────────
     function renderCombinedGraph() {
       const weeks = getWeeksInCalendarYear();
@@ -1149,14 +1164,8 @@
         const remaining = totalEstimatedHours - cumulativeLogged;
         actualData.push(dateStr <= lastLoggedDate ? remaining : null);
 
-        // Ideal data: only show at first day and last day (delivery date)
-        if (dateIndex === 0) {
-          idealData.push(totalEstimatedHours);
-        } else if (dateIndex === totalDays - 1) {
-          idealData.push(0);
-        } else {
-          idealData.push(null);
-        }
+        // Ideal data: linear value at every day so hover tooltip works on any point
+        idealData.push(Math.max(0, totalEstimatedHours - dailyIdeal * dateIndex));
 
         const monthNames = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
         const label = `${current.getDate()} ${monthNames[current.getMonth()]}`;
@@ -1165,6 +1174,15 @@
         current.setDate(current.getDate() + 1);
         dateIndex++;
       }
+
+      // Compute Target Velocity values
+      let loggedTotal = 0;
+      getAllDates().forEach(d => { loggedTotal += getHours(d, taskIndex); });
+      const hoursRemaining = Math.max(0, totalEstimatedHours - loggedTotal);
+      const calendarDaysRemaining = getWorkingDaysTo(deliveryDate);
+      const workingDaysTotal = deliveryDate ? countWorkingDaysBetween(startDate, deliveryDate) : 0;
+      const originalTV = workingDaysTotal > 0 ? totalEstimatedHours / workingDaysTotal : 0;
+      const currentTV = calendarDaysRemaining > 0 ? hoursRemaining / calendarDaysRemaining : 0;
 
       if (taskBurnChartInstance) {
         taskBurnChartInstance.destroy();
@@ -1193,12 +1211,10 @@
               borderDash: [3, 3],
               borderWidth: 1,
               fill: false,
-              tension: 0.1,
-              pointRadius: 4,
-              pointBackgroundColor: darkMode ? '#666' : '#ccc',
-              pointBorderColor: darkMode ? '#666' : '#ccc',
-              pointHoverRadius: 6,
-              spanGaps: true,
+              tension: 0,
+              pointRadius: 0,
+              pointHoverRadius: 4,
+              pointHoverBackgroundColor: darkMode ? '#666' : '#ccc',
             }] : [])
           ]
         },
@@ -1211,6 +1227,19 @@
               labels: {
                 color: darkMode ? '#fff' : '#000',
                 usePointStyle: true,
+              }
+            },
+            tooltip: {
+              callbacks: {
+                label: function(context) {
+                  if (context.dataset.label === 'Ideal') {
+                    const lines = [`Ideal: ${context.parsed.y.toFixed(1)}h remaining`];
+                    if (originalTV > 0) lines.push(`Original velocity: ${originalTV.toFixed(1)}h/day`);
+                    if (calendarDaysRemaining > 0) lines.push(`Target now: ${currentTV.toFixed(1)}h/day`);
+                    return lines;
+                  }
+                  return `${context.dataset.label}: ${context.parsed.y.toFixed(1)}h remaining`;
+                }
               }
             }
           },
@@ -1867,6 +1896,7 @@
 
       renderTaskLegend();
       renderBurnoutBadgeForTask(taskIndex);
+      renderRiskBadge(taskIndex);
       renderTaskRequirementsCard(taskIndex);
       renderTaskProgressCard(taskIndex);
       renderTaskBurnChart(taskIndex);
@@ -1901,6 +1931,44 @@
         el.classList.remove('hidden');
         const extraHours = (loggedTotal - totalEstimatedHours).toFixed(1);
         el.querySelector('span').textContent = `Burned out by ${extraHours}h`;
+      } else {
+        el.classList.add('hidden');
+      }
+    }
+
+    function renderRiskBadge(taskIndex) {
+      const el = document.getElementById('bytaskRiskBadge');
+      if (!el) return;
+
+      const task = tasks[taskIndex];
+      const estimate = parseFloat(task.estimate) || 0;
+      let deliveryDate = task.deliveryDate || '';
+
+      if (deliveryDate && deliveryDate.includes('/')) {
+        const [d, m, y] = deliveryDate.split('/');
+        deliveryDate = `${y}-${m}-${d}`;
+      }
+
+      if (!estimate || !deliveryDate) {
+        el.classList.add('hidden');
+        return;
+      }
+
+      const calendarDaysRemaining = getWorkingDaysTo(deliveryDate);
+      if (calendarDaysRemaining === 0) {
+        el.classList.add('hidden');
+        return;
+      }
+
+      let loggedTotal = 0;
+      getAllDates().forEach(d => { loggedTotal += getHours(d, taskIndex); });
+
+      const hoursRemaining = Math.max(0, estimate * maxCap - loggedTotal);
+      const daysOfWorkRemaining = hoursRemaining / maxCap;
+
+      if (daysOfWorkRemaining > calendarDaysRemaining) {
+        el.classList.remove('hidden');
+        el.querySelector('span').textContent = `⚠ At risk — ${daysOfWorkRemaining.toFixed(1)}d of work, ${calendarDaysRemaining}d left`;
       } else {
         el.classList.add('hidden');
       }
