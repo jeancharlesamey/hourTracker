@@ -1857,18 +1857,15 @@
 
       LegendRenderer.render('overviewTaskLegend', options);
 
-      // Custom inline render for bytaskLegend - shows only tasks with hours in selected month
+      // bytaskLegend shows only tasks with hours in the selected month
       const bytaskLegendEl = document.getElementById('bytaskLegend');
       if (bytaskLegendEl) {
         bytaskLegendEl.innerHTML = tasksWithHours
-          .map((task, displayIdx) => {
+          .map((task) => {
             const actualIdx = tasks.indexOf(task);
             const isActive = actualIdx === activeTaskIndex;
-            const classes = isActive
-              ? ''
-              : 'opacity-60';
             return `
-              <div data-taskindex="${actualIdx}" class="flex items-center gap-1.5 cursor-pointer select-none transition-opacity hover:opacity-100 ${classes}">
+              <div data-taskindex="${actualIdx}" class="flex items-center gap-1.5 cursor-pointer select-none transition-opacity hover:opacity-100 ${isActive ? '' : 'opacity-60'}">
                 <div class="w-2.5 h-2.5 md:w-3 md:h-3 rounded-full" style="background:${COLOR_HEX[task.color]}"></div>
                 <span class="text-gray-500 dark:text-white/70">${task.name}</span>
               </div>
