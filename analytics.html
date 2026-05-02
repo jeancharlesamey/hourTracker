@@ -1128,10 +1128,10 @@
         return;
       }
 
-      // Determine date range: from first logged date to delivery date (if available) or last logged date
+      // Determine date range: from first logged date to last logged date (always show all work logged)
       const startDate = allDates[0];
       const lastLoggedDate = allDates[allDates.length - 1];
-      const endDate = deliveryDate || lastLoggedDate;
+      const endDate = lastLoggedDate;
 
       // Generate all dates in range
       const [startYear, startMonth, startDay] = startDate.split('-').map(Number);
@@ -1182,6 +1182,21 @@
       const workingDaysTotal = deliveryDate ? countWorkingDaysBetween(startDate, deliveryDate) : 0;
       const originalTV = workingDaysTotal > 0 ? totalEstimatedHours / workingDaysTotal : 0;
       const currentTV = calendarDaysRemaining > 0 ? hoursRemaining / calendarDaysRemaining : 0;
+
+      // Compute recent velocity (last 7 active days)
+      const today = new Date(todayStr());
+      const sevenAgo = new Date(today);
+      sevenAgo.setDate(sevenAgo.getDate() - 7);
+      const recentDates = getAllDates().filter(d => {
+        const dt = parseDate(d);
+        return dt >= sevenAgo && dt <= today && getHours(d, taskIndex) > 0;
+      });
+      const recentV = recentDates.length > 0
+        ? recentDates.reduce((s, d) => s + getHours(d, taskIndex), 0) / recentDates.length
+        : 0;
+      const projectedSlipDays = recentV > 0 && calendarDaysRemaining > 0
+        ? Math.round(hoursRemaining / recentV - calendarDaysRemaining)
+        : null;
 
       if (taskBurnChartInstance) {
         taskBurnChartInstance.destroy();
@@ -1237,7 +1252,11 @@
                     if (calendarDaysRemaining > 0) lines.push(`Target now: ${currentTV.toFixed(1)}h/day`);
                     return lines;
                   }
-                  return `${context.dataset.label}: ${context.parsed.y.toFixed(1)}h remaining`;
+                  const lines = [`${context.dataset.label}: ${context.parsed.y.toFixed(1)}h remaining`];
+                  if (projectedSlipDays !== null && projectedSlipDays > 0) {
+                    lines.push(`Projected slip: +${projectedSlipDays}d at current pace`);
+                  }
+                  return lines;
                 }
               }
             }
@@ -1856,6 +1875,18 @@
 
       LegendRenderer.render('overviewTaskLegend', options);
 
+      // Add click handlers to overview legend
+      const overviewLegendEl = document.getElementById('overviewTaskLegend');
+      if (overviewLegendEl) {
+        overviewLegendEl.querySelectorAll('[data-taskindex]').forEach(item => {
+          item.addEventListener('click', () => {
+            const idx = parseInt(item.dataset.taskindex, 10);
+            switchView('bytask');
+            setTimeout(() => renderByTaskView(idx), 0);
+          });
+        });
+      }
+
       // bytaskLegend shows only tasks with hours in the selected month
       const bytaskLegendEl = document.getElementById('bytaskLegend');
       if (bytaskLegendEl) {
@@ -1945,9 +1976,22 @@
       const hoursRemaining = Math.max(0, totalEstimatedHours - loggedTotal);
       const daysOfWorkRemaining = hoursRemaining / maxCap;
 
+      // When delivery date has passed, hide risk badge (Delivery date passed shown in TIME PRESSURE instead)
+      if (calendarDaysRemaining <= 0) {
+        el.classList.add('hidden');
+        return;
+      }
+
+      // Check if estimation needs adjustment: remaining work < 15% of estimate AND enough time available (> 10% of estimate)
+      const estimationNeedsAdjustment = daysOfWorkRemaining < estimate * 0.15 && calendarDaysRemaining > estimate * 0.1;
+
       el.classList.remove('hidden');
       const span = el.querySelector('span');
-      if (daysOfWorkRemaining > calendarDaysRemaining) {
+
+      if (estimationNeedsAdjustment) {
+        span.className = 'inline-flex items-center gap-1.5 text-xs bg-orange-500/20 text-orange-600 dark:text-orange-400 px-3 py-1 rounded-full font-medium cursor-pointer hover:opacity-70 transition-opacity';
+        span.textContent = `Estimation might need to be adjusted — ${daysOfWorkRemaining.toFixed(1)}d of work, ${calendarDaysRemaining}d left`;
+      } else if (daysOfWorkRemaining > calendarDaysRemaining) {
         span.className = 'inline-flex items-center gap-1.5 text-xs bg-orange-500/20 text-orange-600 dark:text-orange-400 px-3 py-1 rounded-full font-medium';
         span.textContent = `⚠ At risk — ${daysOfWorkRemaining.toFixed(1)}d of work, ${calendarDaysRemaining}d left`;
       } else {
@@ -2027,12 +2071,20 @@
       const colorCircle = `<div class="w-2.5 h-2.5 rounded-full flex-shrink-0" style="background: ${COLOR_HEX[task.color]}"></div>`;
 
       const estimateDisplay = task.estimate
-        ? `<span title="${(task.estimate * maxCap).toFixed(1)}h">${task.estimate}d</span>`
+        ? `${task.estimate}d<span class="ml-2 text-gray-500 dark:text-gray-400">| ${(task.estimate * maxCap).toFixed(1)}h</span>`
         : '—';
 
-      const deliveryDate = task.deliveryDate
+      let deliveryDate = task.deliveryDate
         ? formatDateToLongFormat(task.deliveryDate)
         : '—';
+
+      // Add "Xd late" annotation if delivery has passed
+      if (task.deliveryDate) {
+        const daysLate = calculateDaysLate(task.deliveryDate, todayStr());
+        if (daysLate > 0) {
+          deliveryDate += `<span class="ml-1 text-red-600 dark:text-red-400 font-semibold">${daysLate}d late</span>`;
+        }
+      }
 
       const jiraLink = task.jiraLink
         ? `<a href="${task.jiraLink}" target="_blank" rel="noopener noreferrer" class="text-blue-600 dark:text-blue-400 hover:underline">see ticket in Jira</a>`
@@ -2042,17 +2094,6 @@
       const remainingText = daysRemaining !== null
         ? (daysRemaining < 0 ? `${Math.abs(daysRemaining)} day${Math.abs(daysRemaining) !== 1 ? 's' : ''} ago` : `${daysRemaining} day${daysRemaining !== 1 ? 's' : ''}`)
         : '—';
-
-      // Initial Velocity: estimated h/day from first logged date to delivery
-      let initialVelocityText = '—';
-      if (task.estimate && task.deliveryDate) {
-        const totalEstimatedHours = parseFloat(task.estimate) * maxCap;
-        const firstLoggedDate = getAllDates().filter(d => getHours(d, taskIndex) > 0)[0];
-        if (firstLoggedDate) {
-          const wDays = countWorkingDaysBetween(firstLoggedDate, task.deliveryDate);
-          if (wDays > 0) initialVelocityText = `${(totalEstimatedHours / wDays).toFixed(1)}h/day`;
-        }
-      }
 
       container.innerHTML = `
         <div class="overflow-x-auto">
@@ -2069,10 +2110,6 @@
               <tr class="border-b border-gray-100 dark:border-white/5 hover:bg-black/5 dark:hover:bg-white/5">
                 <td class="py-2 px-3 text-left text-gray-700 dark:text-white/80 text-xs w-2/5">Week days remaining</td>
                 <td class="py-2 px-3 text-right text-gray-900 dark:text-white font-semibold text-xs w-3/5">${remainingText}</td>
-              </tr>
-              <tr class="border-b border-gray-100 dark:border-white/5 hover:bg-black/5 dark:hover:bg-white/5">
-                <td class="py-2 px-3 text-left text-gray-700 dark:text-white/80 text-xs w-2/5">Initial velocity</td>
-                <td class="py-2 px-3 text-right text-gray-900 dark:text-white font-semibold text-xs w-3/5">${initialVelocityText}</td>
               </tr>
               <tr class="border-b border-gray-100 dark:border-white/5 hover:bg-black/5 dark:hover:bg-white/5">
                 <td class="py-2 px-3 text-left text-gray-700 dark:text-white/80 text-xs w-2/5">Jira</td>
@@ -2187,7 +2224,11 @@
       // Set the status badge in the header using task status if available
       const badgeEl = document.getElementById('bytaskProgressBadge');
       if (badgeEl) {
-        badgeEl.innerHTML = `<span class="inline-flex items-center gap-1.5 text-xs px-2.5 py-1 rounded-full font-medium ${taskStatusColor}">${taskStatusDisplay}</span>`;
+        const deliveryPassed = deliveryDate && getWorkingDaysTo(deliveryDate) === 0;
+        const deliveryBadge = deliveryPassed
+          ? `<span class="inline-flex items-center gap-1.5 text-xs bg-red-500/20 text-red-600 dark:text-red-400 px-2.5 py-1 rounded-full font-medium">Delivery date passed</span>`
+          : '';
+        badgeEl.innerHTML = `${deliveryBadge}<span class="inline-flex items-center gap-1.5 text-xs px-2.5 py-1 rounded-full font-medium ${taskStatusColor}">${taskStatusDisplay}</span>`;
       }
 
       // Velocity computations (shared between display rows and reschedule log)
@@ -2257,6 +2298,16 @@
         const progressBarWidth = Math.min(displayPercent, 100);
         const progressBarColor = isOverdone ? '#f97316' : COLOR_HEX[task.color];
 
+      // Compute days late if delivery has passed
+      const daysLate = calDays === 0 && deliveryDate ? calculateDaysLate(deliveryDate, todayStr()) : 0;
+
+      // Compute pacing percentage
+      const pacingPercent = weekV > 0 && initialV > 0 ? Math.round(weekV / initialV * 100) : null;
+      const pacingColor = pacingPercent !== null
+        ? (pacingPercent >= 80 ? 'text-green-600 dark:text-green-400' : pacingPercent >= 40 ? 'text-yellow-600 dark:text-yellow-400' : 'text-red-600 dark:text-red-400')
+        : '';
+      const pacingLegendId = `pacingLegend-${Math.random().toString(36).slice(2)}`;
+
         container.innerHTML = `
           <div class="mb-4">
             <div class="text-xs text-gray-600 dark:text-gray-400 mb-2">${percentComplete.toFixed(0)}%</div>
@@ -2274,10 +2325,9 @@
                 </tr>
               </thead>
               <tbody>
-                <tr class="border-b border-gray-100 dark:border-white/5 hover:bg-black/5 dark:hover:bg-white/5">
-                  <td class="py-2 px-3 text-left text-gray-700 dark:text-white/80 text-xs w-2/5">Estimate</td>
-                  <td class="py-2 px-3 text-right text-gray-900 dark:text-white font-semibold text-xs w-1.5/5">${estimate || '—'}</td>
-                  <td class="py-2 px-3 text-right text-gray-900 dark:text-white font-semibold text-xs w-1.5/5">${totalEstimatedHours > 0 ? fmtH(totalEstimatedHours) : '—'}</td>
+                <!-- PROGRESS -->
+                <tr>
+                  <td colspan="3" class="px-3 pt-4 pb-1 text-xs font-semibold uppercase tracking-wider text-gray-400 dark:text-gray-500">Progress</td>
                 </tr>
                 <tr class="border-b border-gray-100 dark:border-white/5 hover:bg-black/5 dark:hover:bg-white/5">
                   <td class="py-2 px-3 text-left text-gray-700 dark:text-white/80 text-xs w-2/5">Total logged</td>
@@ -2289,27 +2339,92 @@
                   <td class="py-2 px-3 text-right${isOverdone ? ' text-orange-600 dark:text-orange-400' : ' text-gray-900 dark:text-white'} font-semibold text-xs w-1.5/5">${daysRemainingText}</td>
                   <td class="py-2 px-3 text-right${isOverdone ? ' text-orange-600 dark:text-orange-400' : ' text-gray-900 dark:text-white'} font-semibold text-xs w-1.5/5">${hoursRemainingText}</td>
                 </tr>
-                ${monthV > 0 ? `<tr class="border-b border-gray-100 dark:border-white/5 hover:bg-black/5 dark:hover:bg-white/5">
-                  <td class="py-2 px-3 text-left text-gray-700 dark:text-white/80 text-xs w-2/5">This month velocity</td>
-                  <td class="py-2 px-3 text-right text-gray-900 dark:text-white font-semibold text-xs" colspan="2">${monthV.toFixed(1)}h/day</td>
-                </tr>` : ''}
+
+                <!-- TIME PRESSURE -->
+                ${estimate && deliveryDate ? `
+                <tr>
+                  <td colspan="3" class="px-3 pt-4 pb-1 text-xs font-semibold uppercase tracking-wider text-gray-400 dark:text-gray-500">Time pressure</td>
+                </tr>
+                ${calDays === 0 ? `
+                <tr class="border-b border-gray-100 dark:border-white/5 hover:bg-black/5 dark:hover:bg-white/5">
+                  <td class="py-2 px-3 text-left text-red-600 dark:text-red-400 text-xs w-2/5">Days late</td>
+                  <td class="py-2 px-3 text-right text-red-600 dark:text-red-400 font-semibold text-xs w-1.5/5">${daysLate}d</td>
+                  <td class="py-2 px-3 text-right text-red-600 dark:text-red-400 font-semibold text-xs w-1.5/5">—</td>
+                </tr>
+                ` : `
+                <tr class="border-b border-gray-100 dark:border-white/5 hover:bg-black/5 dark:hover:bg-white/5">
+                  <td class="py-2 px-3 text-left text-gray-700 dark:text-white/80 text-xs w-2/5">Working days left</td>
+                  <td class="py-2 px-3 text-right text-gray-900 dark:text-white font-semibold text-xs w-1.5/5">${calDays}d</td>
+                  <td class="py-2 px-3 text-right text-gray-500 dark:text-gray-400 text-xs w-1.5/5">(${(calDays / 5).toFixed(1)}w)</td>
+                </tr>
+                `}
+                ${calDays > 0 ? `
+                <tr class="border-b border-gray-100 dark:border-white/5 hover:bg-black/5 dark:hover:bg-white/5">
+                  <td class="py-2 px-3 text-left text-gray-700 dark:text-white/80 text-xs w-2/5">Velocity to finish</td>
+                  <td class="py-2 px-3 text-right text-gray-900 dark:text-white font-semibold text-xs" colspan="2">${(hoursRemaining / calDays).toFixed(1)}h/day</td>
+                </tr>
+                ` : ''}
+                ` : ''}
+
+                <!-- VELOCITY -->
+                ${weekV > 0 || monthV > 0 || initialV > 0 ? `
+                <tr>
+                  <td colspan="3" class="px-3 pt-4 pb-1 text-xs font-semibold uppercase tracking-wider text-gray-400 dark:text-gray-500">Velocity</td>
+                </tr>
                 ${weekV > 0 ? `<tr class="border-b border-gray-100 dark:border-white/5 hover:bg-black/5 dark:hover:bg-white/5">
-                  <td class="py-2 px-3 text-left text-gray-700 dark:text-white/80 text-xs w-2/5">This week velocity</td>
+                  <td class="py-2 px-3 text-left text-gray-700 dark:text-white/80 text-xs w-2/5">This week</td>
                   <td class="py-2 px-3 text-right text-gray-900 dark:text-white font-semibold text-xs" colspan="2">${weekV.toFixed(1)}h/day</td>
                 </tr>` : ''}
-                ${estimate && deliveryDate ? `<tr class="border-b border-gray-100 dark:border-white/5 hover:bg-black/5 dark:hover:bg-white/5">
-                  <td class="py-2 px-3 text-left text-gray-700 dark:text-white/80 text-xs w-2/5">Est. velocity to finish</td>
-                  <td class="py-2 px-3 text-right text-gray-900 dark:text-white font-semibold text-xs" colspan="2">
-                    ${calDays > 0
-                      ? `${(hoursRemaining / calDays).toFixed(1)}h/day`
-                      : `<span id="deliveryPassedBadge" class="inline-flex items-center gap-1.5 text-xs bg-red-500/20 text-red-600 dark:text-red-400 px-2.5 py-1 rounded-full font-medium cursor-pointer hover:opacity-70 transition-opacity">Delivery date passed</span>`
-                    }
-                  </td>
+                ${monthV > 0 ? `<tr class="border-b border-gray-100 dark:border-white/5 hover:bg-black/5 dark:hover:bg-white/5">
+                  <td class="py-2 px-3 text-left text-gray-700 dark:text-white/80 text-xs w-2/5">This month</td>
+                  <td class="py-2 px-3 text-right text-gray-900 dark:text-white font-semibold text-xs" colspan="2">${monthV.toFixed(1)}h/day</td>
                 </tr>` : ''}
+                ${initialV > 0 ? `<tr class="border-b border-gray-100 dark:border-white/5 hover:bg-black/5 dark:hover:bg-white/5">
+                  <td class="py-2 px-3 text-left text-gray-700 dark:text-white/80 text-xs w-2/5">Initial</td>
+                  <td class="py-2 px-3 text-right text-gray-900 dark:text-white font-semibold text-xs" colspan="2">${initialV.toFixed(1)}h/day</td>
+                </tr>` : ''}
+                ${pacingPercent !== null ? `<tr class="border-b border-gray-100 dark:border-white/5 hover:bg-black/5 dark:hover:bg-white/5 group relative cursor-help pacingRow">
+                  <td class="py-2 px-3 text-left text-gray-700 dark:text-white/80 text-xs w-2/5 flex items-center gap-1">
+                    <span>Pacing</span>
+                  </td>
+                  <td class="py-2 px-3 text-right font-semibold text-xs ${pacingColor}" colspan="2">${pacingPercent}% of initial</td>
+                </tr>
+                <div id="${pacingLegendId}" class="hidden fixed bg-gray-900 dark:bg-gray-800 text-white dark:text-gray-100 px-3 py-2 rounded text-xs z-50 pointer-events-none" style="border: 1px solid rgba(200,200,200,0.2);">
+                  <div class="text-gray-300">Pacing = This week velocity / Initial pace</div>
+                  <div class="mt-1 space-y-0.5">
+                    <div><span class="text-green-400 font-semibold">80%+</span> = strong pace</div>
+                    <div><span class="text-yellow-400 font-semibold">40–79%</span> = watchful pace</div>
+                    <div><span class="text-red-400 font-semibold">&lt;40%</span> = slowing down</div>
+                  </div>
+                </div>` : ''}
+                ` : ''}
               </tbody>
             </table>
           </div>
         `;
+
+        // Attach pacing legend event listeners
+        if (pacingPercent !== null) {
+          setTimeout(() => {
+            const pacingRow = container.querySelector('.pacingRow');
+            const pacingLegend = document.getElementById(pacingLegendId);
+            if (pacingRow && pacingLegend) {
+              const showLegend = (e) => {
+                const rect = pacingRow.getBoundingClientRect();
+                pacingLegend.style.left = (rect.left + 10) + 'px';
+                pacingLegend.style.top = (rect.bottom + 5) + 'px';
+                pacingLegend.classList.remove('hidden');
+              };
+              const hideLegend = () => pacingLegend.classList.add('hidden');
+              pacingRow.addEventListener('mouseenter', showLegend);
+              pacingRow.addEventListener('mouseleave', hideLegend);
+              pacingRow.addEventListener('click', showLegend);
+              document.addEventListener('click', (e) => {
+                if (!pacingRow.contains(e.target) && !pacingLegend.contains(e.target)) hideLegend();
+              });
+            }
+          }, 0);
+        }
       }
     }
 
