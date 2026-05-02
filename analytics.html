@@ -437,15 +437,9 @@
 
       <!-- by Task View -->
       <div id="bytaskView" class="hidden space-y-6">
-        <!-- Header with Legend and Burnout Badge -->
+        <!-- Header with Legend -->
         <div class="flex items-center gap-4">
           <div id="bytaskLegend" class="flex-1 flex flex-wrap gap-3 md:gap-4 text-xs md:text-sm"></div>
-          <div id="bytaskRiskBadge" class="shrink-0 hidden">
-            <span class="inline-flex items-center gap-1.5 text-xs bg-orange-500/20 text-orange-600 dark:text-orange-400 px-3 py-1 rounded-full font-medium"></span>
-          </div>
-          <div id="bytaskBurnoutBadge" class="shrink-0 hidden">
-            <span class="inline-flex items-center gap-1.5 text-xs bg-red-500/20 text-red-600 dark:text-red-400 px-3 py-1 rounded-full font-medium"></span>
-          </div>
         </div>
 
         <!-- Bento Grid -->
@@ -459,8 +453,13 @@
           <!-- Progress Card (col-7 on md+) -->
           <div id="bytaskProgress" class="col-span-12 md:col-span-7 bg-white dark:bg-card-dark rounded-2xl p-6 shadow-sm border border-gray-100 dark:border-white/5">
             <div class="flex items-center justify-between mb-4">
-              <h3 class="font-semibold text-gray-900 dark:text-white">Progress</h3>
-              <div id="bytaskProgressBadge"></div>
+              <h3 class="font-semibold text-gray-900 dark:text-white">Momentum</h3>
+              <div class="flex items-center gap-2">
+                <div id="bytaskRiskBadge" class="hidden">
+                  <span class="inline-flex items-center gap-1.5 text-xs bg-orange-500/20 text-orange-600 dark:text-orange-400 px-3 py-1 rounded-full font-medium cursor-pointer hover:opacity-70 transition-opacity"></span>
+                </div>
+                <div id="bytaskProgressBadge"></div>
+              </div>
             </div>
             <div class="space-y-4"></div>
           </div>
@@ -961,7 +960,7 @@
           if (deliveryDates.length > 0) {
             const deliveryInfo = deliveryDates.map(d => {
               const workingDays = getWorkingDaysTo(dateStr);
-              return `${d.name} • ${formatDateToDDMMYYYY(dateStr)} • ${workingDays}d remaining`;
+              return `${d.name} → ${formatDateToDDMMYYYY(dateStr)} → ${workingDays}d remaining`;
             }).join('\n');
             tooltipText += '\n' + deliveryInfo;
             strokeColor = deliveryDates[0].color;
@@ -1892,45 +1891,15 @@
       activeTaskIndex = taskIndex;
 
       renderTaskLegend();
-      renderBurnoutBadgeForTask(taskIndex);
       renderRiskBadge(taskIndex);
       renderTaskRequirementsCard(taskIndex);
       renderTaskProgressCard(taskIndex);
+      setTimeout(setupReschedulePopovers, 0);
       renderTaskBurnChart(taskIndex);
       renderTaskWeekChart(taskIndex);
       renderTaskDayChart(taskIndex);
       renderTaskAchievements(taskIndex);
       renderTaskHeatmap(taskIndex);
-    }
-
-    function renderBurnoutBadgeForTask(taskIndex) {
-      const el = document.getElementById('bytaskBurnoutBadge');
-      if (!el) return;
-
-      const task = tasks[taskIndex];
-      const estimate = task.estimate || 0;
-      const deliveryDate = task.deliveryDate || '';
-
-      if (!estimate || !deliveryDate) {
-        el.classList.add('hidden');
-        return;
-      }
-
-      const totalEstimatedHours = estimate * maxCap;
-      let loggedTotal = 0;
-      const allDates = getAllDates();
-      allDates.forEach(dateStr => {
-        loggedTotal += getHours(dateStr, taskIndex);
-      });
-
-      const isBurnedOut = loggedTotal > totalEstimatedHours;
-      if (isBurnedOut) {
-        el.classList.remove('hidden');
-        const extraHours = (loggedTotal - totalEstimatedHours).toFixed(1);
-        el.querySelector('span').textContent = `Burned out by ${extraHours}h`;
-      } else {
-        el.classList.add('hidden');
-      }
     }
 
     function renderRiskBadge(taskIndex) {
@@ -1951,24 +1920,101 @@
         return;
       }
 
+      const totalEstimatedHours = estimate * maxCap;
+      let loggedTotal = 0;
+      getAllDates().forEach(d => { loggedTotal += getHours(d, taskIndex); });
+
+      const extraHours = Math.max(0, loggedTotal - totalEstimatedHours);
+      const isOverdone = extraHours > 0;
+
+      if (isOverdone) {
+        el.classList.remove('hidden');
+        const span = el.querySelector('span');
+        span.className = 'inline-flex items-center gap-1.5 text-xs bg-purple-500/20 text-purple-600 dark:text-purple-400 px-3 py-1 rounded-full font-medium cursor-pointer hover:opacity-70 transition-opacity';
+        const extraDays = (extraHours / maxCap).toFixed(1);
+        span.textContent = `Overdone: +${extraDays}d • ${fmtH(loggedTotal)}/${fmtH(totalEstimatedHours)}`;
+        return;
+      }
+
       const calendarDaysRemaining = getWorkingDaysTo(deliveryDate);
       if (calendarDaysRemaining === 0) {
         el.classList.add('hidden');
         return;
       }
 
-      let loggedTotal = 0;
-      getAllDates().forEach(d => { loggedTotal += getHours(d, taskIndex); });
-
-      const hoursRemaining = Math.max(0, estimate * maxCap - loggedTotal);
+      const hoursRemaining = Math.max(0, totalEstimatedHours - loggedTotal);
       const daysOfWorkRemaining = hoursRemaining / maxCap;
 
+      el.classList.remove('hidden');
+      const span = el.querySelector('span');
       if (daysOfWorkRemaining > calendarDaysRemaining) {
-        el.classList.remove('hidden');
-        el.querySelector('span').textContent = `⚠ At risk — ${daysOfWorkRemaining.toFixed(1)}d of work, ${calendarDaysRemaining}d left`;
+        span.className = 'inline-flex items-center gap-1.5 text-xs bg-orange-500/20 text-orange-600 dark:text-orange-400 px-3 py-1 rounded-full font-medium';
+        span.textContent = `⚠ At risk — ${daysOfWorkRemaining.toFixed(1)}d of work, ${calendarDaysRemaining}d left`;
       } else {
-        el.classList.add('hidden');
+        span.className = 'inline-flex items-center gap-1.5 text-xs bg-green-500/20 text-green-600 dark:text-green-400 px-3 py-1 rounded-full font-medium cursor-pointer hover:opacity-70 transition-opacity';
+        span.textContent = `On track — ${daysOfWorkRemaining.toFixed(1)}d of work, ${calendarDaysRemaining}d left`;
       }
+    }
+
+    function setupReschedulePopovers() {
+      const d = window._rescheduleData;
+      if (!d) return;
+
+      const popoverContent = () => {
+        if (d.isOverdone) {
+          const overdoneRow = (label, date) => date && date !== '—'
+            ? `<div class="flex items-center justify-between gap-4">
+                 <span class="text-gray-500 dark:text-gray-400">${label}</span>
+                 <span class="text-gray-400 dark:text-gray-500">${date}</span>
+               </div>`
+            : '';
+          const inTimeRow = d.weekV > 0
+            ? `<div class="pt-3 mt-3 p-3 bg-blue-500/10 border border-blue-200/50 dark:border-blue-400/30 rounded-lg">
+                 <div class="text-gray-700 dark:text-gray-300">Adding <span class="font-semibold">+${d.daysToDeliverInTime}d</span> workload to deliver in time</div>
+                 <div class="text-sm text-gray-500 dark:text-gray-400 mt-1"><span class="text-gray-400 dark:text-gray-500">${d.suggestInTime}</span> • <span class="font-bold text-gray-700 dark:text-gray-300">${d.weekV.toFixed(1)}h/day</span></div>
+               </div>`
+            : '';
+          return `
+            <div class="text-xs space-y-1.5 min-w-[240px]">
+              <div class="font-semibold text-gray-900 dark:text-white mb-2">Suggestions</div>
+              ${overdoneRow('Adding +2d at this week velocity', d.suggest2)}
+              ${overdoneRow('Adding +5d at this week velocity', d.suggest5)}
+              ${overdoneRow('Adding +10d at this week velocity', d.suggest10)}
+              ${inTimeRow}
+            </div>`;
+        }
+        const row = (label, v, date) => v > 0
+          ? `<div class="flex items-center justify-between gap-4">
+               <span class="text-gray-500 dark:text-gray-400">${label}</span>
+               <span>${date} • <span class="text-gray-400 dark:text-gray-500">${v.toFixed(1)}h/day</span></span>
+             </div>`
+          : '';
+        const finishRow = d.finishV > 0
+          ? `<div class="flex items-center justify-between gap-4 pt-1.5 mt-1 border-t border-gray-200 dark:border-white/10">
+               <span class="text-gray-500 dark:text-gray-400">To finish in time</span>
+               <span><span class="text-gray-400 dark:text-gray-500">${d.deliveryDateDisplay}</span> • <span class="font-bold">${d.finishV.toFixed(1)}h/day</span></span>
+             </div>`
+          : '';
+        return `
+          <div class="text-xs space-y-1.5 min-w-[220px]">
+            <div class="font-semibold text-gray-900 dark:text-white mb-2">Reschedule suggestions</div>
+            ${row('This week', d.weekV, d.reschedWeek)}
+            ${row('This month', d.monthV, d.reschedMonth)}
+            ${row('Initial', d.initialV, d.reschedInit)}
+            ${finishRow}
+          </div>`;
+      };
+
+      const attach = (el) => {
+        if (!el) return;
+        const show = () => Popover.open(el, popoverContent());
+        el.addEventListener('mouseenter', show);
+        el.addEventListener('click', show);
+        el.addEventListener('mouseleave', () => Popover.close());
+      };
+
+      attach(document.getElementById('bytaskRiskBadge')?.querySelector('span'));
+      attach(document.getElementById('deliveryPassedBadge'));
     }
 
     function renderTaskRequirementsCard(taskIndex) {
@@ -1997,12 +2043,23 @@
         ? (daysRemaining < 0 ? `${Math.abs(daysRemaining)} day${Math.abs(daysRemaining) !== 1 ? 's' : ''} ago` : `${daysRemaining} day${daysRemaining !== 1 ? 's' : ''}`)
         : '—';
 
+      // Initial Velocity: estimated h/day from first logged date to delivery
+      let initialVelocityText = '—';
+      if (task.estimate && task.deliveryDate) {
+        const totalEstimatedHours = parseFloat(task.estimate) * maxCap;
+        const firstLoggedDate = getAllDates().filter(d => getHours(d, taskIndex) > 0)[0];
+        if (firstLoggedDate) {
+          const wDays = countWorkingDaysBetween(firstLoggedDate, task.deliveryDate);
+          if (wDays > 0) initialVelocityText = `${(totalEstimatedHours / wDays).toFixed(1)}h/day`;
+        }
+      }
+
       container.innerHTML = `
         <div class="overflow-x-auto">
           <table class="w-full text-sm table-fixed">
             <tbody>
               <tr class="border-b border-gray-100 dark:border-white/5 hover:bg-black/5 dark:hover:bg-white/5">
-                <td class="py-2 px-3 text-left text-gray-700 dark:text-white/80 text-xs w-2/5">Estimate</td>
+                <td class="py-2 px-3 text-left text-gray-700 dark:text-white/80 text-xs w-2/5">Workload estimate</td>
                 <td class="py-2 px-3 text-right text-gray-900 dark:text-white font-semibold text-xs w-3/5">${estimateDisplay}</td>
               </tr>
               <tr class="border-b border-gray-100 dark:border-white/5 hover:bg-black/5 dark:hover:bg-white/5">
@@ -2012,6 +2069,10 @@
               <tr class="border-b border-gray-100 dark:border-white/5 hover:bg-black/5 dark:hover:bg-white/5">
                 <td class="py-2 px-3 text-left text-gray-700 dark:text-white/80 text-xs w-2/5">Week days remaining</td>
                 <td class="py-2 px-3 text-right text-gray-900 dark:text-white font-semibold text-xs w-3/5">${remainingText}</td>
+              </tr>
+              <tr class="border-b border-gray-100 dark:border-white/5 hover:bg-black/5 dark:hover:bg-white/5">
+                <td class="py-2 px-3 text-left text-gray-700 dark:text-white/80 text-xs w-2/5">Initial velocity</td>
+                <td class="py-2 px-3 text-right text-gray-900 dark:text-white font-semibold text-xs w-3/5">${initialVelocityText}</td>
               </tr>
               <tr class="border-b border-gray-100 dark:border-white/5 hover:bg-black/5 dark:hover:bg-white/5">
                 <td class="py-2 px-3 text-left text-gray-700 dark:text-white/80 text-xs w-2/5">Jira</td>
@@ -2129,6 +2190,66 @@
         badgeEl.innerHTML = `<span class="inline-flex items-center gap-1.5 text-xs px-2.5 py-1 rounded-full font-medium ${taskStatusColor}">${taskStatusDisplay}</span>`;
       }
 
+      // Velocity computations (shared between display rows and reschedule log)
+      const hoursRemaining = Math.max(0, totalEstimatedHours - loggedTotal);
+      const calDays = deliveryDate ? getWorkingDaysTo(deliveryDate) : 0;
+
+      const monthStr2 = String(linearViewMonth + 1).padStart(2, '0');
+      const monthDates2 = getAllDates().filter(d => d.startsWith(`${linearViewYear}-${monthStr2}`) && getHours(d, taskIndex) > 0);
+      const monthV = monthDates2.length > 0 ? monthDates2.reduce((s, d) => s + getHours(d, taskIndex), 0) / monthDates2.length : 0;
+
+      const _todayDate = new Date();
+      const _dow = (_todayDate.getDay() + 6) % 7;
+      const weekDates2 = [];
+      for (let i = 0; i <= _dow; i++) {
+        const d = new Date(_todayDate);
+        d.setDate(_todayDate.getDate() - _dow + i);
+        const ds = d.toISOString().split('T')[0];
+        if (ds <= todayStr() && getHours(ds, taskIndex) > 0) weekDates2.push(ds);
+      }
+      const weekV = weekDates2.length > 0 ? weekDates2.reduce((s, d) => s + getHours(d, taskIndex), 0) / weekDates2.length : 0;
+
+      const firstLoggedDate = getAllDates().filter(d => getHours(d, taskIndex) > 0)[0];
+      const initialV = (firstLoggedDate && deliveryDate) ? (() => {
+        const wDays = countWorkingDaysBetween(firstLoggedDate, deliveryDate);
+        return wDays > 0 ? totalEstimatedHours / wDays : 0;
+      })() : 0;
+
+      // Add N working days from today, return DD/MM/YYYY
+      const addWorkingDays = (n) => {
+        if (!n || n <= 0) return '—';
+        let count = 0;
+        const d = new Date();
+        while (count < Math.ceil(n)) {
+          d.setDate(d.getDate() + 1);
+          if (d.getDay() !== 0 && d.getDay() !== 6) count++;
+        }
+        return `${String(d.getDate()).padStart(2,'0')}/${String(d.getMonth()+1).padStart(2,'0')}/${d.getFullYear()}`;
+      };
+
+      const reschedWeek  = weekV  > 0 ? addWorkingDays(hoursRemaining / weekV)  : '—';
+      const reschedMonth = monthV > 0 ? addWorkingDays(hoursRemaining / monthV) : '—';
+      const reschedInit  = initialV > 0 ? addWorkingDays(hoursRemaining / initialV) : '—';
+
+      const finishV = calDays > 0 ? hoursRemaining / calDays : 0;
+      const deliveryDateDisplay = deliveryDate ? formatDateToDDMMYYYY(deliveryDate) : '—';
+
+      // Overdone suggestions: adding N days at weekV h/day
+      const suggest2  = weekV > 0 ? addWorkingDays(Math.max(0, (2  * maxCap - extraHours) / weekV)) : '—';
+      const suggest5  = weekV > 0 ? addWorkingDays(Math.max(0, (5  * maxCap - extraHours) / weekV)) : '—';
+      const suggest10 = weekV > 0 ? addWorkingDays(Math.max(0, (10 * maxCap - extraHours) / weekV)) : '—';
+      const daysToDeliverInTime = Math.ceil(extraHours / maxCap);
+      const suggestInTime = deliveryDate ? deliveryDateDisplay : '—';
+
+      window._rescheduleData = {
+        weekV, monthV, initialV,
+        reschedWeek, reschedMonth, reschedInit,
+        finishV, deliveryDateDisplay,
+        isOverdone: extraHours > 0, extraHours,
+        suggest2, suggest5, suggest10,
+        daysToDeliverInTime, suggestInTime
+      };
+
       // Set the progress content
       if (container) {
         // Progress bar with task color (or orange if overdone), allow percentage over 100%
@@ -2155,8 +2276,8 @@
               <tbody>
                 <tr class="border-b border-gray-100 dark:border-white/5 hover:bg-black/5 dark:hover:bg-white/5">
                   <td class="py-2 px-3 text-left text-gray-700 dark:text-white/80 text-xs w-2/5">Estimate</td>
-                  <td class="py-2 px-3 text-right text-gray-900 dark:text-white font-semibold text-xs w-1.5/5">${estimate}</td>
-                  <td class="py-2 px-3 text-right text-gray-900 dark:text-white font-semibold text-xs w-1.5/5">—</td>
+                  <td class="py-2 px-3 text-right text-gray-900 dark:text-white font-semibold text-xs w-1.5/5">${estimate || '—'}</td>
+                  <td class="py-2 px-3 text-right text-gray-900 dark:text-white font-semibold text-xs w-1.5/5">${totalEstimatedHours > 0 ? fmtH(totalEstimatedHours) : '—'}</td>
                 </tr>
                 <tr class="border-b border-gray-100 dark:border-white/5 hover:bg-black/5 dark:hover:bg-white/5">
                   <td class="py-2 px-3 text-left text-gray-700 dark:text-white/80 text-xs w-2/5">Total logged</td>
@@ -2168,6 +2289,23 @@
                   <td class="py-2 px-3 text-right${isOverdone ? ' text-orange-600 dark:text-orange-400' : ' text-gray-900 dark:text-white'} font-semibold text-xs w-1.5/5">${daysRemainingText}</td>
                   <td class="py-2 px-3 text-right${isOverdone ? ' text-orange-600 dark:text-orange-400' : ' text-gray-900 dark:text-white'} font-semibold text-xs w-1.5/5">${hoursRemainingText}</td>
                 </tr>
+                ${monthV > 0 ? `<tr class="border-b border-gray-100 dark:border-white/5 hover:bg-black/5 dark:hover:bg-white/5">
+                  <td class="py-2 px-3 text-left text-gray-700 dark:text-white/80 text-xs w-2/5">This month velocity</td>
+                  <td class="py-2 px-3 text-right text-gray-900 dark:text-white font-semibold text-xs" colspan="2">${monthV.toFixed(1)}h/day</td>
+                </tr>` : ''}
+                ${weekV > 0 ? `<tr class="border-b border-gray-100 dark:border-white/5 hover:bg-black/5 dark:hover:bg-white/5">
+                  <td class="py-2 px-3 text-left text-gray-700 dark:text-white/80 text-xs w-2/5">This week velocity</td>
+                  <td class="py-2 px-3 text-right text-gray-900 dark:text-white font-semibold text-xs" colspan="2">${weekV.toFixed(1)}h/day</td>
+                </tr>` : ''}
+                ${estimate && deliveryDate ? `<tr class="border-b border-gray-100 dark:border-white/5 hover:bg-black/5 dark:hover:bg-white/5">
+                  <td class="py-2 px-3 text-left text-gray-700 dark:text-white/80 text-xs w-2/5">Est. velocity to finish</td>
+                  <td class="py-2 px-3 text-right text-gray-900 dark:text-white font-semibold text-xs" colspan="2">
+                    ${calDays > 0
+                      ? `${(hoursRemaining / calDays).toFixed(1)}h/day`
+                      : `<span id="deliveryPassedBadge" class="inline-flex items-center gap-1.5 text-xs bg-red-500/20 text-red-600 dark:text-red-400 px-2.5 py-1 rounded-full font-medium cursor-pointer hover:opacity-70 transition-opacity">Delivery date passed</span>`
+                    }
+                  </td>
+                </tr>` : ''}
               </tbody>
             </table>
           </div>
@@ -2177,8 +2315,10 @@
 
     let linearChartInstance = null;
     let repartitionChartInstance = null;
-    let linearViewYear = new Date().getFullYear();
-    let linearViewMonth = new Date().getMonth();
+    const _now = new Date();
+    const _defaultDate = _now.getDate() <= 7 ? new Date(_now.getFullYear(), _now.getMonth() - 1, 1) : _now;
+    let linearViewYear = _defaultDate.getFullYear();
+    let linearViewMonth = _defaultDate.getMonth();
     let summaryCachingMode = 'hours';
 
     function renderLinearChart() {
