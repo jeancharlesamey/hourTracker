@@ -472,17 +472,15 @@
             </div>
           </div>
 
-          <!-- Hours View Toggle Group -->
-          <div class="col-span-12 flex justify-center mt-1">
-            <div class="inline-flex rounded-lg border border-gray-200 dark:border-white/10 bg-gray-50 dark:bg-white/5 p-1">
-              <button id="hoursViewWeek" class="px-4 py-2 text-sm font-medium rounded text-gray-700 dark:text-white bg-white dark:bg-white/10 shadow-sm" data-view="week">Week</button>
-              <button id="hoursViewDay" class="px-4 py-2 text-sm font-medium rounded text-gray-600 dark:text-white/60 hover:text-gray-900 dark:hover:text-white" data-view="day">Day</button>
-            </div>
-          </div>
-
           <!-- Week Hours Card -->
           <div id="weekHoursCard" class="col-span-12 bg-white dark:bg-card-dark rounded-2xl p-6 shadow-sm border border-gray-100 dark:border-white/5">
-            <h3 class="font-semibold text-gray-900 dark:text-white mb-4">Hours Done - Week</h3>
+            <div class="flex items-center gap-3 mb-4">
+              <h3 class="font-semibold text-gray-900 dark:text-white">Hours Done</h3>
+              <div class="inline-flex rounded-lg bg-black/5 dark:bg-white/5 p-0.5">
+                <button class="hoursViewBtn px-3 py-1 text-sm font-medium rounded text-gray-700 dark:text-white bg-white dark:bg-white/15 shadow-sm transition-colors" data-view="week">by week</button>
+                <button class="hoursViewBtn px-3 py-1 text-sm font-medium rounded text-gray-600 dark:text-white/60 hover:text-gray-900 dark:hover:text-white transition-colors" data-view="day">by day</button>
+              </div>
+            </div>
             <div class="relative" style="min-height: 400px; height: calc(100vh - 280px); max-height: 700px;">
               <canvas id="bytaskWeekChart"></canvas>
             </div>
@@ -490,7 +488,13 @@
 
           <!-- Day Hours Card (hidden by default) -->
           <div id="dayHoursCard" class="col-span-12 bg-white dark:bg-card-dark rounded-2xl p-6 shadow-sm border border-gray-100 dark:border-white/5 hidden">
-            <h3 class="font-semibold text-gray-900 dark:text-white mb-4">Hours Done - Day</h3>
+            <div class="flex items-center gap-3 mb-4">
+              <h3 class="font-semibold text-gray-900 dark:text-white">Hours Done</h3>
+              <div class="inline-flex rounded-lg bg-black/5 dark:bg-white/5 p-0.5">
+                <button class="hoursViewBtn px-3 py-1 text-sm font-medium rounded text-gray-600 dark:text-white/60 hover:text-gray-900 dark:hover:text-white transition-colors" data-view="week">by week</button>
+                <button class="hoursViewBtn px-3 py-1 text-sm font-medium rounded text-gray-700 dark:text-white bg-white dark:bg-white/15 shadow-sm transition-colors" data-view="day">by day</button>
+              </div>
+            </div>
             <div class="relative" style="min-height: 400px; height: calc(100vh - 280px); max-height: 700px;">
               <canvas id="bytaskDayChart"></canvas>
             </div>
@@ -615,47 +619,44 @@
     // Initialize dropdown dark mode knob position
     AppMenu.updateDarkModeKnob(darkMode);
 
-    // Hours view toggle buttons
-    const hoursViewWeek = document.getElementById('hoursViewWeek');
-    const hoursViewDay = document.getElementById('hoursViewDay');
+    // Hours view toggle buttons (using classes to handle multiple button sets)
     const weekHoursCard = document.getElementById('weekHoursCard');
     const dayHoursCard = document.getElementById('dayHoursCard');
+    const hoursViewBtns = document.querySelectorAll('.hoursViewBtn');
 
-    if (hoursViewWeek && hoursViewDay) {
-      hoursViewWeek.addEventListener('click', () => {
-        // Update button styles
-        hoursViewWeek.classList.add('bg-white', 'dark:bg-white/10', 'shadow-sm', 'text-gray-700', 'dark:text-white');
-        hoursViewWeek.classList.remove('text-gray-600', 'dark:text-white/60', 'hover:text-gray-900', 'dark:hover:text-white');
-        hoursViewDay.classList.remove('bg-white', 'dark:bg-white/10', 'shadow-sm', 'text-gray-700', 'dark:text-white');
-        hoursViewDay.classList.add('text-gray-600', 'dark:text-white/60', 'hover:text-gray-900', 'dark:hover:text-white');
+    hoursViewBtns.forEach(btn => {
+      btn.addEventListener('click', (e) => {
+        const view = e.target.dataset.view;
 
-        // Show/hide cards
-        weekHoursCard.classList.remove('hidden');
-        dayHoursCard.classList.add('hidden');
-
-        // Re-render week chart
-        if (selectedTaskIndex >= 0) {
-          renderTaskWeekChart(selectedTaskIndex);
-        }
-      });
-
-      hoursViewDay.addEventListener('click', () => {
-        // Update button styles
-        hoursViewDay.classList.add('bg-white', 'dark:bg-white/10', 'shadow-sm', 'text-gray-700', 'dark:text-white');
-        hoursViewDay.classList.remove('text-gray-600', 'dark:text-white/60', 'hover:text-gray-900', 'dark:hover:text-white');
-        hoursViewWeek.classList.remove('bg-white', 'dark:bg-white/10', 'shadow-sm', 'text-gray-700', 'dark:text-white');
-        hoursViewWeek.classList.add('text-gray-600', 'dark:text-white/60', 'hover:text-gray-900', 'dark:hover:text-white');
+        // Update all button styles
+        hoursViewBtns.forEach(b => {
+          if (b.dataset.view === view) {
+            // Active button
+            b.classList.add('bg-white', 'dark:bg-white/15', 'shadow-sm', 'text-gray-700', 'dark:text-white');
+            b.classList.remove('text-gray-600', 'dark:text-white/60', 'hover:text-gray-900', 'dark:hover:text-white');
+          } else {
+            // Inactive button
+            b.classList.remove('bg-white', 'dark:bg-white/15', 'shadow-sm', 'text-gray-700', 'dark:text-white');
+            b.classList.add('text-gray-600', 'dark:text-white/60', 'hover:text-gray-900', 'dark:hover:text-white');
+          }
+        });
 
         // Show/hide cards
-        weekHoursCard.classList.add('hidden');
-        dayHoursCard.classList.remove('hidden');
-
-        // Re-render day chart
-        if (selectedTaskIndex >= 0) {
-          renderTaskDayChart(selectedTaskIndex);
+        if (view === 'week') {
+          weekHoursCard.classList.remove('hidden');
+          dayHoursCard.classList.add('hidden');
+          if (selectedTaskIndex >= 0) {
+            renderTaskWeekChart(selectedTaskIndex);
+          }
+        } else {
+          weekHoursCard.classList.add('hidden');
+          dayHoursCard.classList.remove('hidden');
+          if (selectedTaskIndex >= 0) {
+            renderTaskDayChart(selectedTaskIndex);
+          }
         }
       });
-    }
+    });
 
     // ── Date Utilities ────────────────────────────────────
     function todayStr() {
@@ -1180,10 +1181,13 @@
         return;
       }
 
-      // Determine date range: from first logged date to last logged date (always show all work logged)
+      // Determine date range: from first logged date to last logged date or latest scope change (whichever is later)
       const startDate = allDates[0];
       const lastLoggedDate = allDates[allDates.length - 1];
-      const endDate = lastLoggedDate;
+      const latestScopeChangeDate = (task.estimateHistory || []).reduce((latest, entry) => {
+        return !latest || entry.date > latest ? entry.date : latest;
+      }, null);
+      const endDate = latestScopeChangeDate && latestScopeChangeDate > lastLoggedDate ? latestScopeChangeDate : lastLoggedDate;
 
       // Generate all dates in range
       const [startYear, startMonth, startDay] = startDate.split('-').map(Number);
@@ -1226,6 +1230,17 @@
         dateIndex++;
       }
 
+      // Build scope change map: labelIndex → { date, from, to }
+      const scopeChangeMap = {};
+      (task.estimateHistory || []).forEach(entry => {
+        const entryDate = parseDate(entry.date);
+        if (entryDate < start || entryDate > end) return;
+        const dayOffset = Math.round((entryDate - start) / (1000 * 60 * 60 * 24));
+        if (dayOffset >= 0 && dayOffset < labels.length) {
+          scopeChangeMap[dayOffset] = entry;
+        }
+      });
+
       // Compute Target Velocity values
       let loggedTotal = 0;
       getAllDates().forEach(d => { loggedTotal += getHours(d, taskIndex); });
@@ -1236,6 +1251,62 @@
       const currentTV = calendarDaysRemaining > 0 ? hoursRemaining / calendarDaysRemaining : 0;
 
       const projectedSlipDays = calculateProjectedSlip(taskIndex, task.deliveryDate, estimate);
+
+      // Define scope change markers plugin
+      const scopeChangeMarkersPlugin = {
+        id: 'scopeChangeMarkers',
+        afterDatasetsDraw(chart) {
+          const entries = Object.entries(scopeChangeMap);
+          if (entries.length === 0) return;
+          const { ctx, chartArea } = chart;
+          const xScale = chart.scales.x;
+          const yScale = chart.scales.y;
+
+          entries.forEach(([idx, change]) => {
+            const idxNum = parseInt(idx, 10);
+            const x = xScale.getPixelForValue(idxNum);
+            if (x < chartArea.left || x > chartArea.right) return;
+
+            // Diamond positioned at remaining hours after the scope change
+            // = remaining before + hours added = actualData[idx] + (change.to - change.from) * maxCap
+            const remainingBefore = actualData[idxNum] ?? 0;
+            const hoursAdded = (change.to - change.from) * maxCap;
+            const remainingAfter = Math.max(0, remainingBefore + hoursAdded);
+            const y = yScale.getPixelForValue(remainingAfter);
+
+            ctx.save();
+            // Vertical dashed amber line
+            ctx.strokeStyle = 'rgba(245, 158, 11, 0.75)';
+            ctx.lineWidth = 1.5;
+            ctx.setLineDash([4, 3]);
+            ctx.beginPath();
+            ctx.moveTo(x, chartArea.top);
+            ctx.lineTo(x, chartArea.bottom);
+            ctx.stroke();
+            // Diamond marker at the new remaining hours level
+            ctx.setLineDash([]);
+            ctx.fillStyle = 'rgba(245, 158, 11, 0.9)';
+            ctx.beginPath();
+            ctx.moveTo(x, y - 6);
+            ctx.lineTo(x + 5, y);
+            ctx.lineTo(x, y + 6);
+            ctx.lineTo(x - 5, y);
+            ctx.closePath();
+            ctx.fill();
+
+            // Label showing days added (to the left of the diamond)
+            const daysAdded = change.to - change.from;
+            const labelText = `+${daysAdded.toFixed(1)}d`;
+            ctx.fillStyle = 'rgba(245, 158, 11, 0.9)';
+            ctx.font = '11px sans-serif';
+            ctx.textAlign = 'right';
+            ctx.textBaseline = 'middle';
+            ctx.fillText(labelText, x - 10, y);
+
+            ctx.restore();
+          });
+        }
+      };
 
       if (taskBurnChartInstance) {
         taskBurnChartInstance.destroy();
@@ -1295,6 +1366,11 @@
                   if (projectedSlipDays !== null && projectedSlipDays > 0) {
                     lines.push(`Projected slip: +${projectedSlipDays}d at current pace`);
                   }
+                  const sc = scopeChangeMap[context.dataIndex];
+                  if (sc) {
+                    const diff = sc.to - sc.from;
+                    lines.push(`Scope +${diff}d : ${sc.from}d → ${sc.to}d`);
+                  }
                   return lines;
                 }
               }
@@ -1311,7 +1387,8 @@
               grid: { color: darkMode ? '#333' : '#eee' }
             }
           }
-        }
+        },
+        plugins: [scopeChangeMarkersPlugin]
       });
     }
 

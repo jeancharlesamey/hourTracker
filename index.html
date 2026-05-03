@@ -324,7 +324,8 @@
       deliveryDate: t.deliveryDate ?? '',
       jiraLink: t.jiraLink ?? '',
       status: t.status ?? '',
-      idOpus: t.idOpus ?? ''
+      idOpus: t.idOpus ?? '',
+      estimateHistory: t.estimateHistory ?? []
     }));
     let completions = loadJSON('dt_completions', {});
     let maxCap = parseFloat(localStorage.getItem('dt_maxCap')) || 7.5;

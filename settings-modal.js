@@ -20,10 +20,10 @@ const COLOR_NAMES = {
 };
 
 const DEFAULT_TASKS = [
-  { name: 'Exercise', color: 'green', estimate: '', deliveryDate: '', jiraLink: '', status: '', idOpus: '' },
-  { name: 'Read', color: 'blue', estimate: '', deliveryDate: '', jiraLink: '', status: '', idOpus: '' },
-  { name: 'Meditate', color: 'purple', estimate: '', deliveryDate: '', jiraLink: '', status: '', idOpus: '' },
-  { name: 'Journal', color: 'amber', estimate: '', deliveryDate: '', jiraLink: '', status: '', idOpus: '' },
+  { name: 'Exercise', color: 'green', estimate: '', deliveryDate: '', jiraLink: '', status: '', idOpus: '', estimateHistory: [] },
+  { name: 'Read', color: 'blue', estimate: '', deliveryDate: '', jiraLink: '', status: '', idOpus: '', estimateHistory: [] },
+  { name: 'Meditate', color: 'purple', estimate: '', deliveryDate: '', jiraLink: '', status: '', idOpus: '', estimateHistory: [] },
+  { name: 'Journal', color: 'amber', estimate: '', deliveryDate: '', jiraLink: '', status: '', idOpus: '', estimateHistory: [] },
 ];
 
 const SettingsModal = {
@@ -291,7 +291,9 @@ const SettingsModal = {
               <label for="taskEstimate${i}" class="text-xs text-gray-400 dark:text-white/60 font-medium block mb-1">Est.</label>
               <input id="taskEstimate${i}" type="number" min="0" step="1" value="${t.estimate || ''}" placeholder="days"
                 class="w-full bg-black/5 dark:bg-white/5 border border-gray-200 dark:border-white/10 rounded-lg px-3 py-2 text-sm text-gray-900 dark:text-white placeholder-gray-300 dark:placeholder-white/20 focus:outline-none focus:border-gray-400 dark:focus:border-white/30 transition-colors"
-                oninput="window._settingsModalUpdateTaskEstimate(${i}, this.value)">
+                onfocus="window._settingsModalFocusEstimate(${i})"
+                oninput="window._settingsModalUpdateTaskEstimate(${i}, this.value)"
+                onblur="window._settingsModalFinalizeEstimateChange(${i}, this.value)">
             </div>
             <div class="col-span-2">
               <label for="taskDelivery${i}" class="text-xs text-gray-400 dark:text-white/60 font-medium block mb-1">Delivery date</label>
@@ -649,12 +651,43 @@ window._settingsModalUpdateTaskColor = (i, c) => {
   }
 };
 
+let _estimateFocusValue = null;
+
+window._settingsModalFocusEstimate = (i) => {
+  const tasks = SettingsModal.config.getTasks();
+  if (tasks[i]) {
+    _estimateFocusValue = parseFloat(tasks[i].estimate) || 0;
+  }
+};
+
 window._settingsModalUpdateTaskEstimate = (i, v) => {
   const tasks = SettingsModal.config.getTasks();
   if (tasks[i]) {
     tasks[i].estimate = v;
     SettingsModal.config.onSave?.();
   }
+};
+
+window._settingsModalFinalizeEstimateChange = (i, v) => {
+  const tasks = SettingsModal.config.getTasks();
+  if (!tasks[i]) return;
+  const newVal = parseFloat(v) || 0;
+  const oldVal = _estimateFocusValue ?? (parseFloat(tasks[i].estimate) || 0);
+
+  if (newVal > oldVal) {
+    const completions = SettingsModal.config.getCompletions?.() || {};
+    const hasLoggedHours = Object.values(completions).some(
+      comp => Array.isArray(comp) && (comp[i] || 0) > 0
+    );
+    if (hasLoggedHours) {
+      if (!Array.isArray(tasks[i].estimateHistory)) tasks[i].estimateHistory = [];
+      const today = new Date();
+      const dateStr = `${today.getFullYear()}-${String(today.getMonth()+1).padStart(2,'0')}-${String(today.getDate()).padStart(2,'0')}`;
+      tasks[i].estimateHistory.push({ date: dateStr, from: oldVal, to: newVal });
+    }
+  }
+  _estimateFocusValue = null;
+  SettingsModal.config.onSave?.();
 };
 
 window._settingsModalUpdateTaskDeliveryDate = (i, v) => {
@@ -695,7 +728,7 @@ window._settingsModalDeleteTask = (i) => {
 window._settingsModalAddTask = () => {
   const usedColors = SettingsModal.config.getTasks().map(t => t.color);
   const nextColor = PALETTE.find(c => !usedColors.includes(c)) || PALETTE[SettingsModal.config.getTasks().length % PALETTE.length];
-  const newTask = { name: `Task ${SettingsModal.config.getTasks().length + 1}`, color: nextColor, estimate: '', deliveryDate: '', jiraLink: '', status: '', idOpus: '' };
+  const newTask = { name: `Task ${SettingsModal.config.getTasks().length + 1}`, color: nextColor, estimate: '', deliveryDate: '', jiraLink: '', status: '', idOpus: '', estimateHistory: [] };
   const tasks = SettingsModal.config.getTasks();
   tasks.push(newTask);
   SettingsModal.config.onSave?.();
