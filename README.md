@@ -1,6 +1,6 @@
 ◷ **HOUR TRACKER** — one file. no server. no fuss.
 
-**v1.3.0-beta3**
+**v1.3.0-beta2**
 
 A minimal, offline-first hour tracker that lives in your browser. No login, no server, no complications.
 
@@ -10,11 +10,11 @@ A minimal, offline-first hour tracker that lives in your browser. No login, no s
 
 **You work on multiple projects and need to understand where your time actually goes.**
 
-Every Friday, you review the week. You notice 3 days hit your daily cap (7.5h), 2 days stopped at 4h, and 2 days had no logged hours. The calendar shows it visually. The analytics show it numerically. You see that design work consumed 24.2h, and writing only 8.7h. Next week, you adjust. No guessing. No feeling. Numbers.
+Every Friday, you review the week. You notice 3 days hit your daily cap (7.5h), 2 days stopped at 4h, and 2 days had no logged hours. The calendar shows it visually. The analytics show it in details. You see that design and refinement work consumed 28.2h, and product discovery only 2.7h. Next week, you adjust. No guessing. No feeling. Numbers.
 
 This is the premise: **"I can't improve what I can't measure."**
 
-Most trackers ask you to log in real-time. You forget. You estimate retroactively. The data becomes fiction. This one stays simple—open at the end of your half-day or day, type hours per task, move on. No syncing. No apps. No friction. Just your browser and the truth.
+Most trackers ask you to log in real-time. You forget. You estimate retroactively. The data becomes fiction. This one tracker stays simple—open at the end of your half-day or day, type hours per task and move on. and you get tge calculation in day per week or month pr even pourcentage. No cloud syncing. No apps. No friction. Just your browser and the truth.
 
 The calendar shows **4 squares per day**, each representing 2 hours (8h total capacity). Each day in March 2026 displays as a grid where you can see how many hours were logged — 2, 3, 4, 5, etc. — with squares filled from bottom to top.
 
@@ -46,7 +46,7 @@ How it fills:
 - Click the month label for week-by-week summary
 
 **Analytics**
-- **Activity:** GitHub-style heatmap (all tasks + per-task)
+- **Activity overview:** GitHub-style heatmap (all tasks + per-task)
 - **Intensity:** Daily/weekly bar charts with averages
 - **Repartition:** Task distribution at a glance
 - **Burn Chart:** Hours logged vs. ideal trajectory
@@ -62,7 +62,7 @@ How it fills:
 
 **Other**
 - Light / dark mode
-- All data in localStorage (stays private)
+- All data in localStorage 
 - Works fully offline
 - No dependencies
 
@@ -107,7 +107,7 @@ Data stored locally: your task list, colors, hours per day, daily cap, and last 
 
 ## Recent Updates
 
-**v1.3.0** — Settings sidebar, task filtering, analytics refinements
+**v1.3.0-beta2** — Settings sidebar, task filtering, analytics refinements
 - Settings Sidebar: Redesigned settings UI as dedicated sidebar modal with integrated task creation
 - Task Status Persistence: Fixed migration to preserve status and external IDs across sessions
 - Smart Task Filtering: Tasks now filter by month (showing only tasks with logged hours in selected month) across Weekly Breakdown, legends, and views
@@ -116,12 +116,12 @@ Data stored locally: your task list, colors, hours per day, daily cap, and last 
 - Status Colors: Progress card badges now display per-status semantic colors (soon=gray, inProgress=yellow, inPause=orange, done=green, checking=blue, archived=gray)
 - Navigation Fixes: Back buttons on Archive and Analytics pages now use explicit navigation for reliability
 
-**v1.2.1-beta.2** — Bug fixes
+**v1.2.1-beta2** — Bug fixes
 - Color Picker: Fixed visual glitch where picker state switched across all tasks (Issue #8)
 - Back Navigation: Changed from folder link to history.back() for clean navigation (Issue #9)
 - Dark Mode Flash: Added synchronous dark mode check in page head to prevent light mode flash on navigation
 
-**v1.2.0-beta.2** — Delivery tracking, charts, full-year heatmap
+**v1.2.0-beta2** — Delivery tracking, charts, full-year heatmap
 - Burn Chart: Refined visualization with ideal trajectory line
 - Date Formatting: Consistent display + "Month Day Year" in requirements
 - Hours Done Views: Toggle between Week (W14) and Day (Apr 1) with tooltips
