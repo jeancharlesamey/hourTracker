@@ -454,7 +454,7 @@
           <div id="bytaskProgress" class="col-span-12 md:col-span-7 bg-white dark:bg-card-dark rounded-2xl p-6 shadow-sm border border-gray-100 dark:border-white/5">
             <div class="flex items-center justify-between mb-4">
               <h3 class="font-semibold text-gray-900 dark:text-white">Momentum</h3>
-              <div class="flex items-center gap-2">
+              <div class="flex items-center gap-3">
                 <div id="bytaskRiskBadge" class="hidden">
                   <span class="inline-flex items-center gap-1.5 text-xs bg-orange-500/20 text-orange-600 dark:text-orange-400 px-3 py-1 rounded-full font-medium cursor-pointer hover:opacity-70 transition-opacity"></span>
                 </div>
@@ -823,6 +823,43 @@
       return count + 1;
     }
 
+    // Calculate projected slip based on recent velocity
+    function calculateProjectedSlip(taskIndex, deliveryDateStr, estimate) {
+      if (!estimate || !deliveryDateStr) return null;
+
+      let deliveryDate = deliveryDateStr;
+      if (deliveryDate && deliveryDate.includes('/')) {
+        const [d, m, y] = deliveryDate.split('/');
+        deliveryDate = `${y}-${m}-${d}`;
+      }
+
+      const totalEstimatedHours = estimate * maxCap;
+      let loggedTotal = 0;
+      getAllDates().forEach(d => { loggedTotal += getHours(d, taskIndex); });
+      const hoursRemaining = Math.max(0, totalEstimatedHours - loggedTotal);
+      const calendarDaysRemaining = getWorkingDaysTo(deliveryDate);
+
+      // Compute recent velocity (last 7 active days)
+      const today = new Date(todayStr());
+      const sevenAgo = new Date(today);
+      sevenAgo.setDate(sevenAgo.getDate() - 7);
+      const recentDates = getAllDates().filter(d => {
+        const dt = parseDate(d);
+        return dt >= sevenAgo && dt <= today && getHours(d, taskIndex) > 0;
+      });
+      const recentV = recentDates.length > 0
+        ? recentDates.reduce((s, d) => s + getHours(d, taskIndex), 0) / recentDates.length
+        : 0;
+
+      // Projected slip: if current velocity continues, how many days late?
+      if (recentV > 0) {
+        const daysToFinish = hoursRemaining / recentV;
+        return Math.round(daysToFinish - calendarDaysRemaining);
+      }
+
+      return null;
+    }
+
     // Setup popover events for delivery date squares
     function setupDeliveryDatePopovers() {
       // Attach to cells with delivery dates
@@ -908,6 +945,21 @@
         current.setDate(current.getDate() + 1);
       }
       return count;
+    }
+
+    // SVG Icon cache
+    const svgCache = {};
+    async function loadSvg(filename) {
+      if (svgCache[filename]) return svgCache[filename];
+      try {
+        const response = await fetch(`./icons/${filename}`);
+        const svg = await response.text();
+        svgCache[filename] = svg;
+        return svg;
+      } catch (e) {
+        console.warn(`Failed to load ${filename}`);
+        return '';
+      }
     }
 
     // ── Rendering ──────────────────────────────────────────
@@ -1183,20 +1235,7 @@
       const originalTV = workingDaysTotal > 0 ? totalEstimatedHours / workingDaysTotal : 0;
       const currentTV = calendarDaysRemaining > 0 ? hoursRemaining / calendarDaysRemaining : 0;
 
-      // Compute recent velocity (last 7 active days)
-      const today = new Date(todayStr());
-      const sevenAgo = new Date(today);
-      sevenAgo.setDate(sevenAgo.getDate() - 7);
-      const recentDates = getAllDates().filter(d => {
-        const dt = parseDate(d);
-        return dt >= sevenAgo && dt <= today && getHours(d, taskIndex) > 0;
-      });
-      const recentV = recentDates.length > 0
-        ? recentDates.reduce((s, d) => s + getHours(d, taskIndex), 0) / recentDates.length
-        : 0;
-      const projectedSlipDays = recentV > 0 && calendarDaysRemaining > 0
-        ? Math.round(hoursRemaining / recentV - calendarDaysRemaining)
-        : null;
+      const projectedSlipDays = calculateProjectedSlip(taskIndex, task.deliveryDate, estimate);
 
       if (taskBurnChartInstance) {
         taskBurnChartInstance.destroy();
@@ -1968,15 +2007,41 @@
       }
 
       const calendarDaysRemaining = getWorkingDaysTo(deliveryDate);
-      if (calendarDaysRemaining === 0) {
-        el.classList.add('hidden');
+      const hoursRemaining = Math.max(0, totalEstimatedHours - loggedTotal);
+      const daysOfWorkRemaining = hoursRemaining / maxCap;
+      const projectedSlip = calculateProjectedSlip(taskIndex, task.deliveryDate, estimate);
+
+      // Show projected slip if it exists (whether before or after delivery date)
+      if (projectedSlip !== null && projectedSlip > 0) {
+        el.classList.remove('hidden');
+        const span = el.querySelector('span');
+        span.className = 'inline-flex items-center gap-1.5 text-xs bg-orange-500/20 text-orange-600 dark:text-orange-400 px-3 py-1 rounded-full font-medium cursor-pointer hover:opacity-70 transition-opacity';
+
+        // Calculate projected delivery date: today + working days remaining + slip days
+        const today = new Date(todayStr());
+        const projectedDate = new Date(today);
+
+        // Add calendar days to reach the projected slip date
+        let daysAdded = 0;
+        while (daysAdded < calendarDaysRemaining + projectedSlip) {
+          projectedDate.setDate(projectedDate.getDate() + 1);
+          const dow = projectedDate.getDay();
+          if (dow !== 0 && dow !== 6) daysAdded++;
+        }
+
+        const deliveryDisplay = `${String(projectedDate.getDate()).padStart(2, '0')}/${String(projectedDate.getMonth() + 1).padStart(2, '0')}/${projectedDate.getFullYear()}`;
+
+        span.textContent = `If pace unchanged: deliver +${projectedSlip}d late : ${deliveryDisplay}`;
+
+        // Store data for popover
+        window._rescheduleData = window._rescheduleData || {};
+        window._rescheduleData.projectedSlip = projectedSlip;
+        window._rescheduleData.projectedDeliveryDate = deliveryDisplay;
+
         return;
       }
 
-      const hoursRemaining = Math.max(0, totalEstimatedHours - loggedTotal);
-      const daysOfWorkRemaining = hoursRemaining / maxCap;
-
-      // When delivery date has passed, hide risk badge (Delivery date passed shown in TIME PRESSURE instead)
+      // When delivery date has passed with no projected slip, hide badge
       if (calendarDaysRemaining <= 0) {
         el.classList.add('hidden');
         return;
@@ -2005,6 +2070,26 @@
       if (!d) return;
 
       const popoverContent = () => {
+        // Projected slip popover
+        if (d.projectedSlip !== undefined) {
+          return `
+            <div class="text-xs space-y-2 min-w-[280px]">
+              <div class="font-semibold text-gray-900 dark:text-white">Projected Slip</div>
+              <div class="text-gray-600 dark:text-gray-400">
+                At your current pace, this task will deliver <span class="font-semibold">+${d.projectedSlip} day${d.projectedSlip !== 1 ? 's' : ''} late</span> on ${d.projectedDeliveryDate}.
+              </div>
+              <div class="pt-2 mt-2 border-t border-gray-200 dark:border-white/10">
+                <div class="text-gray-700 dark:text-gray-300 font-semibold mb-1.5">Options:</div>
+                <ul class="space-y-1.5 text-gray-600 dark:text-gray-400">
+                  <li>• <span class="font-semibold">Increase velocity</span> to finish sooner</li>
+                  <li>• <span class="font-semibold">Descope work</span> to reduce remaining hours</li>
+                  <li>• <span class="font-semibold">Extend deadline</span> if possible</li>
+                  <li>• <span class="font-semibold">Adjust estimate</span> if original was too optimistic</li>
+                </ul>
+              </div>
+            </div>`;
+        }
+
         if (d.isOverdone) {
           const overdoneRow = (label, date) => date && date !== '—'
             ? `<div class="flex items-center justify-between gap-4">
@@ -2251,8 +2336,11 @@
       const weekV = weekDates2.length > 0 ? weekDates2.reduce((s, d) => s + getHours(d, taskIndex), 0) / weekDates2.length : 0;
 
       const firstLoggedDate = getAllDates().filter(d => getHours(d, taskIndex) > 0)[0];
-      const initialV = (firstLoggedDate && deliveryDate) ? (() => {
-        const wDays = countWorkingDaysBetween(firstLoggedDate, deliveryDate);
+      const initialV = firstLoggedDate ? (() => {
+        const today = todayStr();
+        // Use delivery date only if it's in the future, otherwise use today
+        const referenceDate = deliveryDate && deliveryDate > today ? deliveryDate : today;
+        const wDays = countWorkingDaysBetween(firstLoggedDate, referenceDate);
         return wDays > 0 ? totalEstimatedHours / wDays : 0;
       })() : 0;
 
@@ -2301,8 +2389,50 @@
       // Compute days late if delivery has passed
       const daysLate = calDays === 0 && deliveryDate ? calculateDaysLate(deliveryDate, todayStr()) : 0;
 
-      // Compute pacing percentage
-      const pacingPercent = weekV > 0 && initialV > 0 ? Math.round(weekV / initialV * 100) : null;
+      // Compute last 2 days and last 5 filled days velocity for trend
+      const today = new Date(todayStr());
+      const twoDaysAgo = new Date(today);
+      twoDaysAgo.setDate(twoDaysAgo.getDate() - 2);
+      const fiveDaysAgo = new Date(today);
+      fiveDaysAgo.setDate(fiveDaysAgo.getDate() - 5);
+
+      const last2Days = getAllDates().filter(d => {
+        const dt = parseDate(d);
+        return dt >= twoDaysAgo && dt <= today && getHours(d, taskIndex) > 0;
+      });
+      const last5Days = getAllDates().filter(d => {
+        const dt = parseDate(d);
+        return dt >= fiveDaysAgo && dt <= today && getHours(d, taskIndex) > 0;
+      });
+
+      const last2V = last2Days.length > 0 ? last2Days.reduce((s, d) => s + getHours(d, taskIndex), 0) / last2Days.length : 0;
+      const last5V = last5Days.length > 0 ? last5Days.reduce((s, d) => s + getHours(d, taskIndex), 0) / last5Days.length : 0;
+
+      // Determine trend: compare last 2 days to last 5 days
+      let trendIcon = '';
+      let trendColor = '';
+      let trendFile = '';
+      if (last2V > 0 && last5V > 0) {
+        const diff = last2V - last5V;
+        const diffPercent = (diff / last5V) * 100;
+        if (diffPercent > 5) {
+          // Increasing
+          trendFile = 'move-up-right.svg';
+          trendColor = 'text-green-500';
+        } else if (diffPercent < -5) {
+          // Decreasing
+          trendFile = 'move-down-right.svg';
+          trendColor = 'text-red-500';
+        } else {
+          // Stable
+          trendFile = 'move-right.svg';
+          trendColor = 'text-gray-500 dark:text-gray-400';
+        }
+      }
+
+      // Compute pacing percentage (use week velocity, fallback to month velocity)
+      const velocityForPacing = weekV > 0 ? weekV : monthV > 0 ? monthV : 0;
+      const pacingPercent = velocityForPacing > 0 && initialV > 0 ? Math.round(velocityForPacing / initialV * 100) : null;
       const pacingColor = pacingPercent !== null
         ? (pacingPercent >= 80 ? 'text-green-600 dark:text-green-400' : pacingPercent >= 40 ? 'text-yellow-600 dark:text-yellow-400' : 'text-red-600 dark:text-red-400')
         : '';
@@ -2383,19 +2513,28 @@
                   <td class="py-2 px-3 text-left text-gray-700 dark:text-white/80 text-xs w-2/5">Initial</td>
                   <td class="py-2 px-3 text-right text-gray-900 dark:text-white font-semibold text-xs" colspan="2">${initialV.toFixed(1)}h/day</td>
                 </tr>` : ''}
-                ${pacingPercent !== null ? `<tr class="border-b border-gray-100 dark:border-white/5 hover:bg-black/5 dark:hover:bg-white/5 group relative cursor-help pacingRow">
-                  <td class="py-2 px-3 text-left text-gray-700 dark:text-white/80 text-xs w-2/5 flex items-center gap-1">
+                ${pacingPercent !== null ? `<tr class="border-b border-gray-100 dark:border-white/5 hover:bg-black/5 dark:hover:bg-white/5 group relative pacingRow">
+                  <td class="py-2 px-3 text-left text-gray-700 dark:text-white/80 text-xs w-2/5">
                     <span>Pacing</span>
                   </td>
-                  <td class="py-2 px-3 text-right font-semibold text-xs ${pacingColor}" colspan="2">${pacingPercent}% of initial</td>
+                  <td class="py-2 px-3 text-right font-semibold text-xs ${pacingColor} cursor-help" id="pacingPercent-${pacingLegendId}">
+                    ${pacingPercent}% to initial pace
+                  </td>
+                  <td class="py-2 px-3 text-right text-xs cursor-help" id="pacingTrend-${pacingLegendId}">
+                    ${trendFile ? `<span class="inline-flex items-center gap-1">2 last days pace <span id="trendIcon-${pacingLegendId}" class="inline-flex ${trendColor}"></span></span>` : '—'}
+                  </td>
                 </tr>
-                <div id="${pacingLegendId}" class="hidden fixed bg-gray-900 dark:bg-gray-800 text-white dark:text-gray-100 px-3 py-2 rounded text-xs z-50 pointer-events-none" style="border: 1px solid rgba(200,200,200,0.2);">
+                <div id="${pacingLegendId}-pct" class="hidden fixed bg-gray-900 dark:bg-gray-800 text-white dark:text-gray-100 px-3 py-2 rounded text-xs z-50 pointer-events-none" style="border: 1px solid rgba(200,200,200,0.2);">
+                  <div class="font-semibold mb-1">Pace ${pacingPercent}% similar to initial pace</div>
                   <div class="text-gray-300">Pacing = This week velocity / Initial pace</div>
                   <div class="mt-1 space-y-0.5">
                     <div><span class="text-green-400 font-semibold">80%+</span> = strong pace</div>
                     <div><span class="text-yellow-400 font-semibold">40–79%</span> = watchful pace</div>
                     <div><span class="text-red-400 font-semibold">&lt;40%</span> = slowing down</div>
                   </div>
+                </div>
+                <div id="${pacingLegendId}-trend" class="hidden fixed bg-gray-900 dark:bg-gray-800 text-white dark:text-gray-100 px-3 py-2 rounded text-xs z-50 pointer-events-none" style="border: 1px solid rgba(200,200,200,0.2);">
+                  <div class="font-semibold mb-1">2 last days pace are ${trendFile === 'move-up-right.svg' ? 'increasing' : trendFile === 'move-down-right.svg' ? 'decreasing' : 'stable'} compare to last 5 days</div>
                 </div>` : ''}
                 ` : ''}
               </tbody>
@@ -2403,26 +2542,60 @@
           </div>
         `;
 
+        // Load and inject trend icon SVG
+        if (trendFile && pacingLegendId) {
+          loadSvg(trendFile).then(svg => {
+            const iconEl = document.getElementById(`trendIcon-${pacingLegendId}`);
+            if (iconEl && svg) {
+              iconEl.innerHTML = svg;
+            }
+          });
+        }
+
         // Attach pacing legend event listeners
         if (pacingPercent !== null) {
           setTimeout(() => {
-            const pacingRow = container.querySelector('.pacingRow');
-            const pacingLegend = document.getElementById(pacingLegendId);
-            if (pacingRow && pacingLegend) {
-              const showLegend = (e) => {
-                const rect = pacingRow.getBoundingClientRect();
-                pacingLegend.style.left = (rect.left + 10) + 'px';
-                pacingLegend.style.top = (rect.bottom + 5) + 'px';
-                pacingLegend.classList.remove('hidden');
+            // Percentage popover
+            const pacingPercentEl = document.getElementById(`pacingPercent-${pacingLegendId}`);
+            const pacingPercentPopover = document.getElementById(`${pacingLegendId}-pct`);
+            if (pacingPercentEl && pacingPercentPopover) {
+              const showPercentPopover = () => {
+                const rect = pacingPercentEl.getBoundingClientRect();
+                pacingPercentPopover.style.left = (rect.left - 50) + 'px';
+                pacingPercentPopover.style.top = (rect.bottom + 5) + 'px';
+                pacingPercentPopover.classList.remove('hidden');
               };
-              const hideLegend = () => pacingLegend.classList.add('hidden');
-              pacingRow.addEventListener('mouseenter', showLegend);
-              pacingRow.addEventListener('mouseleave', hideLegend);
-              pacingRow.addEventListener('click', showLegend);
-              document.addEventListener('click', (e) => {
-                if (!pacingRow.contains(e.target) && !pacingLegend.contains(e.target)) hideLegend();
-              });
+              const hidePercentPopover = () => pacingPercentPopover.classList.add('hidden');
+              pacingPercentEl.addEventListener('mouseenter', showPercentPopover);
+              pacingPercentEl.addEventListener('mouseleave', hidePercentPopover);
+              pacingPercentEl.addEventListener('click', showPercentPopover);
             }
+
+            // Trend popover
+            const pacingTrendEl = document.getElementById(`pacingTrend-${pacingLegendId}`);
+            const pacingTrendPopover = document.getElementById(`${pacingLegendId}-trend`);
+            if (pacingTrendEl && pacingTrendPopover) {
+              const showTrendPopover = () => {
+                const rect = pacingTrendEl.getBoundingClientRect();
+                pacingTrendPopover.style.left = (rect.left - 50) + 'px';
+                pacingTrendPopover.style.top = (rect.bottom + 5) + 'px';
+                pacingTrendPopover.classList.remove('hidden');
+              };
+              const hideTrendPopover = () => pacingTrendPopover.classList.add('hidden');
+              pacingTrendEl.addEventListener('mouseenter', showTrendPopover);
+              pacingTrendEl.addEventListener('mouseleave', hideTrendPopover);
+              pacingTrendEl.addEventListener('click', showTrendPopover);
+            }
+
+            // Close popover when clicking outside
+            document.addEventListener('click', (e) => {
+              const pacingPercentEl = document.getElementById(`pacingPercent-${pacingLegendId}`);
+              const pacingTrendEl = document.getElementById(`pacingTrend-${pacingLegendId}`);
+              const pacingPercentPopover = document.getElementById(`${pacingLegendId}-pct`);
+              const pacingTrendPopover = document.getElementById(`${pacingLegendId}-trend`);
+              if (pacingPercentEl && !pacingPercentEl.contains(e.target) && pacingPercentPopover) pacingPercentPopover.classList.add('hidden');
+              if (pacingTrendEl && !pacingTrendEl.contains(e.target) && pacingTrendPopover) pacingTrendPopover.classList.add('hidden');
+            });
           }, 0);
         }
       }
