@@ -1,6 +1,6 @@
 ◷ **HOUR TRACKER** — one file. no server. no fuss.
 
-**v1.3.0**
+**v1.3.0-beta3**
 
 A minimal, offline-first hour tracker that lives in your browser. No login, no server, no complications.
 
