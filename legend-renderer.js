@@ -11,6 +11,7 @@ const LegendRenderer = {
       todayStr,
       COLOR_HEX,
       fmtH,
+      onTaskClick,
     } = options;
 
     const el = document.getElementById(elementId);
@@ -40,5 +41,15 @@ const LegendRenderer = {
       })
       .filter(html => html !== '')
       .join('');
+
+    // Add click handlers if callback provided
+    if (onTaskClick) {
+      el.querySelectorAll('[data-taskindex]').forEach(item => {
+        item.addEventListener('click', () => {
+          const taskIndex = parseInt(item.dataset.taskindex, 10);
+          onTaskClick(taskIndex);
+        });
+      });
+    }
   },
 };

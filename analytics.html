@@ -361,22 +361,30 @@
 
     <!-- Main Content -->
     <div class="flex-1 w-full mx-auto px-4 md:px-8 py-8 space-y-6 pt-20">
-      <!-- Shared Month Navigation -->
-      <div class="flex items-center justify-between">
-        <button id="prevMonthBtn" aria-label="Previous month" class="nav-arrow w-9 h-9 md:w-10 md:h-10 flex items-center justify-center rounded-lg hover:bg-black/5 dark:hover:bg-white/10">
-          <img src="./icons/chevron-left.svg" alt="" class="w-5 h-5 md:w-6 md:h-6 text-gray-900 dark:text-white forced-color-adjust-none md:forced-color-adjust-auto" aria-hidden="true">
-        </button>
-        <span id="monthLabel" class="text-sm md:text-lg font-semibold text-gray-900 dark:text-white cursor-pointer hover:opacity-80 transition-opacity"></span>
-        <button id="nextMonthBtn" aria-label="Next month" class="nav-arrow w-9 h-9 md:w-10 md:h-10 flex items-center justify-center rounded-lg hover:bg-black/5 dark:hover:bg-white/10">
-          <img src="./icons/chevron-right.svg" alt="" class="w-5 h-5 md:w-6 md:h-6 text-gray-900 dark:text-white forced-color-adjust-none md:forced-color-adjust-auto" aria-hidden="true">
-        </button>
-      </div>
+      <!-- Sticky Navigation Zone -->
+      <div class="sticky top-0 z-20 bg-surface dark:bg-surface-dark pt-4 pb-4 -mx-4 md:-mx-8 px-4 md:px-8 space-y-4">
+        <!-- Shared Month Navigation -->
+        <div class="flex items-center justify-between">
+          <button id="prevMonthBtn" aria-label="Previous month" class="nav-arrow w-9 h-9 md:w-10 md:h-10 flex items-center justify-center rounded-lg hover:bg-black/5 dark:hover:bg-white/10">
+            <img src="./icons/chevron-left.svg" alt="" class="w-5 h-5 md:w-6 md:h-6 text-gray-900 dark:text-white forced-color-adjust-none md:forced-color-adjust-auto" aria-hidden="true">
+          </button>
+          <div class="relative">
+            <span id="monthLabel" class="text-sm md:text-lg font-semibold text-gray-900 dark:text-white cursor-pointer hover:opacity-80 transition-opacity"></span>
+            <div id="monthTooltip" class="absolute top-full left-1/2 transform -translate-x-1/2 mt-2 px-3 py-1.5 bg-gray-900 dark:bg-gray-700 text-white text-xs whitespace-nowrap rounded-md opacity-0 pointer-events-none transition-opacity duration-0" style="z-index: 50;">
+              <!-- filled by JS -->
+            </div>
+          </div>
+          <button id="nextMonthBtn" aria-label="Next month" class="nav-arrow w-9 h-9 md:w-10 md:h-10 flex items-center justify-center rounded-lg hover:bg-black/5 dark:hover:bg-white/10">
+            <img src="./icons/chevron-right.svg" alt="" class="w-5 h-5 md:w-6 md:h-6 text-gray-900 dark:text-white forced-color-adjust-none md:forced-color-adjust-auto" aria-hidden="true">
+          </button>
+        </div>
 
-      <!-- View Toggle -->
-      <div class="flex justify-center">
-        <div class="inline-flex rounded-lg bg-gray-100 dark:bg-white/5 p-1">
-          <button class="view-toggle-btn active" data-view="overview" onclick="switchView('overview')">Overview</button>
-          <button class="view-toggle-btn" data-view="bytask" onclick="switchView('bytask')">by Task</button>
+        <!-- View Toggle -->
+        <div class="flex justify-center">
+          <div class="inline-flex rounded-lg bg-gray-100 dark:bg-white/5 p-1">
+            <button class="view-toggle-btn active" data-view="overview" onclick="switchView('overview')">Overview</button>
+            <button class="view-toggle-btn" data-view="bytask" onclick="switchView('bytask')">by Task</button>
+          </div>
         </div>
       </div>
 
@@ -3150,7 +3158,19 @@
 
     function updateMonthLabel() {
       const monthNames = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'];
-      document.getElementById('monthLabel').textContent = `${monthNames[linearViewMonth]} ${linearViewYear}`;
+      const label = `${monthNames[linearViewMonth]} ${linearViewYear}`;
+      const monthLabelEl = document.getElementById('monthLabel');
+      monthLabelEl.textContent = label;
+
+      const tooltipEl = document.getElementById('monthTooltip');
+      tooltipEl.textContent = `Go back to ${label}`;
+
+      monthLabelEl.addEventListener('mouseenter', () => {
+        tooltipEl.classList.remove('opacity-0');
+      });
+      monthLabelEl.addEventListener('mouseleave', () => {
+        tooltipEl.classList.add('opacity-0');
+      });
     }
 
     function prevMonth() {
@@ -3209,6 +3229,23 @@
       return html;
     }
 
+    // ── Handle Query Parameters ──────────────────────────
+    const urlParams = new URLSearchParams(window.location.search);
+    const viewParam = urlParams.get('view');
+    const taskParam = urlParams.get('task');
+    const monthParam = urlParams.get('month');
+    const yearParam = urlParams.get('year');
+
+    // Set month/year if provided from index.html
+    if (monthParam !== null && yearParam !== null) {
+      const month = parseInt(monthParam, 10);
+      const year = parseInt(yearParam, 10);
+      if (!isNaN(month) && !isNaN(year)) {
+        linearViewMonth = month;
+        linearViewYear = year;
+      }
+    }
+
     // ── Init ──────────────────────────────────────────────
     // Only render the default active view (overview) on page load
     console.log('=== PAGE INIT START ===');
@@ -3231,9 +3268,26 @@
 
     console.log('=== PAGE INIT END ===');
 
+    if (viewParam === 'bytask' && taskParam !== null) {
+      const taskIndex = parseInt(taskParam, 10);
+      if (!isNaN(taskIndex)) {
+        setTimeout(() => {
+          switchView('bytask');
+          setTimeout(() => renderByTaskView(taskIndex), 0);
+        }, 0);
+      }
+    }
+
     // Month navigation event listeners
     document.getElementById('prevMonthBtn').addEventListener('click', prevMonth);
     document.getElementById('nextMonthBtn').addEventListener('click', nextMonth);
+
+    // Month label click handler - navigate back to index.html with selected month
+    const monthLabelEl = document.getElementById('monthLabel');
+    monthLabelEl.removeEventListener('click', openMonthSummaryModal);
+    monthLabelEl.addEventListener('click', () => {
+      window.location.href = `./index.html?month=${linearViewMonth}&year=${linearViewYear}`;
+    });
 
     // Helper function to get week of year
     function getWeekOfYear(date) {
@@ -3397,8 +3451,6 @@
       const content = renderSummaryContent();
       MonthModal.open(title, content);
     }
-
-    document.getElementById('monthLabel').addEventListener('click', openMonthSummaryModal);
 
     // Re-render when data changes in another tab
     window.addEventListener('storage', () => {
