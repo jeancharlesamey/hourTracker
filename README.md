@@ -1,6 +1,10 @@
 ◷ **HOUR TRACKER** — one file. no server. no fuss.
 
+<<<<<<< beta-1.3.0
 **v1.4.0-beta2**
+=======
+**v1.3.0-beta2**
+>>>>>>> main
 
 A minimal, offline-first hour tracker that lives in your browser. No login, no server, no complications.
 
@@ -47,6 +51,7 @@ How it fills:
 - Click month label → jump to analytics overview for that month
 
 **Analytics**
+<<<<<<< beta-1.3.0
 - **Overview:** GitHub-style heatmap, daily/weekly intensity charts, task repartition, weekly breakdown, full-year heatmap
 - **By-Task View:**
   - Burn chart with scope change tracking (amber dashed lines + diamond markers)
@@ -57,6 +62,14 @@ How it fills:
   - Year heatmap with interactive cell tooltips
 - **Navigation:** Click month label in analytics → return to index.html; task legend → by-task view
 - **Smart Filtering:** Only shows tasks with logged hours in selected month
+=======
+- **Activity overview:** GitHub-style heatmap (all tasks + per-task)
+- **Intensity:** Daily/weekly bar charts with averages
+- **Repartition:** Task distribution at a glance
+- **Burn Chart:** Hours logged vs. ideal trajectory
+- **Weekly Hours:** Toggle between W14 and Apr 1 views
+- **Requirements:** Task deadlines and estimates
+>>>>>>> main
 
 **Task Tracking**
 - Decimal hours supported (1.5, 0.25, etc.)
@@ -112,6 +125,7 @@ Data stored locally: your task list, colors, hours per day, daily cap, and last 
 
 ## Recent Updates
 
+<<<<<<< beta-1.3.0
 **v1.4.0-beta2** — Burndown refinements, navigation improvements, momentum analytics
 - **Navigation:** Click task legend to navigate to by-task analytics view; click month label to toggle between index and analytics
 - **Burn Chart Enhancements:** Projected slip calculation ("If pace unchanged: deliver +Xd late") with visual diamond markers on scope change dates
@@ -121,6 +135,8 @@ Data stored locally: your task list, colors, hours per day, daily cap, and last 
 - **By-Task View:** Improved legend navigation, task filtering by month, enhanced burn chart with scope change visualization
 - **Responsive Tooltips:** Fast-appearing tooltips on hover (month label: "go to analytics" / "go back"; legend: task selection hints)
 
+=======
+>>>>>>> main
 **v1.3.0-beta2** — Settings sidebar, task filtering, analytics refinements
 - Settings Sidebar: Redesigned settings UI as dedicated sidebar modal with integrated task creation
 - Task Status Persistence: Fixed migration to preserve status and external IDs across sessions
@@ -135,7 +151,11 @@ Data stored locally: your task list, colors, hours per day, daily cap, and last 
 - Back Navigation: Changed from folder link to history.back() for clean navigation (Issue #9)
 - Dark Mode Flash: Added synchronous dark mode check in page head to prevent light mode flash on navigation
 
+<<<<<<< beta-1.3.0
 **v1.2.0-beta** — Delivery tracking, charts, full-year heatmap
+=======
+**v1.2.0-beta2** — Delivery tracking, charts, full-year heatmap
+>>>>>>> main
 - Burn Chart: Refined visualization with ideal trajectory line
 - Date Formatting: Consistent display + "Month Day Year" in requirements
 - Hours Done Views: Toggle between Week (W14) and Day (Apr 1) with tooltips
