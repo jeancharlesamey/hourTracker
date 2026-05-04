@@ -361,22 +361,30 @@
 
     <!-- Main Content -->
     <div class="flex-1 w-full mx-auto px-4 md:px-8 py-8 space-y-6 pt-20">
-      <!-- Shared Month Navigation -->
-      <div class="flex items-center justify-between">
-        <button id="prevMonthBtn" aria-label="Previous month" class="nav-arrow w-9 h-9 md:w-10 md:h-10 flex items-center justify-center rounded-lg hover:bg-black/5 dark:hover:bg-white/10">
-          <img src="./icons/chevron-left.svg" alt="" class="w-5 h-5 md:w-6 md:h-6 text-gray-900 dark:text-white forced-color-adjust-none md:forced-color-adjust-auto" aria-hidden="true">
-        </button>
-        <span id="monthLabel" class="text-sm md:text-lg font-semibold text-gray-900 dark:text-white cursor-pointer hover:opacity-80 transition-opacity"></span>
-        <button id="nextMonthBtn" aria-label="Next month" class="nav-arrow w-9 h-9 md:w-10 md:h-10 flex items-center justify-center rounded-lg hover:bg-black/5 dark:hover:bg-white/10">
-          <img src="./icons/chevron-right.svg" alt="" class="w-5 h-5 md:w-6 md:h-6 text-gray-900 dark:text-white forced-color-adjust-none md:forced-color-adjust-auto" aria-hidden="true">
-        </button>
-      </div>
+      <!-- Sticky Navigation Zone -->
+      <div class="sticky top-0 z-20 bg-surface dark:bg-surface-dark pt-4 pb-4 -mx-4 md:-mx-8 px-4 md:px-8 space-y-4">
+        <!-- Shared Month Navigation -->
+        <div class="flex items-center justify-between">
+          <button id="prevMonthBtn" aria-label="Previous month" class="nav-arrow w-9 h-9 md:w-10 md:h-10 flex items-center justify-center rounded-lg hover:bg-black/5 dark:hover:bg-white/10">
+            <img src="./icons/chevron-left.svg" alt="" class="w-5 h-5 md:w-6 md:h-6 text-gray-900 dark:text-white forced-color-adjust-none md:forced-color-adjust-auto" aria-hidden="true">
+          </button>
+          <div class="relative">
+            <span id="monthLabel" class="text-sm md:text-lg font-semibold text-gray-900 dark:text-white cursor-pointer hover:opacity-80 transition-opacity"></span>
+            <div id="monthTooltip" class="absolute top-full left-1/2 transform -translate-x-1/2 mt-2 px-3 py-1.5 bg-gray-900 dark:bg-gray-700 text-white text-xs whitespace-nowrap rounded-md opacity-0 pointer-events-none transition-opacity duration-0" style="z-index: 50;">
+              <!-- filled by JS -->
+            </div>
+          </div>
+          <button id="nextMonthBtn" aria-label="Next month" class="nav-arrow w-9 h-9 md:w-10 md:h-10 flex items-center justify-center rounded-lg hover:bg-black/5 dark:hover:bg-white/10">
+            <img src="./icons/chevron-right.svg" alt="" class="w-5 h-5 md:w-6 md:h-6 text-gray-900 dark:text-white forced-color-adjust-none md:forced-color-adjust-auto" aria-hidden="true">
+          </button>
+        </div>
 
-      <!-- View Toggle -->
-      <div class="flex justify-center">
-        <div class="inline-flex rounded-lg bg-gray-100 dark:bg-white/5 p-1">
-          <button class="view-toggle-btn active" data-view="overview" onclick="switchView('overview')">Overview</button>
-          <button class="view-toggle-btn" data-view="bytask" onclick="switchView('bytask')">by Task</button>
+        <!-- View Toggle -->
+        <div class="flex justify-center">
+          <div class="inline-flex rounded-lg bg-gray-100 dark:bg-white/5 p-1">
+            <button class="view-toggle-btn active" data-view="overview" onclick="switchView('overview')">Overview</button>
+            <button class="view-toggle-btn" data-view="bytask" onclick="switchView('bytask')">by Task</button>
+          </div>
         </div>
       </div>
 
@@ -437,12 +445,9 @@
 
       <!-- by Task View -->
       <div id="bytaskView" class="hidden space-y-6">
-        <!-- Header with Legend and Burnout Badge -->
+        <!-- Header with Legend -->
         <div class="flex items-center gap-4">
           <div id="bytaskLegend" class="flex-1 flex flex-wrap gap-3 md:gap-4 text-xs md:text-sm"></div>
-          <div id="bytaskBurnoutBadge" class="shrink-0 hidden">
-            <span class="inline-flex items-center gap-1.5 text-xs bg-red-500/20 text-red-600 dark:text-red-400 px-3 py-1 rounded-full font-medium"></span>
-          </div>
         </div>
 
         <!-- Bento Grid -->
@@ -456,8 +461,13 @@
           <!-- Progress Card (col-7 on md+) -->
           <div id="bytaskProgress" class="col-span-12 md:col-span-7 bg-white dark:bg-card-dark rounded-2xl p-6 shadow-sm border border-gray-100 dark:border-white/5">
             <div class="flex items-center justify-between mb-4">
-              <h3 class="font-semibold text-gray-900 dark:text-white">Progress</h3>
-              <div id="bytaskProgressBadge"></div>
+              <h3 class="font-semibold text-gray-900 dark:text-white">Momentum</h3>
+              <div class="flex items-center gap-3">
+                <div id="bytaskRiskBadge" class="hidden">
+                  <span class="inline-flex items-center gap-1.5 text-xs bg-orange-500/20 text-orange-600 dark:text-orange-400 px-3 py-1 rounded-full font-medium cursor-pointer hover:opacity-70 transition-opacity"></span>
+                </div>
+                <div id="bytaskProgressBadge"></div>
+              </div>
             </div>
             <div class="space-y-4"></div>
           </div>
@@ -470,17 +480,15 @@
             </div>
           </div>
 
-          <!-- Hours View Toggle Group -->
-          <div class="col-span-12 flex justify-center mt-1">
-            <div class="inline-flex rounded-lg border border-gray-200 dark:border-white/10 bg-gray-50 dark:bg-white/5 p-1">
-              <button id="hoursViewWeek" class="px-4 py-2 text-sm font-medium rounded text-gray-700 dark:text-white bg-white dark:bg-white/10 shadow-sm" data-view="week">Week</button>
-              <button id="hoursViewDay" class="px-4 py-2 text-sm font-medium rounded text-gray-600 dark:text-white/60 hover:text-gray-900 dark:hover:text-white" data-view="day">Day</button>
-            </div>
-          </div>
-
           <!-- Week Hours Card -->
           <div id="weekHoursCard" class="col-span-12 bg-white dark:bg-card-dark rounded-2xl p-6 shadow-sm border border-gray-100 dark:border-white/5">
-            <h3 class="font-semibold text-gray-900 dark:text-white mb-4">Hours Done - Week</h3>
+            <div class="flex items-center gap-3 mb-4">
+              <h3 class="font-semibold text-gray-900 dark:text-white">Hours Done</h3>
+              <div class="inline-flex rounded-lg bg-black/5 dark:bg-white/5 p-0.5">
+                <button class="hoursViewBtn px-3 py-1 text-sm font-medium rounded text-gray-700 dark:text-white bg-white dark:bg-white/15 shadow-sm transition-colors" data-view="week">by week</button>
+                <button class="hoursViewBtn px-3 py-1 text-sm font-medium rounded text-gray-600 dark:text-white/60 hover:text-gray-900 dark:hover:text-white transition-colors" data-view="day">by day</button>
+              </div>
+            </div>
             <div class="relative" style="min-height: 400px; height: calc(100vh - 280px); max-height: 700px;">
               <canvas id="bytaskWeekChart"></canvas>
             </div>
@@ -488,7 +496,13 @@
 
           <!-- Day Hours Card (hidden by default) -->
           <div id="dayHoursCard" class="col-span-12 bg-white dark:bg-card-dark rounded-2xl p-6 shadow-sm border border-gray-100 dark:border-white/5 hidden">
-            <h3 class="font-semibold text-gray-900 dark:text-white mb-4">Hours Done - Day</h3>
+            <div class="flex items-center gap-3 mb-4">
+              <h3 class="font-semibold text-gray-900 dark:text-white">Hours Done</h3>
+              <div class="inline-flex rounded-lg bg-black/5 dark:bg-white/5 p-0.5">
+                <button class="hoursViewBtn px-3 py-1 text-sm font-medium rounded text-gray-600 dark:text-white/60 hover:text-gray-900 dark:hover:text-white transition-colors" data-view="week">by week</button>
+                <button class="hoursViewBtn px-3 py-1 text-sm font-medium rounded text-gray-700 dark:text-white bg-white dark:bg-white/15 shadow-sm transition-colors" data-view="day">by day</button>
+              </div>
+            </div>
             <div class="relative" style="min-height: 400px; height: calc(100vh - 280px); max-height: 700px;">
               <canvas id="bytaskDayChart"></canvas>
             </div>
@@ -613,47 +627,44 @@
     // Initialize dropdown dark mode knob position
     AppMenu.updateDarkModeKnob(darkMode);
 
-    // Hours view toggle buttons
-    const hoursViewWeek = document.getElementById('hoursViewWeek');
-    const hoursViewDay = document.getElementById('hoursViewDay');
+    // Hours view toggle buttons (using classes to handle multiple button sets)
     const weekHoursCard = document.getElementById('weekHoursCard');
     const dayHoursCard = document.getElementById('dayHoursCard');
+    const hoursViewBtns = document.querySelectorAll('.hoursViewBtn');
 
-    if (hoursViewWeek && hoursViewDay) {
-      hoursViewWeek.addEventListener('click', () => {
-        // Update button styles
-        hoursViewWeek.classList.add('bg-white', 'dark:bg-white/10', 'shadow-sm', 'text-gray-700', 'dark:text-white');
-        hoursViewWeek.classList.remove('text-gray-600', 'dark:text-white/60', 'hover:text-gray-900', 'dark:hover:text-white');
-        hoursViewDay.classList.remove('bg-white', 'dark:bg-white/10', 'shadow-sm', 'text-gray-700', 'dark:text-white');
-        hoursViewDay.classList.add('text-gray-600', 'dark:text-white/60', 'hover:text-gray-900', 'dark:hover:text-white');
+    hoursViewBtns.forEach(btn => {
+      btn.addEventListener('click', (e) => {
+        const view = e.target.dataset.view;
 
-        // Show/hide cards
-        weekHoursCard.classList.remove('hidden');
-        dayHoursCard.classList.add('hidden');
-
-        // Re-render week chart
-        if (selectedTaskIndex >= 0) {
-          renderTaskWeekChart(selectedTaskIndex);
-        }
-      });
-
-      hoursViewDay.addEventListener('click', () => {
-        // Update button styles
-        hoursViewDay.classList.add('bg-white', 'dark:bg-white/10', 'shadow-sm', 'text-gray-700', 'dark:text-white');
-        hoursViewDay.classList.remove('text-gray-600', 'dark:text-white/60', 'hover:text-gray-900', 'dark:hover:text-white');
-        hoursViewWeek.classList.remove('bg-white', 'dark:bg-white/10', 'shadow-sm', 'text-gray-700', 'dark:text-white');
-        hoursViewWeek.classList.add('text-gray-600', 'dark:text-white/60', 'hover:text-gray-900', 'dark:hover:text-white');
+        // Update all button styles
+        hoursViewBtns.forEach(b => {
+          if (b.dataset.view === view) {
+            // Active button
+            b.classList.add('bg-white', 'dark:bg-white/15', 'shadow-sm', 'text-gray-700', 'dark:text-white');
+            b.classList.remove('text-gray-600', 'dark:text-white/60', 'hover:text-gray-900', 'dark:hover:text-white');
+          } else {
+            // Inactive button
+            b.classList.remove('bg-white', 'dark:bg-white/15', 'shadow-sm', 'text-gray-700', 'dark:text-white');
+            b.classList.add('text-gray-600', 'dark:text-white/60', 'hover:text-gray-900', 'dark:hover:text-white');
+          }
+        });
 
         // Show/hide cards
-        weekHoursCard.classList.add('hidden');
-        dayHoursCard.classList.remove('hidden');
-
-        // Re-render day chart
-        if (selectedTaskIndex >= 0) {
-          renderTaskDayChart(selectedTaskIndex);
+        if (view === 'week') {
+          weekHoursCard.classList.remove('hidden');
+          dayHoursCard.classList.add('hidden');
+          if (selectedTaskIndex >= 0) {
+            renderTaskWeekChart(selectedTaskIndex);
+          }
+        } else {
+          weekHoursCard.classList.add('hidden');
+          dayHoursCard.classList.remove('hidden');
+          if (selectedTaskIndex >= 0) {
+            renderTaskDayChart(selectedTaskIndex);
+          }
         }
       });
-    }
+    });
 
     // ── Date Utilities ────────────────────────────────────
     function todayStr() {
@@ -821,6 +832,43 @@
       return count + 1;
     }
 
+    // Calculate projected slip based on recent velocity
+    function calculateProjectedSlip(taskIndex, deliveryDateStr, estimate) {
+      if (!estimate || !deliveryDateStr) return null;
+
+      let deliveryDate = deliveryDateStr;
+      if (deliveryDate && deliveryDate.includes('/')) {
+        const [d, m, y] = deliveryDate.split('/');
+        deliveryDate = `${y}-${m}-${d}`;
+      }
+
+      const totalEstimatedHours = estimate * maxCap;
+      let loggedTotal = 0;
+      getAllDates().forEach(d => { loggedTotal += getHours(d, taskIndex); });
+      const hoursRemaining = Math.max(0, totalEstimatedHours - loggedTotal);
+      const calendarDaysRemaining = getWorkingDaysTo(deliveryDate);
+
+      // Compute recent velocity (last 7 active days)
+      const today = new Date(todayStr());
+      const sevenAgo = new Date(today);
+      sevenAgo.setDate(sevenAgo.getDate() - 7);
+      const recentDates = getAllDates().filter(d => {
+        const dt = parseDate(d);
+        return dt >= sevenAgo && dt <= today && getHours(d, taskIndex) > 0;
+      });
+      const recentV = recentDates.length > 0
+        ? recentDates.reduce((s, d) => s + getHours(d, taskIndex), 0) / recentDates.length
+        : 0;
+
+      // Projected slip: if current velocity continues, how many days late?
+      if (recentV > 0) {
+        const daysToFinish = hoursRemaining / recentV;
+        return Math.round(daysToFinish - calendarDaysRemaining);
+      }
+
+      return null;
+    }
+
     // Setup popover events for delivery date squares
     function setupDeliveryDatePopovers() {
       // Attach to cells with delivery dates
@@ -896,6 +944,33 @@
       return count;
     }
 
+    function countWorkingDaysBetween(startStr, endStr) {
+      let count = 0;
+      let current = parseDate(startStr);
+      const end = parseDate(endStr);
+      while (current <= end) {
+        const dow = current.getDay();
+        if (dow !== 0 && dow !== 6) count++;
+        current.setDate(current.getDate() + 1);
+      }
+      return count;
+    }
+
+    // SVG Icon cache
+    const svgCache = {};
+    async function loadSvg(filename) {
+      if (svgCache[filename]) return svgCache[filename];
+      try {
+        const response = await fetch(`./icons/${filename}`);
+        const svg = await response.text();
+        svgCache[filename] = svg;
+        return svg;
+      } catch (e) {
+        console.warn(`Failed to load ${filename}`);
+        return '';
+      }
+    }
+
     // ── Rendering ──────────────────────────────────────────
     function renderCombinedGraph() {
       const weeks = getWeeksInCalendarYear();
@@ -946,7 +1021,7 @@
           if (deliveryDates.length > 0) {
             const deliveryInfo = deliveryDates.map(d => {
               const workingDays = getWorkingDaysTo(dateStr);
-              return `${d.name} • ${formatDateToDDMMYYYY(dateStr)} • ${workingDays}d remaining`;
+              return `${d.name} → ${formatDateToDDMMYYYY(dateStr)} → ${workingDays}d remaining`;
             }).join('\n');
             tooltipText += '\n' + deliveryInfo;
             strokeColor = deliveryDates[0].color;
@@ -1114,10 +1189,13 @@
         return;
       }
 
-      // Determine date range: from first logged date to delivery date (if available) or last logged date
+      // Determine date range: from first logged date to last logged date or latest scope change (whichever is later)
       const startDate = allDates[0];
       const lastLoggedDate = allDates[allDates.length - 1];
-      const endDate = deliveryDate || lastLoggedDate;
+      const latestScopeChangeDate = (task.estimateHistory || []).reduce((latest, entry) => {
+        return !latest || entry.date > latest ? entry.date : latest;
+      }, null);
+      const endDate = latestScopeChangeDate && latestScopeChangeDate > lastLoggedDate ? latestScopeChangeDate : lastLoggedDate;
 
       // Generate all dates in range
       const [startYear, startMonth, startDay] = startDate.split('-').map(Number);
@@ -1149,14 +1227,8 @@
         const remaining = totalEstimatedHours - cumulativeLogged;
         actualData.push(dateStr <= lastLoggedDate ? remaining : null);
 
-        // Ideal data: only show at first day and last day (delivery date)
-        if (dateIndex === 0) {
-          idealData.push(totalEstimatedHours);
-        } else if (dateIndex === totalDays - 1) {
-          idealData.push(0);
-        } else {
-          idealData.push(null);
-        }
+        // Ideal data: linear value at every day so hover tooltip works on any point
+        idealData.push(Math.max(0, totalEstimatedHours - dailyIdeal * dateIndex));
 
         const monthNames = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
         const label = `${current.getDate()} ${monthNames[current.getMonth()]}`;
@@ -1165,6 +1237,84 @@
         current.setDate(current.getDate() + 1);
         dateIndex++;
       }
+
+      // Build scope change map: labelIndex → { date, from, to }
+      const scopeChangeMap = {};
+      (task.estimateHistory || []).forEach(entry => {
+        const entryDate = parseDate(entry.date);
+        if (entryDate < start || entryDate > end) return;
+        const dayOffset = Math.round((entryDate - start) / (1000 * 60 * 60 * 24));
+        if (dayOffset >= 0 && dayOffset < labels.length) {
+          scopeChangeMap[dayOffset] = entry;
+        }
+      });
+
+      // Compute Target Velocity values
+      let loggedTotal = 0;
+      getAllDates().forEach(d => { loggedTotal += getHours(d, taskIndex); });
+      const hoursRemaining = Math.max(0, totalEstimatedHours - loggedTotal);
+      const calendarDaysRemaining = getWorkingDaysTo(deliveryDate);
+      const workingDaysTotal = deliveryDate ? countWorkingDaysBetween(startDate, deliveryDate) : 0;
+      const originalTV = workingDaysTotal > 0 ? totalEstimatedHours / workingDaysTotal : 0;
+      const currentTV = calendarDaysRemaining > 0 ? hoursRemaining / calendarDaysRemaining : 0;
+
+      const projectedSlipDays = calculateProjectedSlip(taskIndex, task.deliveryDate, estimate);
+
+      // Define scope change markers plugin
+      const scopeChangeMarkersPlugin = {
+        id: 'scopeChangeMarkers',
+        afterDatasetsDraw(chart) {
+          const entries = Object.entries(scopeChangeMap);
+          if (entries.length === 0) return;
+          const { ctx, chartArea } = chart;
+          const xScale = chart.scales.x;
+          const yScale = chart.scales.y;
+
+          entries.forEach(([idx, change]) => {
+            const idxNum = parseInt(idx, 10);
+            const x = xScale.getPixelForValue(idxNum);
+            if (x < chartArea.left || x > chartArea.right) return;
+
+            // Diamond positioned at remaining hours after the scope change
+            // = remaining before + hours added = actualData[idx] + (change.to - change.from) * maxCap
+            const remainingBefore = actualData[idxNum] ?? 0;
+            const hoursAdded = (change.to - change.from) * maxCap;
+            const remainingAfter = Math.max(0, remainingBefore + hoursAdded);
+            const y = yScale.getPixelForValue(remainingAfter);
+
+            ctx.save();
+            // Vertical dashed amber line
+            ctx.strokeStyle = 'rgba(245, 158, 11, 0.75)';
+            ctx.lineWidth = 1.5;
+            ctx.setLineDash([4, 3]);
+            ctx.beginPath();
+            ctx.moveTo(x, chartArea.top);
+            ctx.lineTo(x, chartArea.bottom);
+            ctx.stroke();
+            // Diamond marker at the new remaining hours level
+            ctx.setLineDash([]);
+            ctx.fillStyle = 'rgba(245, 158, 11, 0.9)';
+            ctx.beginPath();
+            ctx.moveTo(x, y - 6);
+            ctx.lineTo(x + 5, y);
+            ctx.lineTo(x, y + 6);
+            ctx.lineTo(x - 5, y);
+            ctx.closePath();
+            ctx.fill();
+
+            // Label showing days added (to the left of the diamond)
+            const daysAdded = change.to - change.from;
+            const labelText = `+${daysAdded.toFixed(1)}d`;
+            ctx.fillStyle = 'rgba(245, 158, 11, 0.9)';
+            ctx.font = '11px sans-serif';
+            ctx.textAlign = 'right';
+            ctx.textBaseline = 'middle';
+            ctx.fillText(labelText, x - 10, y);
+
+            ctx.restore();
+          });
+        }
+      };
 
       if (taskBurnChartInstance) {
         taskBurnChartInstance.destroy();
@@ -1193,12 +1343,10 @@
               borderDash: [3, 3],
               borderWidth: 1,
               fill: false,
-              tension: 0.1,
-              pointRadius: 4,
-              pointBackgroundColor: darkMode ? '#666' : '#ccc',
-              pointBorderColor: darkMode ? '#666' : '#ccc',
-              pointHoverRadius: 6,
-              spanGaps: true,
+              tension: 0,
+              pointRadius: 0,
+              pointHoverRadius: 4,
+              pointHoverBackgroundColor: darkMode ? '#666' : '#ccc',
             }] : [])
           ]
         },
@@ -1211,6 +1359,28 @@
               labels: {
                 color: darkMode ? '#fff' : '#000',
                 usePointStyle: true,
+              }
+            },
+            tooltip: {
+              callbacks: {
+                label: function(context) {
+                  if (context.dataset.label === 'Ideal') {
+                    const lines = [`Ideal: ${context.parsed.y.toFixed(1)}h remaining`];
+                    if (originalTV > 0) lines.push(`Original velocity: ${originalTV.toFixed(1)}h/day`);
+                    if (calendarDaysRemaining > 0) lines.push(`Target now: ${currentTV.toFixed(1)}h/day`);
+                    return lines;
+                  }
+                  const lines = [`${context.dataset.label}: ${context.parsed.y.toFixed(1)}h remaining`];
+                  if (projectedSlipDays !== null && projectedSlipDays > 0) {
+                    lines.push(`Projected slip: +${projectedSlipDays}d at current pace`);
+                  }
+                  const sc = scopeChangeMap[context.dataIndex];
+                  if (sc) {
+                    const diff = sc.to - sc.from;
+                    lines.push(`Scope +${diff}d : ${sc.from}d → ${sc.to}d`);
+                  }
+                  return lines;
+                }
               }
             }
           },
@@ -1225,7 +1395,8 @@
               grid: { color: darkMode ? '#333' : '#eee' }
             }
           }
-        }
+        },
+        plugins: [scopeChangeMarkersPlugin]
       });
     }
 
@@ -1828,18 +1999,27 @@
 
       LegendRenderer.render('overviewTaskLegend', options);
 
-      // Custom inline render for bytaskLegend - shows only tasks with hours in selected month
+      // Add click handlers to overview legend
+      const overviewLegendEl = document.getElementById('overviewTaskLegend');
+      if (overviewLegendEl) {
+        overviewLegendEl.querySelectorAll('[data-taskindex]').forEach(item => {
+          item.addEventListener('click', () => {
+            const idx = parseInt(item.dataset.taskindex, 10);
+            switchView('bytask');
+            setTimeout(() => renderByTaskView(idx), 0);
+          });
+        });
+      }
+
+      // bytaskLegend shows only tasks with hours in the selected month
       const bytaskLegendEl = document.getElementById('bytaskLegend');
       if (bytaskLegendEl) {
         bytaskLegendEl.innerHTML = tasksWithHours
-          .map((task, displayIdx) => {
+          .map((task) => {
             const actualIdx = tasks.indexOf(task);
             const isActive = actualIdx === activeTaskIndex;
-            const classes = isActive
-              ? ''
-              : 'opacity-60';
             return `
-              <div data-taskindex="${actualIdx}" class="flex items-center gap-1.5 cursor-pointer select-none transition-opacity hover:opacity-100 ${classes}">
+              <div data-taskindex="${actualIdx}" class="flex items-center gap-1.5 cursor-pointer select-none transition-opacity hover:opacity-100 ${isActive ? '' : 'opacity-60'}">
                 <div class="w-2.5 h-2.5 md:w-3 md:h-3 rounded-full" style="background:${COLOR_HEX[task.color]}"></div>
                 <span class="text-gray-500 dark:text-white/70">${task.name}</span>
               </div>
@@ -1866,9 +2046,10 @@
       activeTaskIndex = taskIndex;
 
       renderTaskLegend();
-      renderBurnoutBadgeForTask(taskIndex);
+      renderRiskBadge(taskIndex);
       renderTaskRequirementsCard(taskIndex);
       renderTaskProgressCard(taskIndex);
+      setTimeout(setupReschedulePopovers, 0);
       renderTaskBurnChart(taskIndex);
       renderTaskWeekChart(taskIndex);
       renderTaskDayChart(taskIndex);
@@ -1876,13 +2057,18 @@
       renderTaskHeatmap(taskIndex);
     }
 
-    function renderBurnoutBadgeForTask(taskIndex) {
-      const el = document.getElementById('bytaskBurnoutBadge');
+    function renderRiskBadge(taskIndex) {
+      const el = document.getElementById('bytaskRiskBadge');
       if (!el) return;
 
       const task = tasks[taskIndex];
-      const estimate = task.estimate || 0;
-      const deliveryDate = task.deliveryDate || '';
+      const estimate = parseFloat(task.estimate) || 0;
+      let deliveryDate = task.deliveryDate || '';
+
+      if (deliveryDate && deliveryDate.includes('/')) {
+        const [d, m, y] = deliveryDate.split('/');
+        deliveryDate = `${y}-${m}-${d}`;
+      }
 
       if (!estimate || !deliveryDate) {
         el.classList.add('hidden');
@@ -1891,19 +2077,158 @@
 
       const totalEstimatedHours = estimate * maxCap;
       let loggedTotal = 0;
-      const allDates = getAllDates();
-      allDates.forEach(dateStr => {
-        loggedTotal += getHours(dateStr, taskIndex);
-      });
+      getAllDates().forEach(d => { loggedTotal += getHours(d, taskIndex); });
 
-      const isBurnedOut = loggedTotal > totalEstimatedHours;
-      if (isBurnedOut) {
+      const extraHours = Math.max(0, loggedTotal - totalEstimatedHours);
+      const isOverdone = extraHours > 0;
+
+      if (isOverdone) {
         el.classList.remove('hidden');
-        const extraHours = (loggedTotal - totalEstimatedHours).toFixed(1);
-        el.querySelector('span').textContent = `Burned out by ${extraHours}h`;
-      } else {
-        el.classList.add('hidden');
+        const span = el.querySelector('span');
+        span.className = 'inline-flex items-center gap-1.5 text-xs bg-purple-500/20 text-purple-600 dark:text-purple-400 px-3 py-1 rounded-full font-medium cursor-pointer hover:opacity-70 transition-opacity';
+        const extraDays = (extraHours / maxCap).toFixed(1);
+        span.textContent = `Overdone: +${extraDays}d • ${fmtH(loggedTotal)}/${fmtH(totalEstimatedHours)}`;
+        return;
       }
+
+      const calendarDaysRemaining = getWorkingDaysTo(deliveryDate);
+      const hoursRemaining = Math.max(0, totalEstimatedHours - loggedTotal);
+      const daysOfWorkRemaining = hoursRemaining / maxCap;
+      const projectedSlip = calculateProjectedSlip(taskIndex, task.deliveryDate, estimate);
+
+      // Show projected slip if it exists (whether before or after delivery date)
+      if (projectedSlip !== null && projectedSlip > 0) {
+        el.classList.remove('hidden');
+        const span = el.querySelector('span');
+        span.className = 'inline-flex items-center gap-1.5 text-xs bg-orange-500/20 text-orange-600 dark:text-orange-400 px-3 py-1 rounded-full font-medium cursor-pointer hover:opacity-70 transition-opacity';
+
+        // Calculate projected delivery date: today + working days remaining + slip days
+        const today = new Date(todayStr());
+        const projectedDate = new Date(today);
+
+        // Add calendar days to reach the projected slip date
+        let daysAdded = 0;
+        while (daysAdded < calendarDaysRemaining + projectedSlip) {
+          projectedDate.setDate(projectedDate.getDate() + 1);
+          const dow = projectedDate.getDay();
+          if (dow !== 0 && dow !== 6) daysAdded++;
+        }
+
+        const deliveryDisplay = `${String(projectedDate.getDate()).padStart(2, '0')}/${String(projectedDate.getMonth() + 1).padStart(2, '0')}/${projectedDate.getFullYear()}`;
+
+        span.textContent = `If pace unchanged: deliver +${projectedSlip}d late : ${deliveryDisplay}`;
+
+        // Store data for popover
+        window._rescheduleData = window._rescheduleData || {};
+        window._rescheduleData.projectedSlip = projectedSlip;
+        window._rescheduleData.projectedDeliveryDate = deliveryDisplay;
+
+        return;
+      }
+
+      // When delivery date has passed with no projected slip, hide badge
+      if (calendarDaysRemaining <= 0) {
+        el.classList.add('hidden');
+        return;
+      }
+
+      // Check if estimation needs adjustment: remaining work < 15% of estimate AND enough time available (> 10% of estimate)
+      const estimationNeedsAdjustment = daysOfWorkRemaining < estimate * 0.15 && calendarDaysRemaining > estimate * 0.1;
+
+      el.classList.remove('hidden');
+      const span = el.querySelector('span');
+
+      if (estimationNeedsAdjustment) {
+        span.className = 'inline-flex items-center gap-1.5 text-xs bg-orange-500/20 text-orange-600 dark:text-orange-400 px-3 py-1 rounded-full font-medium cursor-pointer hover:opacity-70 transition-opacity';
+        span.textContent = `Estimation might need to be adjusted — ${daysOfWorkRemaining.toFixed(1)}d of work, ${calendarDaysRemaining}d left`;
+      } else if (daysOfWorkRemaining > calendarDaysRemaining) {
+        span.className = 'inline-flex items-center gap-1.5 text-xs bg-orange-500/20 text-orange-600 dark:text-orange-400 px-3 py-1 rounded-full font-medium';
+        span.textContent = `⚠ At risk — ${daysOfWorkRemaining.toFixed(1)}d of work, ${calendarDaysRemaining}d left`;
+      } else {
+        span.className = 'inline-flex items-center gap-1.5 text-xs bg-green-500/20 text-green-600 dark:text-green-400 px-3 py-1 rounded-full font-medium cursor-pointer hover:opacity-70 transition-opacity';
+        span.textContent = `On track — ${daysOfWorkRemaining.toFixed(1)}d of work, ${calendarDaysRemaining}d left`;
+      }
+    }
+
+    function setupReschedulePopovers() {
+      const d = window._rescheduleData;
+      if (!d) return;
+
+      const popoverContent = () => {
+        // Projected slip popover
+        if (d.projectedSlip !== undefined) {
+          return `
+            <div class="text-xs space-y-2 min-w-[280px]">
+              <div class="font-semibold text-gray-900 dark:text-white">Projected Slip</div>
+              <div class="text-gray-600 dark:text-gray-400">
+                At your current pace, this task will deliver <span class="font-semibold">+${d.projectedSlip} day${d.projectedSlip !== 1 ? 's' : ''} late</span> on ${d.projectedDeliveryDate}.
+              </div>
+              <div class="pt-2 mt-2 border-t border-gray-200 dark:border-white/10">
+                <div class="text-gray-700 dark:text-gray-300 font-semibold mb-1.5">Options:</div>
+                <ul class="space-y-1.5 text-gray-600 dark:text-gray-400">
+                  <li>• <span class="font-semibold">Increase velocity</span> to finish sooner</li>
+                  <li>• <span class="font-semibold">Descope work</span> to reduce remaining hours</li>
+                  <li>• <span class="font-semibold">Extend deadline</span> if possible</li>
+                  <li>• <span class="font-semibold">Adjust estimate</span> if original was too optimistic</li>
+                </ul>
+              </div>
+            </div>`;
+        }
+
+        if (d.isOverdone) {
+          const overdoneRow = (label, date) => date && date !== '—'
+            ? `<div class="flex items-center justify-between gap-4">
+                 <span class="text-gray-500 dark:text-gray-400">${label}</span>
+                 <span class="text-gray-400 dark:text-gray-500">${date}</span>
+               </div>`
+            : '';
+          const inTimeRow = d.weekV > 0
+            ? `<div class="pt-3 mt-3 p-3 bg-blue-500/10 border border-blue-200/50 dark:border-blue-400/30 rounded-lg">
+                 <div class="text-gray-700 dark:text-gray-300">Adding <span class="font-semibold">+${d.daysToDeliverInTime}d</span> workload to deliver in time</div>
+                 <div class="text-sm text-gray-500 dark:text-gray-400 mt-1"><span class="text-gray-400 dark:text-gray-500">${d.suggestInTime}</span> • <span class="font-bold text-gray-700 dark:text-gray-300">${d.weekV.toFixed(1)}h/day</span></div>
+               </div>`
+            : '';
+          return `
+            <div class="text-xs space-y-1.5 min-w-[240px]">
+              <div class="font-semibold text-gray-900 dark:text-white mb-2">Suggestions</div>
+              ${overdoneRow('Adding +2d at this week velocity', d.suggest2)}
+              ${overdoneRow('Adding +5d at this week velocity', d.suggest5)}
+              ${overdoneRow('Adding +10d at this week velocity', d.suggest10)}
+              ${inTimeRow}
+            </div>`;
+        }
+        const row = (label, v, date) => v > 0
+          ? `<div class="flex items-center justify-between gap-4">
+               <span class="text-gray-500 dark:text-gray-400">${label}</span>
+               <span>${date} • <span class="text-gray-400 dark:text-gray-500">${v.toFixed(1)}h/day</span></span>
+             </div>`
+          : '';
+        const finishRow = d.finishV > 0
+          ? `<div class="flex items-center justify-between gap-4 pt-1.5 mt-1 border-t border-gray-200 dark:border-white/10">
+               <span class="text-gray-500 dark:text-gray-400">To finish in time</span>
+               <span><span class="text-gray-400 dark:text-gray-500">${d.deliveryDateDisplay}</span> • <span class="font-bold">${d.finishV.toFixed(1)}h/day</span></span>
+             </div>`
+          : '';
+        return `
+          <div class="text-xs space-y-1.5 min-w-[220px]">
+            <div class="font-semibold text-gray-900 dark:text-white mb-2">Reschedule suggestions</div>
+            ${row('This week', d.weekV, d.reschedWeek)}
+            ${row('This month', d.monthV, d.reschedMonth)}
+            ${row('Initial', d.initialV, d.reschedInit)}
+            ${finishRow}
+          </div>`;
+      };
+
+      const attach = (el) => {
+        if (!el) return;
+        const show = () => Popover.open(el, popoverContent());
+        el.addEventListener('mouseenter', show);
+        el.addEventListener('click', show);
+        el.addEventListener('mouseleave', () => Popover.close());
+      };
+
+      attach(document.getElementById('bytaskRiskBadge')?.querySelector('span'));
+      attach(document.getElementById('deliveryPassedBadge'));
     }
 
     function renderTaskRequirementsCard(taskIndex) {
@@ -1916,12 +2241,20 @@
       const colorCircle = `<div class="w-2.5 h-2.5 rounded-full flex-shrink-0" style="background: ${COLOR_HEX[task.color]}"></div>`;
 
       const estimateDisplay = task.estimate
-        ? `<span title="${(task.estimate * maxCap).toFixed(1)}h">${task.estimate}d</span>`
+        ? `${task.estimate}d<span class="ml-2 text-gray-500 dark:text-gray-400">| ${(task.estimate * maxCap).toFixed(1)}h</span>`
         : '—';
 
-      const deliveryDate = task.deliveryDate
+      let deliveryDate = task.deliveryDate
         ? formatDateToLongFormat(task.deliveryDate)
         : '—';
+
+      // Add "Xd late" annotation if delivery has passed
+      if (task.deliveryDate) {
+        const daysLate = calculateDaysLate(task.deliveryDate, todayStr());
+        if (daysLate > 0) {
+          deliveryDate += `<span class="ml-1 text-red-600 dark:text-red-400 font-semibold">${daysLate}d late</span>`;
+        }
+      }
 
       const jiraLink = task.jiraLink
         ? `<a href="${task.jiraLink}" target="_blank" rel="noopener noreferrer" class="text-blue-600 dark:text-blue-400 hover:underline">see ticket in Jira</a>`
@@ -1937,7 +2270,7 @@
           <table class="w-full text-sm table-fixed">
             <tbody>
               <tr class="border-b border-gray-100 dark:border-white/5 hover:bg-black/5 dark:hover:bg-white/5">
-                <td class="py-2 px-3 text-left text-gray-700 dark:text-white/80 text-xs w-2/5">Estimate</td>
+                <td class="py-2 px-3 text-left text-gray-700 dark:text-white/80 text-xs w-2/5">Workload estimate</td>
                 <td class="py-2 px-3 text-right text-gray-900 dark:text-white font-semibold text-xs w-3/5">${estimateDisplay}</td>
               </tr>
               <tr class="border-b border-gray-100 dark:border-white/5 hover:bg-black/5 dark:hover:bg-white/5">
@@ -2061,8 +2394,75 @@
       // Set the status badge in the header using task status if available
       const badgeEl = document.getElementById('bytaskProgressBadge');
       if (badgeEl) {
-        badgeEl.innerHTML = `<span class="inline-flex items-center gap-1.5 text-xs px-2.5 py-1 rounded-full font-medium ${taskStatusColor}">${taskStatusDisplay}</span>`;
+        const deliveryPassed = deliveryDate && getWorkingDaysTo(deliveryDate) === 0;
+        const deliveryBadge = deliveryPassed
+          ? `<span class="inline-flex items-center gap-1.5 text-xs bg-red-500/20 text-red-600 dark:text-red-400 px-2.5 py-1 rounded-full font-medium">Delivery date passed</span>`
+          : '';
+        badgeEl.innerHTML = `${deliveryBadge}<span class="inline-flex items-center gap-1.5 text-xs px-2.5 py-1 rounded-full font-medium ${taskStatusColor}">${taskStatusDisplay}</span>`;
       }
+
+      // Velocity computations (shared between display rows and reschedule log)
+      const hoursRemaining = Math.max(0, totalEstimatedHours - loggedTotal);
+      const calDays = deliveryDate ? getWorkingDaysTo(deliveryDate) : 0;
+
+      const monthStr2 = String(linearViewMonth + 1).padStart(2, '0');
+      const monthDates2 = getAllDates().filter(d => d.startsWith(`${linearViewYear}-${monthStr2}`) && getHours(d, taskIndex) > 0);
+      const monthV = monthDates2.length > 0 ? monthDates2.reduce((s, d) => s + getHours(d, taskIndex), 0) / monthDates2.length : 0;
+
+      const _todayDate = new Date();
+      const _dow = (_todayDate.getDay() + 6) % 7;
+      const weekDates2 = [];
+      for (let i = 0; i <= _dow; i++) {
+        const d = new Date(_todayDate);
+        d.setDate(_todayDate.getDate() - _dow + i);
+        const ds = d.toISOString().split('T')[0];
+        if (ds <= todayStr() && getHours(ds, taskIndex) > 0) weekDates2.push(ds);
+      }
+      const weekV = weekDates2.length > 0 ? weekDates2.reduce((s, d) => s + getHours(d, taskIndex), 0) / weekDates2.length : 0;
+
+      const firstLoggedDate = getAllDates().filter(d => getHours(d, taskIndex) > 0)[0];
+      const initialV = firstLoggedDate ? (() => {
+        const today = todayStr();
+        // Use delivery date only if it's in the future, otherwise use today
+        const referenceDate = deliveryDate && deliveryDate > today ? deliveryDate : today;
+        const wDays = countWorkingDaysBetween(firstLoggedDate, referenceDate);
+        return wDays > 0 ? totalEstimatedHours / wDays : 0;
+      })() : 0;
+
+      // Add N working days from today, return DD/MM/YYYY
+      const addWorkingDays = (n) => {
+        if (!n || n <= 0) return '—';
+        let count = 0;
+        const d = new Date();
+        while (count < Math.ceil(n)) {
+          d.setDate(d.getDate() + 1);
+          if (d.getDay() !== 0 && d.getDay() !== 6) count++;
+        }
+        return `${String(d.getDate()).padStart(2,'0')}/${String(d.getMonth()+1).padStart(2,'0')}/${d.getFullYear()}`;
+      };
+
+      const reschedWeek  = weekV  > 0 ? addWorkingDays(hoursRemaining / weekV)  : '—';
+      const reschedMonth = monthV > 0 ? addWorkingDays(hoursRemaining / monthV) : '—';
+      const reschedInit  = initialV > 0 ? addWorkingDays(hoursRemaining / initialV) : '—';
+
+      const finishV = calDays > 0 ? hoursRemaining / calDays : 0;
+      const deliveryDateDisplay = deliveryDate ? formatDateToDDMMYYYY(deliveryDate) : '—';
+
+      // Overdone suggestions: adding N days at weekV h/day
+      const suggest2  = weekV > 0 ? addWorkingDays(Math.max(0, (2  * maxCap - extraHours) / weekV)) : '—';
+      const suggest5  = weekV > 0 ? addWorkingDays(Math.max(0, (5  * maxCap - extraHours) / weekV)) : '—';
+      const suggest10 = weekV > 0 ? addWorkingDays(Math.max(0, (10 * maxCap - extraHours) / weekV)) : '—';
+      const daysToDeliverInTime = Math.ceil(extraHours / maxCap);
+      const suggestInTime = deliveryDate ? deliveryDateDisplay : '—';
+
+      window._rescheduleData = {
+        weekV, monthV, initialV,
+        reschedWeek, reschedMonth, reschedInit,
+        finishV, deliveryDateDisplay,
+        isOverdone: extraHours > 0, extraHours,
+        suggest2, suggest5, suggest10,
+        daysToDeliverInTime, suggestInTime
+      };
 
       // Set the progress content
       if (container) {
@@ -2070,6 +2470,58 @@
         const displayPercent = percentComplete;
         const progressBarWidth = Math.min(displayPercent, 100);
         const progressBarColor = isOverdone ? '#f97316' : COLOR_HEX[task.color];
+
+      // Compute days late if delivery has passed
+      const daysLate = calDays === 0 && deliveryDate ? calculateDaysLate(deliveryDate, todayStr()) : 0;
+
+      // Compute last 2 days and last 5 filled days velocity for trend
+      const today = new Date(todayStr());
+      const twoDaysAgo = new Date(today);
+      twoDaysAgo.setDate(twoDaysAgo.getDate() - 2);
+      const fiveDaysAgo = new Date(today);
+      fiveDaysAgo.setDate(fiveDaysAgo.getDate() - 5);
+
+      const last2Days = getAllDates().filter(d => {
+        const dt = parseDate(d);
+        return dt >= twoDaysAgo && dt <= today && getHours(d, taskIndex) > 0;
+      });
+      const last5Days = getAllDates().filter(d => {
+        const dt = parseDate(d);
+        return dt >= fiveDaysAgo && dt <= today && getHours(d, taskIndex) > 0;
+      });
+
+      const last2V = last2Days.length > 0 ? last2Days.reduce((s, d) => s + getHours(d, taskIndex), 0) / last2Days.length : 0;
+      const last5V = last5Days.length > 0 ? last5Days.reduce((s, d) => s + getHours(d, taskIndex), 0) / last5Days.length : 0;
+
+      // Determine trend: compare last 2 days to last 5 days
+      let trendIcon = '';
+      let trendColor = '';
+      let trendFile = '';
+      if (last2V > 0 && last5V > 0) {
+        const diff = last2V - last5V;
+        const diffPercent = (diff / last5V) * 100;
+        if (diffPercent > 5) {
+          // Increasing
+          trendFile = 'move-up-right.svg';
+          trendColor = 'text-green-500';
+        } else if (diffPercent < -5) {
+          // Decreasing
+          trendFile = 'move-down-right.svg';
+          trendColor = 'text-red-500';
+        } else {
+          // Stable
+          trendFile = 'move-right.svg';
+          trendColor = 'text-gray-500 dark:text-gray-400';
+        }
+      }
+
+      // Compute pacing percentage (use week velocity, fallback to month velocity)
+      const velocityForPacing = weekV > 0 ? weekV : monthV > 0 ? monthV : 0;
+      const pacingPercent = velocityForPacing > 0 && initialV > 0 ? Math.round(velocityForPacing / initialV * 100) : null;
+      const pacingColor = pacingPercent !== null
+        ? (pacingPercent >= 80 ? 'text-green-600 dark:text-green-400' : pacingPercent >= 40 ? 'text-yellow-600 dark:text-yellow-400' : 'text-red-600 dark:text-red-400')
+        : '';
+      const pacingLegendId = `pacingLegend-${Math.random().toString(36).slice(2)}`;
 
         container.innerHTML = `
           <div class="mb-4">
@@ -2088,10 +2540,9 @@
                 </tr>
               </thead>
               <tbody>
-                <tr class="border-b border-gray-100 dark:border-white/5 hover:bg-black/5 dark:hover:bg-white/5">
-                  <td class="py-2 px-3 text-left text-gray-700 dark:text-white/80 text-xs w-2/5">Estimate</td>
-                  <td class="py-2 px-3 text-right text-gray-900 dark:text-white font-semibold text-xs w-1.5/5">${estimate}</td>
-                  <td class="py-2 px-3 text-right text-gray-900 dark:text-white font-semibold text-xs w-1.5/5">—</td>
+                <!-- PROGRESS -->
+                <tr>
+                  <td colspan="3" class="px-3 pt-4 pb-1 text-xs font-semibold uppercase tracking-wider text-gray-400 dark:text-gray-500">Progress</td>
                 </tr>
                 <tr class="border-b border-gray-100 dark:border-white/5 hover:bg-black/5 dark:hover:bg-white/5">
                   <td class="py-2 px-3 text-left text-gray-700 dark:text-white/80 text-xs w-2/5">Total logged</td>
@@ -2103,17 +2554,144 @@
                   <td class="py-2 px-3 text-right${isOverdone ? ' text-orange-600 dark:text-orange-400' : ' text-gray-900 dark:text-white'} font-semibold text-xs w-1.5/5">${daysRemainingText}</td>
                   <td class="py-2 px-3 text-right${isOverdone ? ' text-orange-600 dark:text-orange-400' : ' text-gray-900 dark:text-white'} font-semibold text-xs w-1.5/5">${hoursRemainingText}</td>
                 </tr>
+
+                <!-- TIME PRESSURE -->
+                ${estimate && deliveryDate ? `
+                <tr>
+                  <td colspan="3" class="px-3 pt-4 pb-1 text-xs font-semibold uppercase tracking-wider text-gray-400 dark:text-gray-500">Time pressure</td>
+                </tr>
+                ${calDays === 0 ? `
+                <tr class="border-b border-gray-100 dark:border-white/5 hover:bg-black/5 dark:hover:bg-white/5">
+                  <td class="py-2 px-3 text-left text-red-600 dark:text-red-400 text-xs w-2/5">Days late</td>
+                  <td class="py-2 px-3 text-right text-red-600 dark:text-red-400 font-semibold text-xs w-1.5/5">${daysLate}d</td>
+                  <td class="py-2 px-3 text-right text-red-600 dark:text-red-400 font-semibold text-xs w-1.5/5">—</td>
+                </tr>
+                ` : `
+                <tr class="border-b border-gray-100 dark:border-white/5 hover:bg-black/5 dark:hover:bg-white/5">
+                  <td class="py-2 px-3 text-left text-gray-700 dark:text-white/80 text-xs w-2/5">Working days left</td>
+                  <td class="py-2 px-3 text-right text-gray-900 dark:text-white font-semibold text-xs w-1.5/5">${calDays}d</td>
+                  <td class="py-2 px-3 text-right text-gray-500 dark:text-gray-400 text-xs w-1.5/5">(${(calDays / 5).toFixed(1)}w)</td>
+                </tr>
+                `}
+                ${calDays > 0 ? `
+                <tr class="border-b border-gray-100 dark:border-white/5 hover:bg-black/5 dark:hover:bg-white/5">
+                  <td class="py-2 px-3 text-left text-gray-700 dark:text-white/80 text-xs w-2/5">Velocity to finish</td>
+                  <td class="py-2 px-3 text-right text-gray-900 dark:text-white font-semibold text-xs" colspan="2">${(hoursRemaining / calDays).toFixed(1)}h/day</td>
+                </tr>
+                ` : ''}
+                ` : ''}
+
+                <!-- VELOCITY -->
+                ${weekV > 0 || monthV > 0 || initialV > 0 ? `
+                <tr>
+                  <td colspan="3" class="px-3 pt-4 pb-1 text-xs font-semibold uppercase tracking-wider text-gray-400 dark:text-gray-500">Velocity</td>
+                </tr>
+                ${weekV > 0 ? `<tr class="border-b border-gray-100 dark:border-white/5 hover:bg-black/5 dark:hover:bg-white/5">
+                  <td class="py-2 px-3 text-left text-gray-700 dark:text-white/80 text-xs w-2/5">This week</td>
+                  <td class="py-2 px-3 text-right text-gray-900 dark:text-white font-semibold text-xs" colspan="2">${weekV.toFixed(1)}h/day</td>
+                </tr>` : ''}
+                ${monthV > 0 ? `<tr class="border-b border-gray-100 dark:border-white/5 hover:bg-black/5 dark:hover:bg-white/5">
+                  <td class="py-2 px-3 text-left text-gray-700 dark:text-white/80 text-xs w-2/5">This month</td>
+                  <td class="py-2 px-3 text-right text-gray-900 dark:text-white font-semibold text-xs" colspan="2">${monthV.toFixed(1)}h/day</td>
+                </tr>` : ''}
+                ${initialV > 0 ? `<tr class="border-b border-gray-100 dark:border-white/5 hover:bg-black/5 dark:hover:bg-white/5">
+                  <td class="py-2 px-3 text-left text-gray-700 dark:text-white/80 text-xs w-2/5">Initial</td>
+                  <td class="py-2 px-3 text-right text-gray-900 dark:text-white font-semibold text-xs" colspan="2">${initialV.toFixed(1)}h/day</td>
+                </tr>` : ''}
+                ${pacingPercent !== null ? `<tr class="border-b border-gray-100 dark:border-white/5 hover:bg-black/5 dark:hover:bg-white/5 group relative pacingRow">
+                  <td class="py-2 px-3 text-left text-gray-700 dark:text-white/80 text-xs w-2/5">
+                    <span>Pacing</span>
+                  </td>
+                  <td class="py-2 px-3 text-right font-semibold text-xs ${pacingColor} cursor-help" id="pacingPercent-${pacingLegendId}">
+                    ${pacingPercent}% to initial pace
+                  </td>
+                  <td class="py-2 px-3 text-right text-xs cursor-help" id="pacingTrend-${pacingLegendId}">
+                    ${trendFile ? `<span class="inline-flex items-center gap-1">2 last days pace <span id="trendIcon-${pacingLegendId}" class="inline-flex ${trendColor}"></span></span>` : '—'}
+                  </td>
+                </tr>
+                <div id="${pacingLegendId}-pct" class="hidden fixed bg-gray-900 dark:bg-gray-800 text-white dark:text-gray-100 px-3 py-2 rounded text-xs z-50 pointer-events-none" style="border: 1px solid rgba(200,200,200,0.2);">
+                  <div class="font-semibold mb-1">Pace ${pacingPercent}% similar to initial pace</div>
+                  <div class="text-gray-300">Pacing = This week velocity / Initial pace</div>
+                  <div class="mt-1 space-y-0.5">
+                    <div><span class="text-green-400 font-semibold">80%+</span> = strong pace</div>
+                    <div><span class="text-yellow-400 font-semibold">40–79%</span> = watchful pace</div>
+                    <div><span class="text-red-400 font-semibold">&lt;40%</span> = slowing down</div>
+                  </div>
+                </div>
+                <div id="${pacingLegendId}-trend" class="hidden fixed bg-gray-900 dark:bg-gray-800 text-white dark:text-gray-100 px-3 py-2 rounded text-xs z-50 pointer-events-none" style="border: 1px solid rgba(200,200,200,0.2);">
+                  <div class="font-semibold mb-1">2 last days pace are ${trendFile === 'move-up-right.svg' ? 'increasing' : trendFile === 'move-down-right.svg' ? 'decreasing' : 'stable'} compare to last 5 days</div>
+                </div>` : ''}
+                ` : ''}
               </tbody>
             </table>
           </div>
         `;
+
+        // Load and inject trend icon SVG
+        if (trendFile && pacingLegendId) {
+          loadSvg(trendFile).then(svg => {
+            const iconEl = document.getElementById(`trendIcon-${pacingLegendId}`);
+            if (iconEl && svg) {
+              iconEl.innerHTML = svg;
+            }
+          });
+        }
+
+        // Attach pacing legend event listeners
+        if (pacingPercent !== null) {
+          setTimeout(() => {
+            // Percentage popover
+            const pacingPercentEl = document.getElementById(`pacingPercent-${pacingLegendId}`);
+            const pacingPercentPopover = document.getElementById(`${pacingLegendId}-pct`);
+            if (pacingPercentEl && pacingPercentPopover) {
+              const showPercentPopover = () => {
+                const rect = pacingPercentEl.getBoundingClientRect();
+                pacingPercentPopover.style.left = (rect.left - 50) + 'px';
+                pacingPercentPopover.style.top = (rect.bottom + 5) + 'px';
+                pacingPercentPopover.classList.remove('hidden');
+              };
+              const hidePercentPopover = () => pacingPercentPopover.classList.add('hidden');
+              pacingPercentEl.addEventListener('mouseenter', showPercentPopover);
+              pacingPercentEl.addEventListener('mouseleave', hidePercentPopover);
+              pacingPercentEl.addEventListener('click', showPercentPopover);
+            }
+
+            // Trend popover
+            const pacingTrendEl = document.getElementById(`pacingTrend-${pacingLegendId}`);
+            const pacingTrendPopover = document.getElementById(`${pacingLegendId}-trend`);
+            if (pacingTrendEl && pacingTrendPopover) {
+              const showTrendPopover = () => {
+                const rect = pacingTrendEl.getBoundingClientRect();
+                pacingTrendPopover.style.left = (rect.left - 50) + 'px';
+                pacingTrendPopover.style.top = (rect.bottom + 5) + 'px';
+                pacingTrendPopover.classList.remove('hidden');
+              };
+              const hideTrendPopover = () => pacingTrendPopover.classList.add('hidden');
+              pacingTrendEl.addEventListener('mouseenter', showTrendPopover);
+              pacingTrendEl.addEventListener('mouseleave', hideTrendPopover);
+              pacingTrendEl.addEventListener('click', showTrendPopover);
+            }
+
+            // Close popover when clicking outside
+            document.addEventListener('click', (e) => {
+              const pacingPercentEl = document.getElementById(`pacingPercent-${pacingLegendId}`);
+              const pacingTrendEl = document.getElementById(`pacingTrend-${pacingLegendId}`);
+              const pacingPercentPopover = document.getElementById(`${pacingLegendId}-pct`);
+              const pacingTrendPopover = document.getElementById(`${pacingLegendId}-trend`);
+              if (pacingPercentEl && !pacingPercentEl.contains(e.target) && pacingPercentPopover) pacingPercentPopover.classList.add('hidden');
+              if (pacingTrendEl && !pacingTrendEl.contains(e.target) && pacingTrendPopover) pacingTrendPopover.classList.add('hidden');
+            });
+          }, 0);
+        }
       }
     }
 
     let linearChartInstance = null;
     let repartitionChartInstance = null;
-    let linearViewYear = new Date().getFullYear();
-    let linearViewMonth = new Date().getMonth();
+    const _now = new Date();
+    const _defaultDate = _now.getDate() <= 7 ? new Date(_now.getFullYear(), _now.getMonth() - 1, 1) : _now;
+    let linearViewYear = _defaultDate.getFullYear();
+    let linearViewMonth = _defaultDate.getMonth();
     let summaryCachingMode = 'hours';
 
     function renderLinearChart() {
@@ -2580,7 +3158,19 @@
 
     function updateMonthLabel() {
       const monthNames = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'];
-      document.getElementById('monthLabel').textContent = `${monthNames[linearViewMonth]} ${linearViewYear}`;
+      const label = `${monthNames[linearViewMonth]} ${linearViewYear}`;
+      const monthLabelEl = document.getElementById('monthLabel');
+      monthLabelEl.textContent = label;
+
+      const tooltipEl = document.getElementById('monthTooltip');
+      tooltipEl.textContent = 'go back';
+
+      monthLabelEl.addEventListener('mouseenter', () => {
+        tooltipEl.classList.remove('opacity-0');
+      });
+      monthLabelEl.addEventListener('mouseleave', () => {
+        tooltipEl.classList.add('opacity-0');
+      });
     }
 
     function prevMonth() {
@@ -2639,6 +3229,23 @@
       return html;
     }
 
+    // ── Handle Query Parameters ──────────────────────────
+    const urlParams = new URLSearchParams(window.location.search);
+    const viewParam = urlParams.get('view');
+    const taskParam = urlParams.get('task');
+    const monthParam = urlParams.get('month');
+    const yearParam = urlParams.get('year');
+
+    // Set month/year if provided from index.html
+    if (monthParam !== null && yearParam !== null) {
+      const month = parseInt(monthParam, 10);
+      const year = parseInt(yearParam, 10);
+      if (!isNaN(month) && !isNaN(year)) {
+        linearViewMonth = month;
+        linearViewYear = year;
+      }
+    }
+
     // ── Init ──────────────────────────────────────────────
     // Only render the default active view (overview) on page load
     console.log('=== PAGE INIT START ===');
@@ -2661,9 +3268,26 @@
 
     console.log('=== PAGE INIT END ===');
 
+    if (viewParam === 'bytask' && taskParam !== null) {
+      const taskIndex = parseInt(taskParam, 10);
+      if (!isNaN(taskIndex)) {
+        setTimeout(() => {
+          switchView('bytask');
+          setTimeout(() => renderByTaskView(taskIndex), 0);
+        }, 0);
+      }
+    }
+
     // Month navigation event listeners
     document.getElementById('prevMonthBtn').addEventListener('click', prevMonth);
     document.getElementById('nextMonthBtn').addEventListener('click', nextMonth);
+
+    // Month label click handler - navigate back to index.html with selected month
+    const monthLabelEl = document.getElementById('monthLabel');
+    monthLabelEl.removeEventListener('click', openMonthSummaryModal);
+    monthLabelEl.addEventListener('click', () => {
+      window.location.href = `./index.html?month=${linearViewMonth}&year=${linearViewYear}`;
+    });
 
     // Helper function to get week of year
     function getWeekOfYear(date) {
@@ -2827,8 +3451,6 @@
       const content = renderSummaryContent();
       MonthModal.open(title, content);
     }
-
-    document.getElementById('monthLabel').addEventListener('click', openMonthSummaryModal);
 
     // Re-render when data changes in another tab
     window.addEventListener('storage', () => {

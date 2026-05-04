@@ -241,9 +241,14 @@
         <button id="prevMonth" aria-label="Previous month" class="nav-arrow w-9 h-9 md:w-10 md:h-10 flex items-center justify-center rounded-lg hover:bg-black/5 dark:hover:bg-white/10">
           <img src="./icons/chevron-left.svg" alt="" class="w-5 h-5 md:w-6 md:h-6 text-gray-900 dark:text-white forced-color-adjust-none md:forced-color-adjust-auto" aria-hidden="true">
         </button>
-        <button id="monthLabel" class="text-sm md:text-lg font-semibold transition-colors px-3 py-1 rounded-lg hover:bg-black/5 dark:hover:bg-white/5" style="color: rgb(0, 0, 0);" onmouseover="updateMonthLabelHover(true)" onmouseout="updateMonthLabelHover(false)">
-          <!-- filled by JS -->
-        </button>
+        <div class="relative">
+          <button id="monthLabel" class="text-sm md:text-lg font-semibold transition-colors px-3 py-1 rounded-lg hover:bg-black/5 dark:hover:bg-white/5" style="color: rgb(0, 0, 0);" onmouseover="updateMonthLabelHover(true)" onmouseout="updateMonthLabelHover(false)">
+            <!-- filled by JS -->
+          </button>
+          <div id="monthTooltip" class="absolute top-full left-1/2 transform -translate-x-1/2 mt-2 px-3 py-1.5 bg-gray-900 dark:bg-gray-700 text-white text-xs whitespace-nowrap rounded-md opacity-0 pointer-events-none transition-opacity duration-0" style="z-index: 50;">
+            <!-- filled by JS -->
+          </div>
+        </div>
         <button id="nextMonth" aria-label="Next month" class="nav-arrow w-9 h-9 md:w-10 md:h-10 flex items-center justify-center rounded-lg hover:bg-black/5 dark:hover:bg-white/10">
           <img src="./icons/chevron-right.svg" alt="" class="w-5 h-5 md:w-6 md:h-6 text-gray-900 dark:text-white forced-color-adjust-none md:forced-color-adjust-auto" aria-hidden="true">
         </button>
@@ -324,7 +329,8 @@
       deliveryDate: t.deliveryDate ?? '',
       jiraLink: t.jiraLink ?? '',
       status: t.status ?? '',
-      idOpus: t.idOpus ?? ''
+      idOpus: t.idOpus ?? '',
+      estimateHistory: t.estimateHistory ?? []
     }));
     let completions = loadJSON('dt_completions', {});
     let maxCap = parseFloat(localStorage.getItem('dt_maxCap')) || 7.5;
@@ -367,6 +373,19 @@
     const now = new Date();
     let viewYear = now.getFullYear();
     let viewMonth = now.getMonth();
+
+    // Handle query parameters from analytics.html
+    const urlParams = new URLSearchParams(window.location.search);
+    const monthParam = urlParams.get('month');
+    const yearParam = urlParams.get('year');
+    if (monthParam !== null && yearParam !== null) {
+      const month = parseInt(monthParam, 10);
+      const year = parseInt(yearParam, 10);
+      if (!isNaN(month) && !isNaN(year)) {
+        viewMonth = month;
+        viewYear = year;
+      }
+    }
 
     // ── Helpers ────────────────────────────────────────────
     function todayStr() {
@@ -709,6 +728,10 @@
         todayStr,
         COLOR_HEX,
         fmtH,
+        onTaskClick: (taskIndex) => {
+          // Navigate to analytics.html in by-task view for this task
+          window.location.href = `./analytics.html?view=bytask&task=${taskIndex}`;
+        },
       });
     }
 
@@ -716,7 +739,19 @@
     function renderMonthNav() {
       const d = new Date(viewYear, viewMonth, 1);
       const label = d.toLocaleDateString('en-US', { month: 'long', year: 'numeric' });
-      document.getElementById('monthLabel').textContent = label;
+      const monthLabelEl = document.getElementById('monthLabel');
+      monthLabelEl.textContent = label;
+
+      const tooltipEl = document.getElementById('monthTooltip');
+      tooltipEl.textContent = 'go to analytics';
+
+      monthLabelEl.addEventListener('mouseenter', () => {
+        tooltipEl.classList.remove('opacity-0');
+      });
+      monthLabelEl.addEventListener('mouseleave', () => {
+        tooltipEl.classList.add('opacity-0');
+      });
+
       document.getElementById('prevMonth').disabled = !canGoPrev();
       document.getElementById('nextMonth').disabled = !canGoNext();
       const todayBtn = document.getElementById('todayBtn');
@@ -1134,7 +1169,7 @@
     });
 
     document.getElementById('monthLabel').addEventListener('click', () => {
-      openMonthSummary();
+      window.location.href = `./analytics.html?month=${viewMonth}&year=${viewYear}&view=overview`;
     });
 
     document.getElementById('todayBtn').addEventListener('click', (e) => {

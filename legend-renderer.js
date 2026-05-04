@@ -11,6 +11,7 @@ const LegendRenderer = {
       todayStr,
       COLOR_HEX,
       fmtH,
+      onTaskClick,
     } = options;
 
     const el = document.getElementById(elementId);
@@ -31,15 +32,24 @@ const LegendRenderer = {
         // Only show tasks with > 0 hours
         if (total === 0) return '';
 
-        const label = `${t.name} (${fmtH(total)})`;
         return `
-          <div class="flex items-center gap-1.5 md:gap-2">
+          <div data-taskindex="${i}" class="flex items-center gap-1.5 md:gap-2 cursor-pointer hover:opacity-80 transition-opacity select-none">
             <div class="w-2.5 h-2.5 md:w-3 md:h-3 rounded-full" style="background:${COLOR_HEX[t.color]}"></div>
-            <span class="text-gray-500 dark:text-white/70">${label}</span>
+            <span class="text-gray-500 dark:text-white/70">${t.name}</span>
           </div>
         `;
       })
       .filter(html => html !== '')
       .join('');
+
+    // Add click handlers if callback provided
+    if (onTaskClick) {
+      el.querySelectorAll('[data-taskindex]').forEach(item => {
+        item.addEventListener('click', () => {
+          const taskIndex = parseInt(item.dataset.taskindex, 10);
+          onTaskClick(taskIndex);
+        });
+      });
+    }
   },
 };
