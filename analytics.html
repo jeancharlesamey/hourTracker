@@ -3120,7 +3120,7 @@
             let display = '—';
             if (hours > 0) {
               if (isHours) display = fmtH(hours);
-              else if (isDays) display = fmtD(hours);
+              else if (isDays) display = fmtDNoSuffix(hours);
               else if (isPct) display = fmtPct(hours, grandTotal);
             }
             const colWidth = (3 / (4 * (rows.length + 1))) * 100;
@@ -3130,7 +3130,7 @@
           let groupTotalDisplay = '—';
           if (groupMonthTotal > 0) {
             if (isHours) groupTotalDisplay = fmtH(groupMonthTotal);
-            else if (isDays) groupTotalDisplay = fmtD(groupMonthTotal);
+            else if (isDays) groupTotalDisplay = fmtDNoSuffix(groupMonthTotal);
             else if (isPct) groupTotalDisplay = fmtPct(groupMonthTotal, grandTotal);
           }
 
@@ -3163,7 +3163,7 @@
             let display = '—';
             if (hours > 0) {
               if (isHours) display = fmtH(hours);
-              else if (isDays) display = fmtD(hours);
+              else if (isDays) display = fmtDNoSuffix(hours);
               else if (isPct) display = fmtPct(hours, grandTotal);
             }
             const colWidth = (3 / (4 * (rows.length + 1))) * 100;
@@ -3174,7 +3174,7 @@
           let totalDisplay = '—';
           if (monthTotal > 0) {
             if (isHours) totalDisplay = fmtH(monthTotal);
-            else if (isDays) totalDisplay = fmtD(monthTotal);
+            else if (isDays) totalDisplay = fmtDNoSuffix(monthTotal);
             else if (isPct) totalDisplay = fmtPct(monthTotal, grandTotal);
           }
 
@@ -3392,6 +3392,11 @@
     function fmtD(h) {
       const days = (h / maxCap).toFixed(2);
       return days + 'd';
+    }
+
+    function fmtDNoSuffix(h) {
+      const days = (h / maxCap).toFixed(2);
+      return days;
     }
 
     function hoursToDay(h) {

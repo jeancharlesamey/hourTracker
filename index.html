@@ -960,6 +960,13 @@
       return `${parseFloat(days.toFixed(2))}d`;
     }
 
+    function fmtDNoSuffix(h) {
+      // Convert hours to days without the 'd' suffix
+      if (h === 0) return '—';
+      const days = h / maxCap;
+      return parseFloat(days.toFixed(2)).toString();
+    }
+
     function fmtPct(h, total) {
       if (total === 0 || h === 0) return '—';
       const pct = (h / total) * 100;
@@ -968,7 +975,7 @@
 
     function fmtVal(h, total) {
       if (summaryMode === 'pct') return fmtPct(h, total);
-      return summaryMode === 'days' ? fmtD(h) : fmtH(h);
+      return summaryMode === 'days' ? fmtDNoSuffix(h) : fmtH(h);
     }
 
     function openMonthSummary() {
