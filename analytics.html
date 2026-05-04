@@ -3119,8 +3119,8 @@
           groupWeekTotals.forEach((hours) => {
             let display = '—';
             if (hours > 0) {
-              if (isHours) display = fmtH(hours);
-              else if (isDays) display = fmtDNoSuffix(hours);
+              if (isHours) display = fmtH(hours).replace('.', ',');
+              else if (isDays) display = fmtDNoSuffix(hours).replace('.', ',');
               else if (isPct) display = fmtPct(hours, grandTotal);
             }
             const colWidth = (3 / (4 * (rows.length + 1))) * 100;
@@ -3129,8 +3129,8 @@
 
           let groupTotalDisplay = '—';
           if (groupMonthTotal > 0) {
-            if (isHours) groupTotalDisplay = fmtH(groupMonthTotal);
-            else if (isDays) groupTotalDisplay = fmtDNoSuffix(groupMonthTotal);
+            if (isHours) groupTotalDisplay = fmtH(groupMonthTotal).replace('.', ',');
+            else if (isDays) groupTotalDisplay = fmtDNoSuffix(groupMonthTotal).replace('.', ',');
             else if (isPct) groupTotalDisplay = fmtPct(groupMonthTotal, grandTotal);
           }
 
@@ -3162,8 +3162,8 @@
           weekTotals.forEach((hours) => {
             let display = '—';
             if (hours > 0) {
-              if (isHours) display = fmtH(hours);
-              else if (isDays) display = fmtDNoSuffix(hours);
+              if (isHours) display = fmtH(hours).replace('.', ',');
+              else if (isDays) display = fmtDNoSuffix(hours).replace('.', ',');
               else if (isPct) display = fmtPct(hours, grandTotal);
             }
             const colWidth = (3 / (4 * (rows.length + 1))) * 100;
@@ -3173,8 +3173,8 @@
 
           let totalDisplay = '—';
           if (monthTotal > 0) {
-            if (isHours) totalDisplay = fmtH(monthTotal);
-            else if (isDays) totalDisplay = fmtDNoSuffix(monthTotal);
+            if (isHours) totalDisplay = fmtH(monthTotal).replace('.', ',');
+            else if (isDays) totalDisplay = fmtDNoSuffix(monthTotal).replace('.', ',');
             else if (isPct) totalDisplay = fmtPct(monthTotal, grandTotal);
           }
 
