@@ -112,7 +112,7 @@ Data stored locally: your task list, colors, hours per day, daily cap, and last 
 
 ## Recent Updates
 
-**v1.4.0-beta2** — Burndown refinements, navigation improvements, momentum analytics
+**v1.4.0-beta3** — Burndown refinements, navigation improvements, momentum analytics
 - **Navigation:** Click task legend to navigate to by-task analytics view; click month label to toggle between index and analytics
 - **Burn Chart Enhancements:** Projected slip calculation ("If pace unchanged: deliver +Xd late") with visual diamond markers on scope change dates
 - **Scope Change Tracking:** Records estimate increases with date and from/to values; visualized as amber dashed lines with diamond markers on burn chart
@@ -135,7 +135,7 @@ Data stored locally: your task list, colors, hours per day, daily cap, and last 
 - Back Navigation: Changed from folder link to history.back() for clean navigation (Issue #9)
 - Dark Mode Flash: Added synchronous dark mode check in page head to prevent light mode flash on navigation
 
-**v1.2.0-beta2** — Delivery tracking, charts, full-year heatmap
+**v1.2.0-beta** — Delivery tracking, charts, full-year heatmap
 - Burn Chart: Refined visualization with ideal trajectory line
 - Date Formatting: Consistent display + "Month Day Year" in requirements
 - Hours Done Views: Toggle between Week (W14) and Day (Apr 1) with tooltips
