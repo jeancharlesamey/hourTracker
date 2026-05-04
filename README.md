@@ -112,7 +112,7 @@ Data stored locally: your task list, colors, hours per day, daily cap, and last 
 
 ## Recent Updates
 
-**v1.4.0-beta3** — Burndown refinements, navigation improvements, momentum analytics
+**v1.4.0-beta2** — Burndown refinements, navigation improvements, momentum analytics
 - **Navigation:** Click task legend to navigate to by-task analytics view; click month label to toggle between index and analytics
 - **Burn Chart Enhancements:** Projected slip calculation ("If pace unchanged: deliver +Xd late") with visual diamond markers on scope change dates
 - **Scope Change Tracking:** Records estimate increases with date and from/to values; visualized as amber dashed lines with diamond markers on burn chart
