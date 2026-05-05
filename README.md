@@ -1,6 +1,6 @@
 ◷ **HOUR TRACKER** — one file. no server. no fuss.
 
-**v1.4.0-beta2**
+**v1.4.1-beta2**
 
 A minimal, offline-first hour tracker that lives in your browser. No login, no server, no complications.
 
@@ -112,14 +112,17 @@ Data stored locally: your task list, colors, hours per day, daily cap, and last 
 
 ## Recent Updates
 
-**v1.4.0-beta3** — Burndown refinements, navigation improvements, momentum analytics
-- **Navigation:** Click task legend to navigate to by-task analytics view; click month label to toggle between index and analytics
-- **Burn Chart Enhancements:** Projected slip calculation ("If pace unchanged: deliver +Xd late") with visual diamond markers on scope change dates
-- **Scope Change Tracking:** Records estimate increases with date and from/to values; visualized as amber dashed lines with diamond markers on burn chart
-- **Momentum Card:** New pacing metrics showing % of initial pace with trend indicators (up/down/stable arrows); semantic color coding (80%+ green, 40-79% yellow, <40% red)
-- **Risk Badges:** Unified messaging for projected slip, overdone projects, and status warnings; contextual popover with reschedule suggestions
-- **By-Task View:** Improved legend navigation, task filtering by month, enhanced burn chart with scope change visualization
-- **Responsive Tooltips:** Fast-appearing tooltips on hover (month label: "go to analytics" / "go back"; legend: task selection hints)
+**v1.4.1-beta3** — Burndown refinements, navigation improvements, momentum analytics
+- Weekly Breakdown: add group display for same ID and adjust to facilitate copy to excel the day value
+  
+**v1.4.1-beta3** — Burndown refinements, navigation improvements, momentum analytics
+- Navigation: Click task legend to navigate to by-task analytics view; click month label to toggle between index and analytics
+- Burn Chart Enhancements: Projected slip calculation ("If pace unchanged: deliver +Xd late") with visual diamond markers on scope change dates
+- Scope Change Tracking: Records estimate increases with date and from/to values; visualized as amber dashed lines with diamond markers on burn chart
+- Momentum Card: New pacing metrics showing % of initial pace with trend indicators (up/down/stable arrows); semantic color coding (80%+ green, 40-79% yellow, <40% red)
+- Risk Badges: Unified messaging for projected slip, overdone projects, and status warnings; contextual popover with reschedule suggestions
+- By-Task View: Improved legend navigation, task filtering by month, enhanced burn chart with scope change visualization
+- Responsive Tooltips: Fast-appearing tooltips on hover (month label: "go to analytics" / "go back"; legend: task selection hints)
 
 **v1.3.0-beta2** — Settings sidebar, task filtering, analytics refinements
 - Settings Sidebar: Redesigned settings UI as dedicated sidebar modal with integrated task creation

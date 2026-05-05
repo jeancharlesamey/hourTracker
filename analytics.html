@@ -3153,7 +3153,7 @@
           const colorCircle = `<div class="w-2.5 h-2.5 rounded-full flex-shrink-0" style="background: ${COLOR_HEX[task.color]}"></div>`;
           const paddingLeft = isMissingId ? '' : 'padding-left: 2rem;';
           const rowClass = isMissingId ? 'border-b border-gray-200 dark:border-white/10 bg-gray-50 dark:bg-white/5' : 'border-b border-gray-100 dark:border-white/5 hover:bg-black/5 dark:hover:bg-white/5';
-          const cellClass = isMissingId ? 'py-2 px-3 font-semibold text-gray-900 dark:text-white text-xs flex items-center gap-2.5 w-4/5 overflow-hidden' : 'py-2 px-3 text-gray-900 dark:text-white flex items-center gap-2.5 w-4/5 overflow-hidden';
+          const cellClass = isMissingId ? 'py-2 px-3 font-semibold text-gray-900 dark:text-white text-xs flex items-center gap-2.5 w-4/5 overflow-hidden' : 'py-2 px-3 text-gray-600 dark:text-white/60 flex items-center gap-2.5 w-4/5 overflow-hidden';
 
           html += `<tr class="${rowClass}">
             <td class="${cellClass}" style="${paddingLeft}">${colorCircle}${taskLink}</td>
@@ -3167,7 +3167,7 @@
               else if (isPct) display = fmtPct(hours, grandTotal);
             }
             const colWidth = (3 / (4 * (rows.length + 1))) * 100;
-            const cellStyle = isMissingId ? 'font-semibold text-gray-700 dark:text-white/80 text-xs' : 'text-gray-700 dark:text-white/80 text-xs';
+            const cellStyle = isMissingId ? 'font-semibold text-gray-700 dark:text-white/80 text-xs' : 'text-gray-500 dark:text-white/50 text-xs';
             html += `<td class="text-right py-2 px-3 ${cellStyle}" style="width: ${colWidth}%">${display}</td>`;
           });
 
