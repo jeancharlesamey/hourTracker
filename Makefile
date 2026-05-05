@@ -39,6 +39,6 @@ status:
 	git status
 
 push:
-	git push
+	git push origin HEAD
 
 .DEFAULT_GOAL := help
