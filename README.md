@@ -1,4 +1,4 @@
-##HOUR TRACKER
+# HOUR TRACKER
 one file. no server. no fuss.
 
 **v1.4.1-beta2**
