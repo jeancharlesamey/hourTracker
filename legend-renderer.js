@@ -32,10 +32,11 @@ const LegendRenderer = {
         // Only show tasks with > 0 hours
         if (total === 0) return '';
 
+        const displayLabel = t.idOpus ? `${t.idOpus} • ${t.name}` : t.name;
         return `
           <div data-taskindex="${i}" class="flex items-center gap-1.5 md:gap-2 cursor-pointer hover:opacity-80 transition-opacity select-none">
             <div class="w-2.5 h-2.5 md:w-3 md:h-3 rounded-full" style="background:${COLOR_HEX[t.color]}"></div>
-            <span class="text-gray-500 dark:text-white/70">${t.name}</span>
+            <span class="text-gray-500 dark:text-white/70">${displayLabel}</span>
           </div>
         `;
       })

@@ -1985,7 +1985,16 @@
         return Array.isArray(comp) ? comp : [];
       };
 
-      const tasksWithHours = tasks.filter((task, i) => hasHoursInMonth(i, linearViewYear, linearViewMonth));
+      const tasksWithHours = tasks.filter((task, i) => hasHoursInMonth(i, linearViewYear, linearViewMonth))
+        .sort((a, b) => {
+          const idA = (a.idOpus || '').toString().toLowerCase();
+          const idB = (b.idOpus || '').toString().toLowerCase();
+          // Tasks with IDs come first, sorted by ID; tasks without IDs come last, sorted by name
+          if (idA && !idB) return -1;
+          if (!idA && idB) return 1;
+          if (idA && idB) return idA.localeCompare(idB);
+          return a.name.localeCompare(b.name);
+        });
 
       const options = {
         tasks: tasksWithHours,
@@ -2018,10 +2027,11 @@
           .map((task) => {
             const actualIdx = tasks.indexOf(task);
             const isActive = actualIdx === activeTaskIndex;
+            const displayLabel = task.idOpus ? `${task.idOpus} • ${task.name}` : task.name;
             return `
               <div data-taskindex="${actualIdx}" class="flex items-center gap-1.5 cursor-pointer select-none transition-opacity hover:opacity-100 ${isActive ? '' : 'opacity-60'}">
                 <div class="w-2.5 h-2.5 md:w-3 md:h-3 rounded-full" style="background:${COLOR_HEX[task.color]}"></div>
-                <span class="text-gray-500 dark:text-white/70">${task.name}</span>
+                <span class="text-gray-500 dark:text-white/70">${displayLabel}</span>
               </div>
             `;
           })
@@ -3010,12 +3020,32 @@
       const isPct = summaryCachingMode === 'pct';
 
       // Filter tasks to only show those with hours in this month
-      const tasksWithHours = tasks.filter((_, taskIndex) => hasHoursInMonth(taskIndex, linearViewYear, linearViewMonth));
+      const tasksWithHours = tasks.filter((_, taskIndex) => hasHoursInMonth(taskIndex, linearViewYear, linearViewMonth))
+        .sort((a, b) => {
+          const idA = (a.idOpus || '').toString().toLowerCase();
+          const idB = (b.idOpus || '').toString().toLowerCase();
+          if (idA && !idB) return -1;
+          if (!idA && idB) return 1;
+          if (idA && idB) return idA.localeCompare(idB);
+          return a.name.localeCompare(b.name);
+        });
+
+      // Group tasks by ID
+      const groupedTasks = {};
+      const groupOrder = [];
+      tasksWithHours.forEach(task => {
+        const id = task.idOpus || '(no ID)';
+        if (!groupedTasks[id]) {
+          groupedTasks[id] = [];
+          groupOrder.push(id);
+        }
+        groupedTasks[id].push(task);
+      });
 
       // Calculate total hours for percentage calculations
       let grandTotal = 0;
-      tasksWithHours.forEach((_, displayIdx) => {
-        const taskIndex = tasks.indexOf(tasksWithHours[displayIdx]);
+      tasksWithHours.forEach((task) => {
+        const taskIndex = tasks.indexOf(task);
         rows.forEach(weekDates => {
           grandTotal += weekDates.reduce((sum, ds) => sum + getHours(ds, taskIndex), 0);
         });
@@ -3064,43 +3094,94 @@
             <tbody>
       `;
 
-      tasksWithHours.forEach((task) => {
-        const taskIndex = tasks.indexOf(task);
-        let monthTotal = 0;
-        const weekTotals = rows.map(weekDates => {
-          const weekTotal = weekDates.reduce((sum, ds) => sum + getHours(ds, taskIndex), 0);
-          monthTotal += weekTotal;
-          return weekTotal;
-        });
+      groupOrder.forEach(groupId => {
+        const groupTasks = groupedTasks[groupId];
+        const isMissingId = groupId === '(no ID)';
 
-        const taskLink = task.jiraLink ? `<a href="${task.jiraLink}" target="_blank" class="text-blue-600 dark:text-white hover:underline">${task.name}</a>` : task.name;
-        const colorCircle = `<div class="w-2.5 h-2.5 rounded-full flex-shrink-0" style="background: ${COLOR_HEX[task.color]}"></div>`;
+        // Only show group header if group has an ID
+        if (!isMissingId) {
+          // Calculate group totals
+          let groupMonthTotal = 0;
+          const groupWeekTotals = rows.map(weekDates => {
+            const weekTotal = groupTasks.reduce((sum, task) => {
+              const taskIndex = tasks.indexOf(task);
+              return sum + weekDates.reduce((s, ds) => s + getHours(ds, taskIndex), 0);
+            }, 0);
+            groupMonthTotal += weekTotal;
+            return weekTotal;
+          });
 
-        html += `<tr class="border-b border-gray-100 dark:border-white/5 hover:bg-black/5 dark:hover:bg-white/5">
-          <td class="py-2 px-3 text-gray-900 dark:text-white flex items-center gap-2.5 w-4/5 overflow-hidden">${colorCircle}${taskLink}</td>
-        `;
+          // Group header row
+          html += `<tr class="border-b border-gray-200 dark:border-white/10 bg-gray-50 dark:bg-white/5">
+            <td class="py-2 px-3 font-semibold text-gray-900 dark:text-white text-xs">${groupId}</td>
+          `;
 
-        weekTotals.forEach((hours, idx) => {
-          let display = '—';
-          if (hours > 0) {
-            if (isHours) display = fmtH(hours);
-            else if (isDays) display = fmtD(hours);
-            else if (isPct) display = fmtPct(hours, grandTotal);
+          groupWeekTotals.forEach((hours) => {
+            let display = '—';
+            if (hours > 0) {
+              if (isHours) display = fmtH(hours).replace('.', ',');
+              else if (isDays) display = fmtDNoSuffix(hours).replace('.', ',');
+              else if (isPct) display = fmtPct(hours, grandTotal);
+            }
+            const colWidth = (3 / (4 * (rows.length + 1))) * 100;
+            html += `<td class="text-right py-2 px-3 font-semibold text-gray-700 dark:text-white/80 text-xs" style="width: ${colWidth}%">${display}</td>`;
+          });
+
+          let groupTotalDisplay = '—';
+          if (groupMonthTotal > 0) {
+            if (isHours) groupTotalDisplay = fmtH(groupMonthTotal).replace('.', ',');
+            else if (isDays) groupTotalDisplay = fmtDNoSuffix(groupMonthTotal).replace('.', ',');
+            else if (isPct) groupTotalDisplay = fmtPct(groupMonthTotal, grandTotal);
           }
-          const colWidth = (3 / (4 * (rows.length + 1))) * 100;
-          html += `<td class="text-right py-2 px-3 text-gray-700 dark:text-white/80 text-xs" style="width: ${colWidth}%">${display}</td>`;
-        });
 
-        let totalDisplay = '—';
-        if (monthTotal > 0) {
-          if (isHours) totalDisplay = fmtH(monthTotal);
-          else if (isDays) totalDisplay = fmtD(monthTotal);
-          else if (isPct) totalDisplay = fmtPct(monthTotal, grandTotal);
+          const totalColWidth = (3 / (4 * (rows.length + 1))) * 100;
+          html += `<td class="text-right py-2 px-3 font-semibold text-gray-900 dark:text-white text-xs" style="width: ${totalColWidth}%">${groupTotalDisplay}</td>
+          </tr>`;
         }
 
-        const totalColWidth = (3 / (4 * (rows.length + 1))) * 100;
-        html += `<td class="text-right py-2 px-3 font-semibold text-gray-900 dark:text-white text-xs" style="width: ${totalColWidth}%">${totalDisplay}</td>
+        // Individual task rows within group (or standalone if no ID)
+        groupTasks.forEach((task) => {
+          const taskIndex = tasks.indexOf(task);
+          let monthTotal = 0;
+          const weekTotals = rows.map(weekDates => {
+            const weekTotal = weekDates.reduce((sum, ds) => sum + getHours(ds, taskIndex), 0);
+            monthTotal += weekTotal;
+            return weekTotal;
+          });
+
+          const taskLink = task.jiraLink ? `<a href="${task.jiraLink}" target="_blank" class="text-blue-600 dark:text-white hover:underline">${task.name}</a>` : task.name;
+          const colorCircle = `<div class="w-2.5 h-2.5 rounded-full flex-shrink-0" style="background: ${COLOR_HEX[task.color]}"></div>`;
+          const paddingLeft = isMissingId ? '' : 'padding-left: 2rem;';
+          const rowClass = isMissingId ? 'border-b border-gray-200 dark:border-white/10 bg-gray-50 dark:bg-white/5' : 'border-b border-gray-100 dark:border-white/5 hover:bg-black/5 dark:hover:bg-white/5';
+          const cellClass = isMissingId ? 'py-2 px-3 font-semibold text-gray-900 dark:text-white text-xs flex items-center gap-2.5 w-4/5 overflow-hidden' : 'py-2 px-3 text-gray-600 dark:text-white/60 flex items-center gap-2.5 w-4/5 overflow-hidden';
+
+          html += `<tr class="${rowClass}">
+            <td class="${cellClass}" style="${paddingLeft}">${colorCircle}${taskLink}</td>
+          `;
+
+          weekTotals.forEach((hours) => {
+            let display = '—';
+            if (hours > 0) {
+              if (isHours) display = fmtH(hours).replace('.', ',');
+              else if (isDays) display = fmtDNoSuffix(hours).replace('.', ',');
+              else if (isPct) display = fmtPct(hours, grandTotal);
+            }
+            const colWidth = (3 / (4 * (rows.length + 1))) * 100;
+            const cellStyle = isMissingId ? 'font-semibold text-gray-700 dark:text-white/80 text-xs' : 'text-gray-500 dark:text-white/50 text-xs';
+            html += `<td class="text-right py-2 px-3 ${cellStyle}" style="width: ${colWidth}%">${display}</td>`;
+          });
+
+          let totalDisplay = '—';
+          if (monthTotal > 0) {
+            if (isHours) totalDisplay = fmtH(monthTotal).replace('.', ',');
+            else if (isDays) totalDisplay = fmtDNoSuffix(monthTotal).replace('.', ',');
+            else if (isPct) totalDisplay = fmtPct(monthTotal, grandTotal);
+          }
+
+          const totalColWidth = (3 / (4 * (rows.length + 1))) * 100;
+          html += `<td class="text-right py-2 px-3 font-semibold text-gray-900 dark:text-white text-xs" style="width: ${totalColWidth}%">${totalDisplay}</td>
         </tr>`;
+        });
       });
 
       html += `
@@ -3311,6 +3392,11 @@
     function fmtD(h) {
       const days = (h / maxCap).toFixed(2);
       return days + 'd';
+    }
+
+    function fmtDNoSuffix(h) {
+      const days = (h / maxCap).toFixed(2);
+      return days;
     }
 
     function hoursToDay(h) {
