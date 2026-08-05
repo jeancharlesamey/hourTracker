@@ -921,9 +921,9 @@
         <div class="flex items-center gap-3 p-3 md:p-4 rounded-xl bg-black/5 dark:bg-white/5">
           <div class="w-3 h-3 rounded-full shrink-0" style="background:${COLOR_HEX[t.color]}"></div>
           ${t.jiraLink ? `<a href="${t.jiraLink}" target="_blank" rel="noopener noreferrer" class="flex-1 text-sm md:text-base font-medium text-gray-900 dark:text-white/90 hover:underline">${t.name}</a>` : `<span class="flex-1 text-sm md:text-base font-medium text-gray-900 dark:text-white/90">${t.name}</span>`}
-          <input type="number" min="0" step="0.25" value="${comp[i] || 0}"
+          <input type="number" min="0" step="0.25" value="${comp[i] || 0}" data-task-index="${i}"
             class="w-20 bg-black/5 dark:bg-white/10 border border-gray-200 dark:border-white/10 rounded-lg px-2 py-1.5 text-sm text-right text-gray-900 dark:text-white focus:outline-none focus:border-gray-400 dark:focus:border-white/30 transition-colors"
-            onchange="updateHours(${i}, this.value)" onblur="updateHours(${i}, this.value)">
+            onchange="updateHours(${i}, this.value)" onblur="updateHours(${i}, this.value)" onkeydown="handleHourKeydown(event, ${i})">
           <span class="text-xs text-gray-400 dark:text-white/40 w-3">h</span>
         </div>
       `;
@@ -961,6 +961,23 @@
       }
       renderTaskList();
       renderCalendar();
+    }
+    function handleHourKeydown(e, index) {
+      let delta = 0;
+      if (e.key === 'ArrowUp') delta = 0.25;
+      else if (e.key === 'ArrowDown') delta = -0.25;
+      else if (e.key === 'ArrowRight') delta = 1;
+      else if (e.key === 'ArrowLeft') delta = -1;
+      else return;
+      e.preventDefault();
+      const current = parseFloat(e.target.value) || 0;
+      const next = Math.max(0, Math.round((current + delta) * 100) / 100);
+      updateHours(index, next);
+      const newInput = document.querySelector(`input[data-task-index="${index}"]`);
+      if (newInput) {
+        newInput.focus();
+        newInput.select();
+      }
     }
 
     // ── Month Summary ─────────────────────────────────────
