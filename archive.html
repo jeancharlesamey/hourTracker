@@ -133,9 +133,10 @@
       const statusMap = {
         'soon': 'Soon',
         'inProgress': 'In Progress',
+        'devStarted': 'Dev started',
         'inPause': 'In Pause',
         'done': 'Done',
-        'checking': 'Checking',
+        'checking': 'Final review',
         'archived': 'Archived'
       };
       return statusMap[status] || '—';
@@ -242,9 +243,10 @@
               <option value="" ${task.status === '' ? 'selected' : ''}>—</option>
               <option value="soon" ${task.status === 'soon' ? 'selected' : ''}>Soon</option>
               <option value="inProgress" ${task.status === 'inProgress' ? 'selected' : ''}>In Progress</option>
+              <option value="devStarted" ${task.status === 'devStarted' ? 'selected' : ''}>Dev started</option>
               <option value="inPause" ${task.status === 'inPause' ? 'selected' : ''}>In Pause</option>
               <option value="done" ${task.status === 'done' ? 'selected' : ''}>Done</option>
-              <option value="checking" ${task.status === 'checking' ? 'selected' : ''}>Checking</option>
+              <option value="checking" ${task.status === 'checking' ? 'selected' : ''}>Final review</option>
               <option value="archived" ${task.status === 'archived' ? 'selected' : ''}>Archived</option>
             </select>
           </td>`;

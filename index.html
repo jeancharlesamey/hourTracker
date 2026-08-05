@@ -919,7 +919,7 @@
       }
 
       el.innerHTML = tasks.map((t, i) => {
-        if (t && t.status === 'archived') return '';
+        if (t && (t.status === 'archived' || t.status === 'done' || t.status === 'devStarted')) return '';
         const isSelected = selectedTaskIndex === i;
         return `
         <div class="flex items-center gap-3 p-3 md:p-4 rounded-xl bg-black/5 dark:bg-white/5 cursor-pointer transition-shadow ${isSelected ? 'ring-2 ring-gray-400 dark:ring-white/40' : ''}" onclick="selectTaskRow(event, ${i})">

@@ -311,9 +311,10 @@ const SettingsModal = {
                 <option value="" ${!t.status ? 'selected' : ''}>—</option>
                 <option value="soon" ${t.status === 'soon' ? 'selected' : ''}>Soon</option>
                 <option value="inProgress" ${t.status === 'inProgress' ? 'selected' : ''}>In Progress</option>
+                <option value="devStarted" ${t.status === 'devStarted' ? 'selected' : ''}>Dev started</option>
                 <option value="inPause" ${t.status === 'inPause' ? 'selected' : ''}>In Pause</option>
                 <option value="done" ${t.status === 'done' ? 'selected' : ''}>Done</option>
-                <option value="checking" ${t.status === 'checking' ? 'selected' : ''}>Checking</option>
+                <option value="checking" ${t.status === 'checking' ? 'selected' : ''}>Final review</option>
                 <option value="archived" ${t.status === 'archived' ? 'selected' : ''}>Archived</option>
               </select>
             </div>
@@ -590,9 +591,10 @@ const SettingsModal = {
               <option value="" selected>—</option>
               <option value="soon">Soon</option>
               <option value="inProgress">In Progress</option>
+              <option value="devStarted">Dev started</option>
               <option value="inPause">In Pause</option>
               <option value="done">Done</option>
-              <option value="checking">Checking</option>
+              <option value="checking">Final review</option>
               <option value="archived">Archived</option>
             </select>
           </div>
