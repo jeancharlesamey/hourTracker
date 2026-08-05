@@ -1304,7 +1304,8 @@
 
             // Label showing days added (to the left of the diamond)
             const daysAdded = change.to - change.from;
-            const labelText = `+${daysAdded.toFixed(1)}d`;
+            const sign = daysAdded >= 0 ? '+' : '';
+            const labelText = `${sign}${daysAdded.toFixed(1)}d`;
             ctx.fillStyle = 'rgba(245, 158, 11, 0.9)';
             ctx.font = '11px sans-serif';
             ctx.textAlign = 'right';

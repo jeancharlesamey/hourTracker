@@ -674,7 +674,7 @@ window._settingsModalFinalizeEstimateChange = (i, v) => {
   const newVal = parseFloat(v) || 0;
   const oldVal = _estimateFocusValue ?? (parseFloat(tasks[i].estimate) || 0);
 
-  if (newVal > oldVal) {
+  if (newVal !== oldVal) {
     const completions = SettingsModal.config.getCompletions?.() || {};
     const hasLoggedHours = Object.values(completions).some(
       comp => Array.isArray(comp) && (comp[i] || 0) > 0
