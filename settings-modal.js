@@ -236,7 +236,7 @@ const SettingsModal = {
   },
 
   renderSettings(options = {}) {
-    const { tasks: showTasks = true, dailyCap: showDailyCap = true, deleteData: showDeleteData = true, title = 'Settings' } = options;
+    const { tasks: showTasks = true, dailyCap: showDailyCap = true, deleteData: showDeleteData = false, title = 'Settings' } = options;
     const el = document.getElementById('settingsTasks');
     const titleEl = document.getElementById('settingsTitle');
     if (titleEl) titleEl.textContent = title;
@@ -310,11 +310,11 @@ const SettingsModal = {
                 onchange="window._settingsModalUpdateTaskStatus(${i}, this.value)">
                 <option value="" ${!t.status ? 'selected' : ''}>—</option>
                 <option value="soon" ${t.status === 'soon' ? 'selected' : ''}>Soon</option>
+                <option value="inPause" ${t.status === 'inPause' ? 'selected' : ''}>In Pause</option>
                 <option value="inProgress" ${t.status === 'inProgress' ? 'selected' : ''}>In Progress</option>
                 <option value="devStarted" ${t.status === 'devStarted' ? 'selected' : ''}>Dev started</option>
-                <option value="inPause" ${t.status === 'inPause' ? 'selected' : ''}>In Pause</option>
-                <option value="done" ${t.status === 'done' ? 'selected' : ''}>Done</option>
                 <option value="checking" ${t.status === 'checking' ? 'selected' : ''}>Final review</option>
+                <option value="done" ${t.status === 'done' ? 'selected' : ''}>Done</option>
                 <option value="archived" ${t.status === 'archived' ? 'selected' : ''}>Archived</option>
               </select>
             </div>
@@ -352,6 +352,14 @@ const SettingsModal = {
 
   _showDeleteModal() {
     document.getElementById('deleteModal')?.classList.remove('hidden');
+  },
+
+  // Public entry point for pages that don't show the Settings panel's
+  // delete section (deleteData defaults to false) but still want to
+  // trigger the same confirm-delete flow, e.g. archive.html.
+  openDeleteAllModal() {
+    if (!this.initialized) return;
+    this._showDeleteModal();
   },
 
   _hideDeleteModal() {
@@ -590,11 +598,11 @@ const SettingsModal = {
               onchange="window._settingsModalUpdateTaskStatus(${i}, this.value)">
               <option value="" selected>—</option>
               <option value="soon">Soon</option>
+              <option value="inPause">In Pause</option>
               <option value="inProgress">In Progress</option>
               <option value="devStarted">Dev started</option>
-              <option value="inPause">In Pause</option>
-              <option value="done">Done</option>
               <option value="checking">Final review</option>
+              <option value="done">Done</option>
               <option value="archived">Archived</option>
             </select>
           </div>

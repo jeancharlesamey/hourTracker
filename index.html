@@ -918,13 +918,31 @@
         }
       }
 
+      const statusLabels = {
+        soon: 'Soon', inProgress: 'In Progress', devStarted: 'Dev started',
+        inPause: 'In Pause', done: 'Done', checking: 'Final review', archived: 'Archived'
+      };
+      const statusColors = {
+        soon: 'bg-gray-500/20 text-gray-600 dark:text-gray-300',
+        inProgress: 'bg-yellow-500/20 text-yellow-600 dark:text-yellow-400',
+        devStarted: 'bg-indigo-500/20 text-indigo-600 dark:text-indigo-400',
+        inPause: 'bg-orange-500/20 text-orange-600 dark:text-orange-400',
+        done: 'bg-green-500/20 text-green-600 dark:text-green-400',
+        checking: 'bg-blue-500/20 text-blue-600 dark:text-blue-400',
+        archived: 'bg-gray-500/20 text-gray-600 dark:text-gray-300'
+      };
+
       el.innerHTML = tasks.map((t, i) => {
         if (t && (t.status === 'archived' || t.status === 'done' || t.status === 'devStarted')) return '';
         const isSelected = selectedTaskIndex === i;
+        const statusPill = t.status
+          ? `<span class="text-[10px] md:text-xs px-2 py-0.5 rounded-full font-medium shrink-0 ${statusColors[t.status] || statusColors.soon}">${statusLabels[t.status] || t.status}</span>`
+          : '';
         return `
         <div class="flex items-center gap-3 p-3 md:p-4 rounded-xl bg-black/5 dark:bg-white/5 cursor-pointer transition-shadow ${isSelected ? 'ring-2 ring-gray-400 dark:ring-white/40' : ''}" onclick="selectTaskRow(event, ${i})">
           <div class="w-3 h-3 rounded-full shrink-0" style="background:${COLOR_HEX[t.color]}"></div>
           ${t.jiraLink ? `<a href="${t.jiraLink}" target="_blank" rel="noopener noreferrer" class="task-name text-sm md:text-base font-medium text-gray-900 dark:text-white/90 hover:underline">${t.name}</a>` : `<span class="task-name text-sm md:text-base font-medium text-gray-900 dark:text-white/90">${t.name}</span>`}
+          ${statusPill}
           <input type="number" min="0" step="0.25" value="${comp[i] || 0}" data-task-index="${i}"
             class="w-20 ml-auto bg-black/5 dark:bg-white/10 border border-gray-200 dark:border-white/10 rounded-lg px-2 py-1.5 text-sm text-right text-gray-900 dark:text-white focus:outline-none focus:border-gray-400 dark:focus:border-white/30 transition-colors"
             onchange="updateHours(${i}, this.value)" onblur="updateHours(${i}, this.value)" onkeydown="handleHourKeydown(event, ${i})">
