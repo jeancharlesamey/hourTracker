@@ -735,12 +735,25 @@
       });
     }
 
+    // ── Count days with logged hours in viewed month ──────
+    function calcFilledDays() {
+      const daysInMonth = new Date(viewYear, viewMonth + 1, 0).getDate();
+      let count = 0;
+      for (let d = 1; d <= daysInMonth; d++) {
+        const ds = `${viewYear}-${String(viewMonth + 1).padStart(2, '0')}-${String(d).padStart(2, '0')}`;
+        const total = getCompletions(ds).reduce((a, b) => a + b, 0);
+        if (total > 0) count++;
+      }
+      return count;
+    }
+
     // ── Render Month Navigation ───────────────────────────
     function renderMonthNav() {
       const d = new Date(viewYear, viewMonth, 1);
       const label = d.toLocaleDateString('en-US', { month: 'long', year: 'numeric' });
+      const filledDays = calcFilledDays();
       const monthLabelEl = document.getElementById('monthLabel');
-      monthLabelEl.textContent = label;
+      monthLabelEl.textContent = `${label} (${filledDays})`;
 
       const tooltipEl = document.getElementById('monthTooltip');
       tooltipEl.textContent = 'go to analytics';
