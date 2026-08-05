@@ -1304,7 +1304,8 @@
 
             // Label showing days added (to the left of the diamond)
             const daysAdded = change.to - change.from;
-            const labelText = `+${daysAdded.toFixed(1)}d`;
+            const sign = daysAdded >= 0 ? '+' : '';
+            const labelText = `${sign}${daysAdded.toFixed(1)}d`;
             ctx.fillStyle = 'rgba(245, 158, 11, 0.9)';
             ctx.font = '11px sans-serif';
             ctx.textAlign = 'right';
@@ -2004,6 +2005,7 @@
         todayStr,
         COLOR_HEX,
         fmtH,
+        getTaskIndex: (t) => tasks.indexOf(t),
       };
 
       LegendRenderer.render('overviewTaskLegend', options);
@@ -2385,14 +2387,16 @@
       const statusMap = {
         'soon': 'Soon',
         'inProgress': 'In Progress',
+        'devStarted': 'Dev started',
         'inPause': 'In Pause',
         'done': 'Done',
-        'checking': 'Checking',
+        'checking': 'Final review',
         'archived': 'Archived'
       };
       const statusColorMap = {
         'soon': 'bg-gray-500/20 text-gray-600 dark:text-gray-300',
         'inProgress': 'bg-yellow-500/20 text-yellow-600 dark:text-yellow-400',
+        'devStarted': 'bg-indigo-500/20 text-indigo-600 dark:text-indigo-400',
         'inPause': 'bg-orange-500/20 text-orange-600 dark:text-orange-400',
         'done': 'bg-green-500/20 text-green-600 dark:text-green-400',
         'checking': 'bg-blue-500/20 text-blue-600 dark:text-blue-400',
@@ -2404,8 +2408,11 @@
       // Set the status badge in the header using task status if available
       const badgeEl = document.getElementById('bytaskProgressBadge');
       if (badgeEl) {
-        const deliveryPassed = deliveryDate && getWorkingDaysTo(deliveryDate) === 0;
-        const deliveryBadge = deliveryPassed
+        const deliveryToday = deliveryDate === todayStr();
+        const deliveryPassed = deliveryDate && !deliveryToday && getWorkingDaysTo(deliveryDate) === 0;
+        const deliveryBadge = deliveryToday
+          ? `<span class="inline-flex items-center gap-1.5 text-xs bg-amber-500/20 text-amber-600 dark:text-amber-400 px-2.5 py-1 rounded-full font-medium">Today</span>`
+          : deliveryPassed
           ? `<span class="inline-flex items-center gap-1.5 text-xs bg-red-500/20 text-red-600 dark:text-red-400 px-2.5 py-1 rounded-full font-medium">Delivery date passed</span>`
           : '';
         badgeEl.innerHTML = `${deliveryBadge}<span class="inline-flex items-center gap-1.5 text-xs px-2.5 py-1 rounded-full font-medium ${taskStatusColor}">${taskStatusDisplay}</span>`;
@@ -3237,9 +3244,20 @@
     }
 
 
+    function calcFilledDaysInMonth(year, month) {
+      const daysInMonth = new Date(year, month + 1, 0).getDate();
+      let count = 0;
+      for (let d = 1; d <= daysInMonth; d++) {
+        const dateStr = `${year}-${String(month + 1).padStart(2, '0')}-${String(d).padStart(2, '0')}`;
+        if (getTotalHours(dateStr) > 0) count++;
+      }
+      return count;
+    }
+
     function updateMonthLabel() {
       const monthNames = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'];
-      const label = `${monthNames[linearViewMonth]} ${linearViewYear}`;
+      const filledDays = calcFilledDaysInMonth(linearViewYear, linearViewMonth);
+      const label = `${monthNames[linearViewMonth]} ${linearViewYear} (${filledDays})`;
       const monthLabelEl = document.getElementById('monthLabel');
       monthLabelEl.textContent = label;
 

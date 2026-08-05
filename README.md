@@ -1,7 +1,7 @@
 # HOUR TRACKER
 one file. no server. no fuss.
 
-**v1.4.1-beta2**
+**v1.4.2-beta2**
 
 A minimal, offline-first hour tracker that lives in your browser. No login, no server, no complications.
 
@@ -43,8 +43,11 @@ How it fills:
 - Monthly grid with daily hour breakdown
 - Visual 4-square stacking (2h per square)
 - Red highlight when you exceed your daily cap
+- Month title shows count of filled days for the month
 - Click any day to log hours
-- Click task legend → navigate to by-task analytics
+- Day sheet supports keyboard entry: type hours and move between tasks without touching the mouse
+- Status pill shown per task in the day sheet (Soon, In Pause, In Progress, etc.)
+- Click task legend → navigate to by-task analytics for the month you're viewing
 - Click month label → jump to analytics overview for that month
 
 **Analytics**
@@ -63,7 +66,9 @@ How it fills:
 - Decimal hours supported (1.5, 0.25, etc.)
 - Color-coded tasks
 - Optional Jira links
-- Delivery date tracking with overdue warnings
+- Delivery date tracking with overdue warnings (shows "Today" on the due date itself)
+- Status: Soon, In Pause, In Progress, Dev started, Final review, Done, Archived
+- Tasks marked Done, Dev started, or Archived are hidden from the day sheet automatically
 - Month navigation built in
 
 **Other**
@@ -107,11 +112,21 @@ Everything stays in your browser's localStorage. Nothing is sent anywhere.
 Data stored locally: your task list, colors, hours per day, daily cap, and last entry timestamp.
 
 **Export:** DevTools → Application → Local Storage → copy values
-**Reset:** Settings → Delete all data
+**Reset:** Archive → App menu → Delete all data
 
 ---
 
 ## Recent Updates
+
+**v1.4.2-beta2** — Keyboard entry, status overhaul, navigation & tracking fixes
+- Day Sheet: keyboard hour entry and task selection — type hours and move between tasks without the mouse
+- Home Calendar: month title now shows a count of filled days for the month
+- Task Status: added "Dev started"; renamed "Checking" to "Final review"; Done/Dev started tasks now hidden from the day sheet alongside Archived; status pill added to each day-sheet row; status list reordered (Soon, In Pause, In Progress, Dev started, Final review, Done, Archived)
+- Delivery Date Badge: shows "Today" instead of "Delivery date passed" when the delivery date is the current day
+- Overview Task Legend: fixed an index mismatch that could silently drop tasks with logged hours from the legend
+- Scope Change Tracking: estimate reductions are now recorded too (not just increases), with a correctly signed "-Xd" label on the burn chart
+- Task Legend Navigation: clicking a task from the day-tracker's legend now opens its by-task analytics scoped to the month you were viewing, instead of resetting to the default month
+- Delete All Data: moved from the Settings panel to the Archive page's app menu
 
 **v1.4.1-beta2** — Burndown refinements, navigation improvements, momentum analytics
 - Weekly Breakdown: add group display for same ID and adjust to facilitate copy to excel the day value

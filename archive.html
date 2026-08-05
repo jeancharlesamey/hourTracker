@@ -70,6 +70,9 @@
             <span id="dropdownDarkModeKnob" class="absolute top-0.5 left-0.5 w-5 h-5 rounded-full bg-white shadow transition-transform duration-200 translate-x-4"></span>
           </button>
         </div>
+        <button id="deleteAllDataLink" class="w-full text-left px-4 py-2 text-sm text-red-500 hover:bg-black/5 dark:hover:bg-white/5 transition-colors">
+          Delete all data
+        </button>
       </div>
     </div>
   </header>
@@ -132,10 +135,11 @@
     function formatStatusDisplay(status) {
       const statusMap = {
         'soon': 'Soon',
-        'inProgress': 'In Progress',
         'inPause': 'In Pause',
+        'inProgress': 'In Progress',
+        'devStarted': 'Dev started',
+        'checking': 'Final review',
         'done': 'Done',
-        'checking': 'Checking',
         'archived': 'Archived'
       };
       return statusMap[status] || '—';
@@ -241,10 +245,11 @@
               onchange="updateActiveField(this.value); commitEdit();">
               <option value="" ${task.status === '' ? 'selected' : ''}>—</option>
               <option value="soon" ${task.status === 'soon' ? 'selected' : ''}>Soon</option>
-              <option value="inProgress" ${task.status === 'inProgress' ? 'selected' : ''}>In Progress</option>
               <option value="inPause" ${task.status === 'inPause' ? 'selected' : ''}>In Pause</option>
+              <option value="inProgress" ${task.status === 'inProgress' ? 'selected' : ''}>In Progress</option>
+              <option value="devStarted" ${task.status === 'devStarted' ? 'selected' : ''}>Dev started</option>
+              <option value="checking" ${task.status === 'checking' ? 'selected' : ''}>Final review</option>
               <option value="done" ${task.status === 'done' ? 'selected' : ''}>Done</option>
-              <option value="checking" ${task.status === 'checking' ? 'selected' : ''}>Checking</option>
               <option value="archived" ${task.status === 'archived' ? 'selected' : ''}>Archived</option>
             </select>
           </td>`;
@@ -359,6 +364,22 @@
     });
 
     document.getElementById('dropdownDarkMode')?.addEventListener('click', toggleDarkMode);
+
+    // Delete all data (confirmation dialog provided by SettingsModal)
+    SettingsModal.init({
+      getTasks: () => tasks,
+      setTasks: (t) => { tasks = t; },
+      getCompletions: () => JSON.parse(localStorage.getItem('dt_completions') || '{}'),
+      setCompletions: (c) => localStorage.setItem('dt_completions', JSON.stringify(c)),
+      getMaxCap: () => parseFloat(localStorage.getItem('dt_maxCap')) || 7.5,
+      setMaxCap: (v) => localStorage.setItem('dt_maxCap', v),
+      onSave: saveTasks,
+      onReload: () => location.reload(),
+    });
+    document.getElementById('deleteAllDataLink')?.addEventListener('click', () => {
+      document.getElementById('appMenu')?.classList.add('hidden');
+      SettingsModal.openDeleteAllModal();
+    });
 
     // Initial load
     loadTasks();
