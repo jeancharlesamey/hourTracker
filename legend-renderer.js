@@ -12,6 +12,7 @@ const LegendRenderer = {
       COLOR_HEX,
       fmtH,
       onTaskClick,
+      getTaskIndex,
     } = options;
 
     const el = document.getElementById(elementId);
@@ -21,7 +22,8 @@ const LegendRenderer = {
     const todayS = todayStr();
 
     el.innerHTML = tasks
-      .map((t, i) => {
+      .map((t, pos) => {
+        const i = getTaskIndex ? getTaskIndex(t) : pos;
         let total = 0;
         for (let d = 1; d <= daysInMonth; d++) {
           const ds = `${viewYear}-${String(viewMonth + 1).padStart(2, '0')}-${String(d).padStart(2, '0')}`;
