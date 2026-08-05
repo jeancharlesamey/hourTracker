@@ -2406,8 +2406,11 @@
       // Set the status badge in the header using task status if available
       const badgeEl = document.getElementById('bytaskProgressBadge');
       if (badgeEl) {
-        const deliveryPassed = deliveryDate && getWorkingDaysTo(deliveryDate) === 0;
-        const deliveryBadge = deliveryPassed
+        const deliveryToday = deliveryDate === todayStr();
+        const deliveryPassed = deliveryDate && !deliveryToday && getWorkingDaysTo(deliveryDate) === 0;
+        const deliveryBadge = deliveryToday
+          ? `<span class="inline-flex items-center gap-1.5 text-xs bg-amber-500/20 text-amber-600 dark:text-amber-400 px-2.5 py-1 rounded-full font-medium">Today</span>`
+          : deliveryPassed
           ? `<span class="inline-flex items-center gap-1.5 text-xs bg-red-500/20 text-red-600 dark:text-red-400 px-2.5 py-1 rounded-full font-medium">Delivery date passed</span>`
           : '';
         badgeEl.innerHTML = `${deliveryBadge}<span class="inline-flex items-center gap-1.5 text-xs px-2.5 py-1 rounded-full font-medium ${taskStatusColor}">${taskStatusDisplay}</span>`;
