@@ -731,8 +731,8 @@
         COLOR_HEX,
         fmtH,
         onTaskClick: (taskIndex) => {
-          // Navigate to analytics.html in by-task view for this task
-          window.location.href = `./analytics.html?view=bytask&task=${taskIndex}`;
+          // Navigate to analytics.html in by-task view for this task, preserving the viewed month
+          window.location.href = `./analytics.html?view=bytask&task=${taskIndex}&month=${viewMonth}&year=${viewYear}`;
         },
       });
     }
