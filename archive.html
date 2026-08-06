@@ -22,7 +22,12 @@
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
   <meta name="apple-mobile-web-app-title" content="Hour Tracker">
   <link rel="apple-touch-icon" href="./icons/icon-192.png">
-  <link href="https://unpkg.com/@csstools/normalize.css" rel="stylesheet" />
+  <!-- normalize.css is unlayered CSS; put it in its own low-priority layer so it
+       can't silently override Tailwind's (layered) Preflight resets -->
+  <style>
+    @layer normalize, properties, theme, base, utilities;
+    @import url('https://unpkg.com/@csstools/normalize.css') layer(normalize);
+  </style>
   <link href="./vendor/tailwind/tailwind.css" rel="stylesheet">
 
   <style>
