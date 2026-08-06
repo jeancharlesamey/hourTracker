@@ -275,19 +275,25 @@ const SettingsModal = {
               <label for="taskIdOpus${i}" class="text-xs text-gray-400 dark:text-white/60 font-medium block mb-1">ID</label>
               <input id="taskIdOpus${i}" type="text" value="${t.idOpus || ''}" placeholder="Opus ID"
                 class="w-full bg-black/5 dark:bg-white/5 border border-gray-200 dark:border-white/10 rounded-lg px-3 py-2 text-sm text-gray-900 dark:text-white placeholder-gray-300 dark:placeholder-white/20 focus:outline-none focus:border-gray-400 dark:focus:border-white/30 transition-colors"
-                oninput="window._settingsModalUpdateTaskIdOpus(${i}, this.value)">
+                onfocus="window._settingsModalFocusField(${i}, 'idOpus')"
+                oninput="window._settingsModalUpdateTaskIdOpus(${i}, this.value)"
+                onblur="window._settingsModalBlurField(${i}, 'idOpus')">
             </div>
             <div class="col-span-2">
               <label for="taskName${i}" class="text-xs text-gray-400 dark:text-white/60 font-medium block mb-1">Task</label>
               <input id="taskName${i}" type="text" value="${t.name}" maxlength="20" placeholder="Task name"
                 class="w-full bg-black/5 dark:bg-white/5 border border-gray-200 dark:border-white/10 rounded-lg px-3 py-2 text-sm text-gray-900 dark:text-white placeholder-gray-300 dark:placeholder-white/20 focus:outline-none focus:border-gray-400 dark:focus:border-white/30 transition-colors"
-                oninput="window._settingsModalUpdateTaskName(${i}, this.value)">
+                onfocus="window._settingsModalFocusField(${i}, 'name')"
+                oninput="window._settingsModalUpdateTaskName(${i}, this.value)"
+                onblur="window._settingsModalBlurField(${i}, 'name')">
             </div>
             <div class="col-span-2">
               <label for="taskJira${i}" class="text-xs text-gray-400 dark:text-white/60 font-medium block mb-1">Jira Link</label>
               <input id="taskJira${i}" type="url" value="${t.jiraLink || ''}" maxlength="256" placeholder="https://..."
                 class="w-full bg-black/5 dark:bg-white/5 border border-gray-200 dark:border-white/10 rounded-lg px-3 py-2 text-sm text-gray-900 dark:text-white placeholder-gray-300 dark:placeholder-white/20 focus:outline-none focus:border-gray-400 dark:focus:border-white/30 transition-colors"
-                oninput="window._settingsModalUpdateTaskJiraLink(${i}, this.value)">
+                onfocus="window._settingsModalFocusField(${i}, 'jiraLink')"
+                oninput="window._settingsModalUpdateTaskJiraLink(${i}, this.value)"
+                onblur="window._settingsModalBlurField(${i}, 'jiraLink')">
             </div>
           </div>
 
@@ -688,10 +694,29 @@ window._settingsModalUpdateTaskName = (i, v) => {
   }
 };
 
+let _fieldFocusValue = null;
+
+window._settingsModalFocusField = (i, field) => {
+  const tasks = SettingsModal.config.getTasks();
+  if (tasks[i]) {
+    _fieldFocusValue = tasks[i][field];
+  }
+};
+
+window._settingsModalBlurField = (i, field) => {
+  const tasks = SettingsModal.config.getTasks();
+  if (tasks[i]) {
+    window.logTaskChange?.(tasks[i], field, _fieldFocusValue, tasks[i][field]);
+  }
+  _fieldFocusValue = null;
+};
+
 window._settingsModalUpdateTaskColor = (i, c) => {
   const tasks = SettingsModal.config.getTasks();
   if (tasks[i]) {
+    const oldColor = tasks[i].color;
     tasks[i].color = c;
+    window.logTaskChange?.(tasks[i], 'color', oldColor, c);
     SettingsModal.config.onSave?.();
 
     // Update only the color swatch active state for this specific task
@@ -750,6 +775,7 @@ window._settingsModalFinalizeEstimateChange = (i, v) => {
       tasks[i].estimateHistory.push({ date: dateStr, from: oldVal, to: newVal });
     }
   }
+  window.logTaskChange?.(tasks[i], 'estimate', oldVal, newVal);
   _estimateFocusValue = null;
   SettingsModal.config.onSave?.();
 };
@@ -757,6 +783,7 @@ window._settingsModalFinalizeEstimateChange = (i, v) => {
 window._settingsModalUpdateTaskDeliveryDate = (i, v) => {
   const tasks = SettingsModal.config.getTasks();
   if (tasks[i]) {
+    const oldDeliveryDate = tasks[i].deliveryDate;
     // Handle both YYYY-MM-DD (from native date input) and DD/MM/YYYY (from text input) formats
     if (v && v.length === 10) {
       if (v.includes('/')) {
@@ -772,6 +799,7 @@ window._settingsModalUpdateTaskDeliveryDate = (i, v) => {
     } else {
       tasks[i].deliveryDate = '';
     }
+    window.logTaskChange?.(tasks[i], 'deliveryDate', oldDeliveryDate, tasks[i].deliveryDate);
     SettingsModal.config.onSave?.();
   }
 };
@@ -815,7 +843,9 @@ window._settingsModalUpdateMaxCap = (v) => {
 window._settingsModalUpdateTaskStatus = (i, v) => {
   const tasks = SettingsModal.config.getTasks();
   if (tasks[i]) {
+    const oldStatus = tasks[i].status;
     tasks[i].status = v;
+    window.logTaskChange?.(tasks[i], 'status', oldStatus, v);
     SettingsModal.config.onSave?.();
   }
 };
