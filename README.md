@@ -123,6 +123,12 @@ Data stored locally: your task list, colors, hours per day, daily cap, and last 
 - Replaced the cdn.tailwindcss.com Play CDN script with a precompiled, locally vendored Tailwind build — eliminates console warnings when opening the app via file:// and removes the external CDN dependency
 - Fixed a CSS cascade-layers conflict between the vendored Tailwind build and @csstools/normalize.css that was inflating header size and breaking spacing around status pills/inputs
 
+**v1.4.3-beta2** — Hold-to-confirm deletions
+- Archive Task Deletion: replaced the native browser confirm dialog with the shared custom confirmation modal
+- Hold-to-Delete: both "Delete all data" and per-task delete confirmations now require a 3-second press-and-hold on the delete button instead of a single click, reducing accidental destructive deletes
+- Delete Task Modal: now shows the task name and its total logged hours in the confirmation title (e.g. "Delete Read (3.5h)?")
+- Reusable Confirmation Modal: `SettingsModal.openDeleteTaskModal(name, hours, onConfirm)` lets any page trigger the shared delete-task modal with its own removal logic
+
 **v1.4.2-beta2** — Keyboard entry, status overhaul, navigation & tracking fixes
 - Day Sheet: keyboard hour entry and task selection — type hours and move between tasks without the mouse
 - Home Calendar: month title now shows a count of filled days for the month
