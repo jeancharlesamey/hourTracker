@@ -142,8 +142,8 @@ const SettingsModal = {
 
       <div id="deleteTaskModal" class="settings-overlay hidden fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center px-6">
         <div class="bg-card dark:bg-card-dark w-full max-w-sm rounded-2xl p-6 shadow-xl transition-colors duration-300">
-          <h2 class="text-base font-bold mb-1">Delete task?</h2>
-          <p class="text-sm text-gray-400 dark:text-white/40 mb-6">This task will be removed.</p>
+          <h2 id="deleteTaskModalTitle" class="text-base font-bold mb-1">Delete task?</h2>
+          <p class="text-sm text-gray-400 dark:text-white/40 mb-6">This task will be removed if you press the red button for 3 seconds.</p>
           <div class="flex gap-3 justify-end">
             <button id="deleteTaskCancelBtn" class="px-4 py-2 rounded-lg text-sm font-medium bg-black/5 dark:bg-white/10 hover:bg-black/10 dark:hover:bg-white/20 transition-colors">Cancel</button>
             <button id="deleteTaskConfirmBtn" class="hold-btn px-4 py-2 rounded-lg text-sm font-medium bg-red-500 text-white select-none relative overflow-hidden">
@@ -392,7 +392,27 @@ const SettingsModal = {
     if (this.config.onReload) this.config.onReload();
   },
 
-  _showDeleteTaskModal() {
+  _formatHours(hours) {
+    const rounded = Math.round((hours || 0) * 100) / 100;
+    return `${rounded}h`;
+  },
+
+  _getTaskTotalHours(index) {
+    const completions = this.config.getCompletions?.() || {};
+    let total = 0;
+    Object.values(completions).forEach(comp => {
+      if (Array.isArray(comp) && typeof comp[index] === 'number') {
+        total += comp[index];
+      }
+    });
+    return total;
+  },
+
+  _showDeleteTaskModal(name, hours) {
+    const titleEl = document.getElementById('deleteTaskModalTitle');
+    if (titleEl) {
+      titleEl.textContent = `Delete ${name || 'this task'} (${this._formatHours(hours)})?`;
+    }
     document.getElementById('deleteTaskModal')?.classList.remove('hidden');
   },
 
@@ -400,10 +420,10 @@ const SettingsModal = {
   // own task list/removal logic and just want the shared hold-to-delete
   // confirmation modal. onConfirm is invoked once the button is held down
   // for the full duration.
-  openDeleteTaskModal(onConfirm) {
+  openDeleteTaskModal(taskName, hours, onConfirm) {
     if (!this.initialized) return;
     this.state.pendingDeleteCallback = onConfirm;
-    this._showDeleteTaskModal();
+    this._showDeleteTaskModal(taskName, hours);
   },
 
   _hideDeleteTaskModal() {
@@ -766,7 +786,10 @@ window._settingsModalUpdateTaskJiraLink = (i, v) => {
 
 window._settingsModalDeleteTask = (i) => {
   SettingsModal.state.pendingDeleteIndex = i;
-  SettingsModal._showDeleteTaskModal();
+  const tasks = SettingsModal.config.getTasks();
+  const name = tasks[i]?.name;
+  const hours = SettingsModal._getTaskTotalHours(i);
+  SettingsModal._showDeleteTaskModal(name, hours);
 };
 
 window._settingsModalAddTask = () => {
