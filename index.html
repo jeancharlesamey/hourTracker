@@ -24,29 +24,7 @@
   <meta name="apple-mobile-web-app-title" content="Hour Tracker">
   <link rel="apple-touch-icon" href="./icons/icon-192.png">
   <link href="https://unpkg.com/@csstools/normalize.css" rel="stylesheet" />
-  <script src="https://cdn.tailwindcss.com" onerror="console.warn('Tailwind CSS failed to load from CDN')"></script>
-  <script>
-    // Suppress Tailwind console warnings in development
-    const originalWarn = console.warn;
-    console.warn = function(...args) {
-      if (args[0]?.includes?.('Tailwind') || args[0]?.includes?.('content')) return;
-      originalWarn.apply(console, args);
-    };
-
-    tailwind.config = {
-      darkMode: 'class',
-      theme: {
-        extend: {
-          colors: {
-            surface: { DEFAULT: '#f5f5f5', dark: '#1a1a2e' },
-            card: { DEFAULT: '#ffffff', dark: '#16213e' },
-            accent: { DEFAULT: '#e0e7ff', dark: '#0f3460' },
-            muted: { DEFAULT: '#d1d5db', dark: '#333a56' },
-          }
-        }
-      }
-    }
-  </script>
+  <link href="./vendor/tailwind/tailwind.css" rel="stylesheet">
   <style>
     @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
     body { font-family: 'Inter', sans-serif; }
