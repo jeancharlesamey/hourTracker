@@ -131,7 +131,10 @@ const SettingsModal = {
           <p class="text-sm text-gray-400 dark:text-white/40 mb-6">All data will be permanently removed. This cannot be undone.</p>
           <div class="flex gap-3 justify-end">
             <button id="deleteCancelBtn" class="px-4 py-2 rounded-lg text-sm font-medium bg-black/5 dark:bg-white/10 hover:bg-black/10 dark:hover:bg-white/20 transition-colors">Cancel</button>
-            <button id="deleteConfirmBtn" class="px-4 py-2 rounded-lg text-sm font-medium bg-red-500 hover:bg-red-600 text-white transition-colors">Delete</button>
+            <button id="deleteConfirmBtn" class="hold-btn px-4 py-2 rounded-lg text-sm font-medium bg-red-500 text-white select-none relative overflow-hidden">
+              <span class="hold-btn-fill absolute inset-0 bg-red-700 origin-left"></span>
+              <span class="relative z-10">Hold to delete</span>
+            </button>
           </div>
         </div>
       </div>
@@ -185,9 +188,9 @@ const SettingsModal = {
 
     closeSettings?.addEventListener('click', () => this.close());
     settingsBackdrop?.addEventListener('click', () => this.close());
-    this._wireHoldButton();
+    this._wireHoldButton('resetBtn', () => this._showDeleteModal());
+    this._wireHoldButton('deleteConfirmBtn', () => this._confirmDeleteAllData());
     deleteCancelBtn?.addEventListener('click', () => this._hideDeleteModal());
-    deleteConfirmBtn?.addEventListener('click', () => this._confirmDeleteAllData());
     deleteTaskCancelBtn?.addEventListener('click', () => this._hideDeleteTaskModal());
     deleteTaskConfirmBtn?.addEventListener('click', () => this._handleConfirmDeleteTask());
     cancelAddTaskCancelBtn?.addEventListener('click', () => this._hideCancelAddTaskModal());
@@ -199,40 +202,40 @@ const SettingsModal = {
     addTaskSaveBtn?.addEventListener('click', () => this._handleSaveAddTask());
   },
 
-  _wireHoldButton() {
-    const resetBtn = document.getElementById('resetBtn');
-    if (!resetBtn) return;
+  _wireHoldButton(btnId, onComplete, duration = 3000) {
+    const btn = document.getElementById(btnId);
+    if (!btn) return;
     let holdTimer = null;
 
     const startHold = (e) => {
       e.preventDefault();
-      if (resetBtn.classList.contains('filled')) return;
-      resetBtn.classList.add('holding');
+      if (btn.classList.contains('filled')) return;
+      btn.classList.add('holding');
       holdTimer = setTimeout(() => {
         holdTimer = null;
-        resetBtn.classList.remove('holding');
-        resetBtn.classList.add('filled');
-        this._showDeleteModal();
-      }, 3000);
+        btn.classList.remove('holding');
+        btn.classList.add('filled');
+        onComplete();
+      }, duration);
     };
 
     const cancelHold = () => {
       if (!holdTimer) return;
       clearTimeout(holdTimer);
       holdTimer = null;
-      resetBtn.classList.remove('holding');
+      btn.classList.remove('holding');
     };
 
-    resetBtn.addEventListener('pointerdown', startHold);
-    resetBtn.addEventListener('pointerup', cancelHold);
-    resetBtn.addEventListener('pointerleave', cancelHold);
-    resetBtn.addEventListener('contextmenu', (e) => e.preventDefault());
+    btn.addEventListener('pointerdown', startHold);
+    btn.addEventListener('pointerup', cancelHold);
+    btn.addEventListener('pointerleave', cancelHold);
+    btn.addEventListener('contextmenu', (e) => e.preventDefault());
   },
 
-  _resetHoldButton() {
-    const resetBtn = document.getElementById('resetBtn');
-    if (!resetBtn) return;
-    resetBtn.classList.remove('holding', 'filled');
+  _resetHoldButton(btnId) {
+    const btn = document.getElementById(btnId);
+    if (!btn) return;
+    btn.classList.remove('holding', 'filled');
   },
 
   renderSettings(options = {}) {
@@ -364,11 +367,14 @@ const SettingsModal = {
 
   _hideDeleteModal() {
     document.getElementById('deleteModal')?.classList.add('hidden');
-    this._resetHoldButton();
+    this._resetHoldButton('resetBtn');
+    this._resetHoldButton('deleteConfirmBtn');
   },
 
   _confirmDeleteAllData() {
     document.getElementById('deleteModal')?.classList.add('hidden');
+    this._resetHoldButton('resetBtn');
+    this._resetHoldButton('deleteConfirmBtn');
     const completions = this.config.getCompletions();
     const setCompletions = this.config.setCompletions;
     const setTasks = this.config.setTasks;
