@@ -45,6 +45,7 @@ const SettingsModal = {
   state: {
     isAddTaskMode: false,
     pendingDeleteIndex: null,
+    pendingDeleteCallback: null,
     pageNeedsReload: false,
   },
 
@@ -131,18 +132,24 @@ const SettingsModal = {
           <p class="text-sm text-gray-400 dark:text-white/40 mb-6">All data will be permanently removed. This cannot be undone.</p>
           <div class="flex gap-3 justify-end">
             <button id="deleteCancelBtn" class="px-4 py-2 rounded-lg text-sm font-medium bg-black/5 dark:bg-white/10 hover:bg-black/10 dark:hover:bg-white/20 transition-colors">Cancel</button>
-            <button id="deleteConfirmBtn" class="px-4 py-2 rounded-lg text-sm font-medium bg-red-500 hover:bg-red-600 text-white transition-colors">Delete</button>
+            <button id="deleteConfirmBtn" class="hold-btn px-4 py-2 rounded-lg text-sm font-medium bg-red-500 text-white select-none relative overflow-hidden">
+              <span class="hold-btn-fill absolute inset-0 bg-red-700 origin-left"></span>
+              <span class="relative z-10">Hold to delete</span>
+            </button>
           </div>
         </div>
       </div>
 
       <div id="deleteTaskModal" class="settings-overlay hidden fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center px-6">
         <div class="bg-card dark:bg-card-dark w-full max-w-sm rounded-2xl p-6 shadow-xl transition-colors duration-300">
-          <h2 class="text-base font-bold mb-1">Delete task?</h2>
-          <p class="text-sm text-gray-400 dark:text-white/40 mb-6">This task will be removed.</p>
+          <h2 id="deleteTaskModalTitle" class="text-base font-bold mb-1">Delete task?</h2>
+          <p class="text-sm text-gray-400 dark:text-white/40 mb-6">This task will be removed if you press the red button for 3 seconds.</p>
           <div class="flex gap-3 justify-end">
             <button id="deleteTaskCancelBtn" class="px-4 py-2 rounded-lg text-sm font-medium bg-black/5 dark:bg-white/10 hover:bg-black/10 dark:hover:bg-white/20 transition-colors">Cancel</button>
-            <button id="deleteTaskConfirmBtn" class="px-4 py-2 rounded-lg text-sm font-medium bg-red-500 hover:bg-red-600 text-white transition-colors">Delete</button>
+            <button id="deleteTaskConfirmBtn" class="hold-btn px-4 py-2 rounded-lg text-sm font-medium bg-red-500 text-white select-none relative overflow-hidden">
+              <span class="hold-btn-fill absolute inset-0 bg-red-700 origin-left"></span>
+              <span class="relative z-10">Hold to delete</span>
+            </button>
           </div>
         </div>
       </div>
@@ -179,17 +186,16 @@ const SettingsModal = {
     const deleteCancelBtn = document.getElementById('deleteCancelBtn');
     const deleteConfirmBtn = document.getElementById('deleteConfirmBtn');
     const deleteTaskCancelBtn = document.getElementById('deleteTaskCancelBtn');
-    const deleteTaskConfirmBtn = document.getElementById('deleteTaskConfirmBtn');
     const cancelAddTaskCancelBtn = document.getElementById('cancelAddTaskCancelBtn');
     const cancelAddTaskConfirmBtn = document.getElementById('cancelAddTaskConfirmBtn');
 
     closeSettings?.addEventListener('click', () => this.close());
     settingsBackdrop?.addEventListener('click', () => this.close());
-    this._wireHoldButton();
+    this._wireHoldButton('resetBtn', () => this._showDeleteModal());
+    this._wireHoldButton('deleteConfirmBtn', () => this._confirmDeleteAllData());
+    this._wireHoldButton('deleteTaskConfirmBtn', () => this._handleDeleteTaskConfirmed());
     deleteCancelBtn?.addEventListener('click', () => this._hideDeleteModal());
-    deleteConfirmBtn?.addEventListener('click', () => this._confirmDeleteAllData());
     deleteTaskCancelBtn?.addEventListener('click', () => this._hideDeleteTaskModal());
-    deleteTaskConfirmBtn?.addEventListener('click', () => this._handleConfirmDeleteTask());
     cancelAddTaskCancelBtn?.addEventListener('click', () => this._hideCancelAddTaskModal());
     cancelAddTaskConfirmBtn?.addEventListener('click', () => this._handleDiscardTask());
 
@@ -199,40 +205,40 @@ const SettingsModal = {
     addTaskSaveBtn?.addEventListener('click', () => this._handleSaveAddTask());
   },
 
-  _wireHoldButton() {
-    const resetBtn = document.getElementById('resetBtn');
-    if (!resetBtn) return;
+  _wireHoldButton(btnId, onComplete, duration = 3000) {
+    const btn = document.getElementById(btnId);
+    if (!btn) return;
     let holdTimer = null;
 
     const startHold = (e) => {
       e.preventDefault();
-      if (resetBtn.classList.contains('filled')) return;
-      resetBtn.classList.add('holding');
+      if (btn.classList.contains('filled')) return;
+      btn.classList.add('holding');
       holdTimer = setTimeout(() => {
         holdTimer = null;
-        resetBtn.classList.remove('holding');
-        resetBtn.classList.add('filled');
-        this._showDeleteModal();
-      }, 3000);
+        btn.classList.remove('holding');
+        btn.classList.add('filled');
+        onComplete();
+      }, duration);
     };
 
     const cancelHold = () => {
       if (!holdTimer) return;
       clearTimeout(holdTimer);
       holdTimer = null;
-      resetBtn.classList.remove('holding');
+      btn.classList.remove('holding');
     };
 
-    resetBtn.addEventListener('pointerdown', startHold);
-    resetBtn.addEventListener('pointerup', cancelHold);
-    resetBtn.addEventListener('pointerleave', cancelHold);
-    resetBtn.addEventListener('contextmenu', (e) => e.preventDefault());
+    btn.addEventListener('pointerdown', startHold);
+    btn.addEventListener('pointerup', cancelHold);
+    btn.addEventListener('pointerleave', cancelHold);
+    btn.addEventListener('contextmenu', (e) => e.preventDefault());
   },
 
-  _resetHoldButton() {
-    const resetBtn = document.getElementById('resetBtn');
-    if (!resetBtn) return;
-    resetBtn.classList.remove('holding', 'filled');
+  _resetHoldButton(btnId) {
+    const btn = document.getElementById(btnId);
+    if (!btn) return;
+    btn.classList.remove('holding', 'filled');
   },
 
   renderSettings(options = {}) {
@@ -364,11 +370,14 @@ const SettingsModal = {
 
   _hideDeleteModal() {
     document.getElementById('deleteModal')?.classList.add('hidden');
-    this._resetHoldButton();
+    this._resetHoldButton('resetBtn');
+    this._resetHoldButton('deleteConfirmBtn');
   },
 
   _confirmDeleteAllData() {
     document.getElementById('deleteModal')?.classList.add('hidden');
+    this._resetHoldButton('resetBtn');
+    this._resetHoldButton('deleteConfirmBtn');
     const completions = this.config.getCompletions();
     const setCompletions = this.config.setCompletions;
     const setTasks = this.config.setTasks;
@@ -383,13 +392,57 @@ const SettingsModal = {
     if (this.config.onReload) this.config.onReload();
   },
 
-  _showDeleteTaskModal() {
+  _formatHours(hours) {
+    const rounded = Math.round((hours || 0) * 100) / 100;
+    return `${rounded}h`;
+  },
+
+  _getTaskTotalHours(index) {
+    const completions = this.config.getCompletions?.() || {};
+    let total = 0;
+    Object.values(completions).forEach(comp => {
+      if (Array.isArray(comp) && typeof comp[index] === 'number') {
+        total += comp[index];
+      }
+    });
+    return total;
+  },
+
+  _showDeleteTaskModal(name, hours) {
+    const titleEl = document.getElementById('deleteTaskModalTitle');
+    if (titleEl) {
+      titleEl.textContent = `Delete ${name || 'this task'} (${this._formatHours(hours)})?`;
+    }
     document.getElementById('deleteTaskModal')?.classList.remove('hidden');
+  },
+
+  // Public entry point for callers (e.g. archive.html) that manage their
+  // own task list/removal logic and just want the shared hold-to-delete
+  // confirmation modal. onConfirm is invoked once the button is held down
+  // for the full duration.
+  openDeleteTaskModal(taskName, hours, onConfirm) {
+    if (!this.initialized) return;
+    this.state.pendingDeleteCallback = onConfirm;
+    this._showDeleteTaskModal(taskName, hours);
   },
 
   _hideDeleteTaskModal() {
     document.getElementById('deleteTaskModal')?.classList.add('hidden');
     this.state.pendingDeleteIndex = null;
+    this.state.pendingDeleteCallback = null;
+    this._resetHoldButton('deleteTaskConfirmBtn');
+  },
+
+  _handleDeleteTaskConfirmed() {
+    if (this.state.pendingDeleteCallback) {
+      const callback = this.state.pendingDeleteCallback;
+      this.state.pendingDeleteCallback = null;
+      document.getElementById('deleteTaskModal')?.classList.add('hidden');
+      this._resetHoldButton('deleteTaskConfirmBtn');
+      callback();
+      return;
+    }
+    this._handleConfirmDeleteTask();
   },
 
   _handleConfirmDeleteTask() {
@@ -397,6 +450,7 @@ const SettingsModal = {
     if (index === null) return;
     this.state.pendingDeleteIndex = null;
     document.getElementById('deleteTaskModal')?.classList.add('hidden');
+    this._resetHoldButton('deleteTaskConfirmBtn');
 
     const taskEl = document.getElementById(`taskContainer-${index}`);
     if (taskEl) {
@@ -732,7 +786,10 @@ window._settingsModalUpdateTaskJiraLink = (i, v) => {
 
 window._settingsModalDeleteTask = (i) => {
   SettingsModal.state.pendingDeleteIndex = i;
-  SettingsModal._showDeleteTaskModal();
+  const tasks = SettingsModal.config.getTasks();
+  const name = tasks[i]?.name;
+  const hours = SettingsModal._getTaskTotalHours(i);
+  SettingsModal._showDeleteTaskModal(name, hours);
 };
 
 window._settingsModalAddTask = () => {

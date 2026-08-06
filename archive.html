@@ -336,7 +336,15 @@
     }
 
     function deleteTask(displayIdx) {
-      if (confirm('Delete this task?')) {
+      const task = tasks[displayIdx];
+      const completions = JSON.parse(localStorage.getItem('dt_completions') || '{}');
+      let hours = 0;
+      Object.values(completions).forEach(comp => {
+        if (Array.isArray(comp) && typeof comp[task._storageIdx] === 'number') {
+          hours += comp[task._storageIdx];
+        }
+      });
+      SettingsModal.openDeleteTaskModal(task.name, hours, () => {
         tasks.splice(displayIdx, 1);
         // Re-index storage indices
         tasks = tasks.map((t, i) => {
@@ -346,7 +354,7 @@
         saveTasks();
         editing = null;
         renderTable();
-      }
+      });
     }
 
     // Dark mode toggle
