@@ -336,7 +336,7 @@
     }
 
     function deleteTask(displayIdx) {
-      if (confirm('Delete this task?')) {
+      SettingsModal.openDeleteTaskModal(() => {
         tasks.splice(displayIdx, 1);
         // Re-index storage indices
         tasks = tasks.map((t, i) => {
@@ -346,7 +346,7 @@
         saveTasks();
         editing = null;
         renderTable();
-      }
+      });
     }
 
     // Dark mode toggle

@@ -45,6 +45,7 @@ const SettingsModal = {
   state: {
     isAddTaskMode: false,
     pendingDeleteIndex: null,
+    pendingDeleteCallback: null,
     pageNeedsReload: false,
   },
 
@@ -145,7 +146,10 @@ const SettingsModal = {
           <p class="text-sm text-gray-400 dark:text-white/40 mb-6">This task will be removed.</p>
           <div class="flex gap-3 justify-end">
             <button id="deleteTaskCancelBtn" class="px-4 py-2 rounded-lg text-sm font-medium bg-black/5 dark:bg-white/10 hover:bg-black/10 dark:hover:bg-white/20 transition-colors">Cancel</button>
-            <button id="deleteTaskConfirmBtn" class="px-4 py-2 rounded-lg text-sm font-medium bg-red-500 hover:bg-red-600 text-white transition-colors">Delete</button>
+            <button id="deleteTaskConfirmBtn" class="hold-btn px-4 py-2 rounded-lg text-sm font-medium bg-red-500 text-white select-none relative overflow-hidden">
+              <span class="hold-btn-fill absolute inset-0 bg-red-700 origin-left"></span>
+              <span class="relative z-10">Hold to delete</span>
+            </button>
           </div>
         </div>
       </div>
@@ -182,7 +186,6 @@ const SettingsModal = {
     const deleteCancelBtn = document.getElementById('deleteCancelBtn');
     const deleteConfirmBtn = document.getElementById('deleteConfirmBtn');
     const deleteTaskCancelBtn = document.getElementById('deleteTaskCancelBtn');
-    const deleteTaskConfirmBtn = document.getElementById('deleteTaskConfirmBtn');
     const cancelAddTaskCancelBtn = document.getElementById('cancelAddTaskCancelBtn');
     const cancelAddTaskConfirmBtn = document.getElementById('cancelAddTaskConfirmBtn');
 
@@ -190,9 +193,9 @@ const SettingsModal = {
     settingsBackdrop?.addEventListener('click', () => this.close());
     this._wireHoldButton('resetBtn', () => this._showDeleteModal());
     this._wireHoldButton('deleteConfirmBtn', () => this._confirmDeleteAllData());
+    this._wireHoldButton('deleteTaskConfirmBtn', () => this._handleDeleteTaskConfirmed());
     deleteCancelBtn?.addEventListener('click', () => this._hideDeleteModal());
     deleteTaskCancelBtn?.addEventListener('click', () => this._hideDeleteTaskModal());
-    deleteTaskConfirmBtn?.addEventListener('click', () => this._handleConfirmDeleteTask());
     cancelAddTaskCancelBtn?.addEventListener('click', () => this._hideCancelAddTaskModal());
     cancelAddTaskConfirmBtn?.addEventListener('click', () => this._handleDiscardTask());
 
@@ -393,9 +396,33 @@ const SettingsModal = {
     document.getElementById('deleteTaskModal')?.classList.remove('hidden');
   },
 
+  // Public entry point for callers (e.g. archive.html) that manage their
+  // own task list/removal logic and just want the shared hold-to-delete
+  // confirmation modal. onConfirm is invoked once the button is held down
+  // for the full duration.
+  openDeleteTaskModal(onConfirm) {
+    if (!this.initialized) return;
+    this.state.pendingDeleteCallback = onConfirm;
+    this._showDeleteTaskModal();
+  },
+
   _hideDeleteTaskModal() {
     document.getElementById('deleteTaskModal')?.classList.add('hidden');
     this.state.pendingDeleteIndex = null;
+    this.state.pendingDeleteCallback = null;
+    this._resetHoldButton('deleteTaskConfirmBtn');
+  },
+
+  _handleDeleteTaskConfirmed() {
+    if (this.state.pendingDeleteCallback) {
+      const callback = this.state.pendingDeleteCallback;
+      this.state.pendingDeleteCallback = null;
+      document.getElementById('deleteTaskModal')?.classList.add('hidden');
+      this._resetHoldButton('deleteTaskConfirmBtn');
+      callback();
+      return;
+    }
+    this._handleConfirmDeleteTask();
   },
 
   _handleConfirmDeleteTask() {
@@ -403,6 +430,7 @@ const SettingsModal = {
     if (index === null) return;
     this.state.pendingDeleteIndex = null;
     document.getElementById('deleteTaskModal')?.classList.add('hidden');
+    this._resetHoldButton('deleteTaskConfirmBtn');
 
     const taskEl = document.getElementById(`taskContainer-${index}`);
     if (taskEl) {
