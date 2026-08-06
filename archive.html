@@ -100,6 +100,7 @@
   </main>
 
   <!-- Scripts -->
+  <script src="./task-log.js"></script>
   <script src="./settings-modal.js"></script>
 
   <script>
@@ -290,7 +291,8 @@
         displayField: field,
         originalValue: field === 'deliveryDate'
           ? formatDateToDisplay(tasks[displayIdx][field])
-          : tasks[displayIdx][field]
+          : tasks[displayIdx][field],
+        originalRaw: tasks[displayIdx][field]
       };
 
       renderTable();
@@ -310,6 +312,8 @@
 
     function commitEdit() {
       if (!editing) return;
+      const task = tasks[editing.displayIdx];
+      window.logTaskChange?.(task, editing.displayField, editing.originalRaw, task[editing.displayField]);
       saveTasks();
       editing = null;
       renderTable();

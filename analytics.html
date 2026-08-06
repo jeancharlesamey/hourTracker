@@ -503,8 +503,14 @@
             <div class="space-y-2 text-sm"></div>
           </div>
 
-          <!-- Year Heatmap Card (full width) -->
-          <div class="col-span-12 bg-white dark:bg-card-dark rounded-2xl p-6 shadow-sm border border-gray-100 dark:border-white/5">
+          <!-- Change Log Card (col-6 on md+) -->
+          <div id="bytaskLogCard" class="col-span-12 md:col-span-6 bg-white dark:bg-card-dark rounded-2xl p-6 shadow-sm border border-gray-100 dark:border-white/5">
+            <h3 class="font-semibold text-gray-900 dark:text-white mb-4">Change log</h3>
+            <div id="bytaskLogTimeline" class="max-h-96 overflow-y-auto pr-2"></div>
+          </div>
+
+          <!-- Year Heatmap Card (col-6 on md+) -->
+          <div class="col-span-12 md:col-span-6 bg-white dark:bg-card-dark rounded-2xl p-6 shadow-sm border border-gray-100 dark:border-white/5">
             <h3 class="font-semibold text-gray-900 dark:text-white mb-2">Year Heatmap</h3>
             <div id="bytaskHeatmapLegend" class="mb-3"></div>
             <div id="bytaskHeatmapContainer" class="graph-container"></div>
@@ -518,6 +524,7 @@
   <script src="./month-modal.js"></script>
   <script src="./popover.js"></script>
   <script src="./app-menu.js"></script>
+  <script src="./task-log.js"></script>
   <script src="./settings-modal.js"></script>
   <script src="./legend-renderer.js"></script>
   <script>
@@ -1771,6 +1778,60 @@
       }
     }
 
+    function renderTaskLogTimeline(taskIndex) {
+      const el = document.getElementById('bytaskLogTimeline');
+      if (!el) return;
+
+      const task = tasks[taskIndex];
+      if (!task) { el.innerHTML = ''; return; }
+
+      const entries = (window.taskLogGetAll?.() || [])
+        .filter(e => task.uid && e.uid === task.uid)
+        .sort((a, b) => new Date(b.date) - new Date(a.date));
+
+      if (entries.length === 0) {
+        el.innerHTML = `<p style="font-size:14px;color:#6b7280;">No changes recorded yet.</p>`;
+        return;
+      }
+
+      // Note: the vendored Tailwind build is purged to only the classes already
+      // used elsewhere in the app, so this timeline's layout (line, dot, indent,
+      // spacing) is done with inline styles rather than untested utility classes.
+      const isDark = document.documentElement.classList.contains('dark');
+      const lineColor = isDark ? '#2d3751' : '#e5e7eb';
+      const dotColor = lineColor; // dot fill matches the rail, both solid (no opacity)
+      const dotRingColor = isDark ? '#16213e' : '#ffffff'; // ring matches the card background
+      const timeColor = isDark ? 'rgba(255,255,255,0.4)' : '#9ca3af';
+      const titleColor = isDark ? '#ffffff' : '#111827';
+      const descColor = isDark ? '#9ca3af' : '#6b7280';
+
+      const displayValue = (field, value) => {
+        if (field === 'status') return (window.STATUS_LABELS && window.STATUS_LABELS[value]) || '—';
+        return value || '—';
+      };
+
+      // The rail (line) and dots are both positioned relative to the <ol>, at the
+      // same x-coordinate (railX), so the line passes exactly through each dot's
+      // center instead of sitting beside it.
+      const railX = 6; // px from the ol's left edge = dot radius, so dots center on the rail
+      const dotSize = 12;
+      const textIndent = 24; // px from the ol's left edge to where title/text start
+
+      el.innerHTML = `
+        <ol style="position:relative;list-style:none;margin:0;padding:0;">
+          <div style="position:absolute;top:0;bottom:0;left:${railX - 1}px;width:2px;background:${lineColor};"></div>
+          ${entries.map((entry, idx) => `
+            <li style="position:relative;margin-inline-start:${textIndent}px;${idx === entries.length - 1 ? '' : 'margin-bottom:32px;'}">
+              <div style="position:absolute;top:4px;inset-inline-start:${-(textIndent - (railX - dotSize / 2))}px;width:${dotSize}px;height:${dotSize}px;border-radius:9999px;background:${dotColor};border:2px solid ${dotRingColor};"></div>
+              <time style="display:block;margin-bottom:4px;font-size:13px;color:${timeColor};">${new Date(entry.date).toLocaleString()}</time>
+              <h3 style="margin:0;font-size:16px;font-weight:600;color:${titleColor};">${(window.FIELD_LABELS && window.FIELD_LABELS[entry.field]) || entry.field}</h3>
+              <p style="margin:2px 0 0;font-size:14px;color:${descColor};">${displayValue(entry.field, entry.from)} &rarr; ${displayValue(entry.field, entry.to)}</p>
+            </li>
+          `).join('')}
+        </ol>
+      `;
+    }
+
     function renderTaskHeatmap(taskIndex) {
       const el = document.getElementById('bytaskHeatmapContainer');
       const legendEl = document.getElementById('bytaskHeatmapLegend');
@@ -2050,6 +2111,7 @@
       renderTaskDayChart(taskIndex);
       renderTaskAchievements(taskIndex);
       renderTaskHeatmap(taskIndex);
+      renderTaskLogTimeline(taskIndex);
     }
 
     function renderRiskBadge(taskIndex) {
