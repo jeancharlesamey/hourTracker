@@ -5,6 +5,7 @@ const ASSETS = [
   './manifest.json',
   './icons/icon-192.png',
   './icons/icon-512.png',
+  './vendor/tailwind/tailwind.css',
 ];
 
 // Install: cache app shell

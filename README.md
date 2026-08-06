@@ -1,7 +1,7 @@
 # HOUR TRACKER
 one file. no server. no fuss.
 
-**v1.4.3-beta2**
+**v1.4.4-beta2**
 
 A minimal, offline-first hour tracker that lives in your browser. No login, no server, no complications.
 
@@ -81,7 +81,7 @@ How it fills:
 
 ## Install
 
-No build step. No dependencies.
+No build step required to run it. Tailwind CSS is precompiled and vendored in `vendor/tailwind/` (no CDN, no external fetch, no npm install needed).
 
 **Option 1:** Clone the repo, navigate to the folder, open `index.html`
 
@@ -102,6 +102,7 @@ No build step. No dependencies.
 - `manifest.json` — PWA config
 - `sw.js` — offline support
 - `icons/` — app icons
+- `vendor/tailwind/` — precompiled local Tailwind CSS build (see vendor/tailwind/README.md to rebuild)
 
 ---
 
@@ -117,6 +118,10 @@ Data stored locally: your task list, colors, hours per day, daily cap, and last 
 ---
 
 ## Recent Updates
+
+**v1.4.4-beta2** — Removed Tailwind CDN dependency
+- Replaced the cdn.tailwindcss.com Play CDN script with a precompiled, locally vendored Tailwind build — eliminates console warnings when opening the app via file:// and removes the external CDN dependency
+- Fixed a CSS cascade-layers conflict between the vendored Tailwind build and @csstools/normalize.css that was inflating header size and breaking spacing around status pills/inputs
 
 **v1.4.3-beta2** — Hold-to-confirm deletions
 - Archive Task Deletion: replaced the native browser confirm dialog with the shared custom confirmation modal

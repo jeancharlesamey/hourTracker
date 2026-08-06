@@ -1,0 +1,17 @@
+@import "tailwindcss";
+
+@source "../../*.html";
+@source "../../*.js";
+
+@custom-variant dark (&:where(.dark, .dark *));
+
+@theme {
+  --color-surface: #f5f5f5;
+  --color-surface-dark: #1a1a2e;
+  --color-card: #ffffff;
+  --color-card-dark: #16213e;
+  --color-accent: #e0e7ff;
+  --color-accent-dark: #0f3460;
+  --color-muted: #d1d5db;
+  --color-muted-dark: #333a56;
+}
